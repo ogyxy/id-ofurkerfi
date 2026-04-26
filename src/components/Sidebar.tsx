@@ -55,7 +55,7 @@ export function Sidebar({ activeKey, userEmail }: SidebarProps) {
         <img
           src={ideLogo}
           alt={t.brand.name}
-          className="h-8 w-auto object-contain"
+          className="h-16 w-auto object-contain"
         />
         <button
           type="button"
