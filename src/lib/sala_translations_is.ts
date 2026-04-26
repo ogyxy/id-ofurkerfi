@@ -341,13 +341,13 @@ export const t = {
   // Deal summary footer labels
   // ---------------------------------------------------------------------------
   dealSummary: {
-    subtotal:    'Samtals verð',
-    totalCost:   'Heildarkostnaður',
+    subtotal:    'Söluverð án vsk',
+    totalCost:   'Kostnaðarverð',
     shipping:    'Sending (kostnaður)',
-    totalMargin: 'Heildarmunur',
+    totalMargin: 'Framlegð',
     marginPct:   'Framlegð %',
     vat:         'VSK',
-    grandTotal:  'Heildarupphæð',
+    grandTotal:  'Söluverð með vsk',
   },
 
   // ---------------------------------------------------------------------------
