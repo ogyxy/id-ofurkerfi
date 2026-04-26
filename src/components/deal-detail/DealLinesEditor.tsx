@@ -388,25 +388,18 @@ export function DealLinesEditor({
                     </Select>
                   </td>
                   <td className="px-2 py-2">
-                    <div className="flex flex-col items-end">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={line.exchange_rate}
-                        onChange={(e) =>
-                          updateLine(idx, {
-                            exchange_rate: Number(e.target.value),
-                          })
-                        }
-                        placeholder={ratesError ? "Sláðu inn gengi" : ""}
-                        className="w-24 text-right"
-                      />
-                      {liveRate && (
-                        <span className="mt-0.5 text-[10px] text-muted-foreground">
-                          {line.cost_currency} · {formatNumber(liveRate, 1)}
-                        </span>
-                      )}
-                    </div>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={line.exchange_rate}
+                      onChange={(e) =>
+                        updateLine(idx, {
+                          exchange_rate: Number(e.target.value),
+                        })
+                      }
+                      placeholder={ratesError ? "Sláðu inn gengi" : ""}
+                      className="w-24 text-right"
+                    />
                   </td>
                   <td className="px-2 py-2">
                     <Input
