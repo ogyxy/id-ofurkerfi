@@ -83,15 +83,49 @@ function fromCompany(c: Company): FormState {
 }
 
 export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Props) {
-  const [form, setForm] = useState<FormState>(() => fromCompany(company));
+  const initialForm = useMemo(() => fromCompany(company), [company]);
+  const [form, setForm] = useState<FormState>(initialForm);
   const [saving, setSaving] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (open) setForm(fromCompany(company));
   }, [open, company]);
 
+  const isDirty = useMemo(
+    () => JSON.stringify(form) !== JSON.stringify(initialForm),
+    [form, initialForm],
+  );
+
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const requestClose = () => {
+    if (isDirty) {
+      setConfirmOpen(true);
+    } else {
+      onOpenChange(false);
+    }
+  };
+
+  const handleSheetOpenChange = (next: boolean) => {
+    if (!next) {
+      requestClose();
+      return;
+    }
+    onOpenChange(next);
+  };
+
+  const discardAndClose = () => {
+    setForm(initialForm);
+    setConfirmOpen(false);
+    onOpenChange(false);
+  };
+
+  const saveFromConfirm = async () => {
+    setConfirmOpen(false);
+    await handleSave();
   };
 
   const handleSave = async () => {
