@@ -153,6 +153,14 @@ function CompanyDetailContent() {
 
   return (
     <div className="space-y-6">
+      <Link
+        to="/companies"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        {t.actions.back}
+      </Link>
+
       <CompanyHeader company={company} onEdit={() => setEditOpen(true)} />
 
       {/* Tabs nav */}
