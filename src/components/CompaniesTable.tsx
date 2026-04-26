@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatIsk } from "@/lib/sala_translations_is";
 import { Input } from "@/components/ui/input";
