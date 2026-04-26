@@ -34,7 +34,7 @@ export const t = {
     dashboard:      'Yfirlit',
     companies:      'Viðskiptavinir',
     contacts:       'Tengiliðir',
-    contactSingle:  'tengilið',
+    contactSingle:  'Tengiliður',
     deals:          'Sölur',
     designs:        'Hönnun',
     products:       'Vörur',
