@@ -355,7 +355,7 @@ export function DealLinesEditor({
                       onChange={(e) =>
                         updateLine(idx, { quantity: Number(e.target.value) })
                       }
-                      className="w-20 text-right"
+                      className="w-20 mx-auto text-center"
                     />
                   </td>
                   <td className="px-2 py-2">
