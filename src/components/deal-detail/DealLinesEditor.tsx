@@ -317,17 +317,15 @@ export function DealLinesEditor({
 
       {/* Lines table */}
       <div className="overflow-x-auto rounded-md border border-border bg-card">
-        <table className="w-full min-w-[1100px] text-sm">
+        <table className="w-full min-w-[900px] text-sm">
           <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="w-8 px-2 py-2"></th>
-              <th className="px-2 py-2 text-left">#</th>
               <th className="px-2 py-2 text-left">{t.dealLine.product_name}</th>
               <th className="px-2 py-2 text-right">{t.dealLine.quantity}</th>
               <th className="px-2 py-2 text-right">{t.dealLine.unit_cost}</th>
               <th className="px-2 py-2 text-left">{t.dealLine.cost_currency}</th>
               <th className="px-2 py-2 text-right">{t.dealLine.exchange_rate}</th>
-              <th className="px-2 py-2 text-right">{t.dealLine.unit_cost_isk}</th>
               <th className="px-2 py-2 text-right">{t.dealLine.markup_pct}</th>
               <th className="px-2 py-2 text-right">{t.dealLine.unit_price_isk}</th>
               <th className="px-2 py-2 text-right">{t.dealLine.line_total_isk}</th>
