@@ -166,7 +166,7 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={handleSheetOpenChange}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>
