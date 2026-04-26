@@ -340,7 +340,6 @@ export function DealLinesEditor({
                   <td className="px-2 py-2 text-muted-foreground">
                     <GripVertical className="h-4 w-4" />
                   </td>
-                  <td className="px-2 py-2 text-muted-foreground">{idx + 1}</td>
                   <td className="px-2 py-2">
                     <Input
                       value={line.product_name}
