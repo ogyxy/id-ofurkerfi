@@ -35,6 +35,7 @@ export const t = {
     companies:      'Viðskiptavinir',
     contacts:       'Tengiliðir',
     contactSingle:  'Tengiliður',
+    contactAcc:     'tengilið',
     deals:          'Sölur',
     dealSingle:     'Sölu',
     designs:        'Hönnun',
