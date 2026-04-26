@@ -325,7 +325,7 @@ export const t = {
     markup_pct:           'Álag (%)',
     unit_price_isk:       'Söluverð (ISK)',
     line_cost_isk:        'Heildarkostnaður línu',
-    line_total_isk:       'Heildarverð línu',
+    line_total_isk:       'Samtals',
     line_margin_isk:      'Framlegð línu',
     notes:                'Athugasemdir',
     exchangeRateBar:      'Gengi í dag',
@@ -341,13 +341,13 @@ export const t = {
   // Deal summary footer labels
   // ---------------------------------------------------------------------------
   dealSummary: {
-    subtotal:    'Samtals verð',
-    totalCost:   'Heildarkostnaður',
+    subtotal:    'Söluverð án vsk',
+    totalCost:   'Kostnaðarverð',
     shipping:    'Sending (kostnaður)',
-    totalMargin: 'Heildarmunur',
+    totalMargin: 'Framlegð',
     marginPct:   'Framlegð %',
     vat:         'VSK',
-    grandTotal:  'Heildarupphæð',
+    grandTotal:  'Söluverð með vsk',
   },
 
   // ---------------------------------------------------------------------------

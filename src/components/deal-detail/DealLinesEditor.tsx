@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Pencil, Trash2, Plus, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,12 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 
 type DealLineRow = Database["public"]["Tables"]["deal_lines"]["Row"];
 
 const CURRENCIES = ["EUR", "GBP", "USD", "NOK", "DKK", "SEK", "CHF"] as const;
-type Currency = (typeof CURRENCIES)[number];
 
 export type EditableLine = {
   id: string; // local id (uuid or temp id)
@@ -99,11 +97,117 @@ export function DealLinesEditor({
   onSaveDefaultMarkup,
   onSaved,
 }: Props) {
-  const [saving, setSaving] = useState(false);
+  // Track ids of lines that have been persisted at least once
+  const persistedIds = useRef<Set<string>>(new Set());
+  // Cache last serialized payload per id to avoid redundant writes
+  const lastSerialized = useRef<Map<string, string>>(new Map());
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Initialize persisted ids from existing (non-new) lines
+  useEffect(() => {
+    for (const l of lines) {
+      if (!l.isNew) persistedIds.current.add(l.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const persistTotals = async (currentLines: EditableLine[]) => {
+    const totalCost = currentLines.reduce((s, l) => s + lineCostIsk(l), 0);
+    const totalPrice = currentLines.reduce((s, l) => s + lineTotalIsk(l), 0);
+    await supabase
+      .from("deals")
+      .update({
+        total_cost_isk: totalCost,
+        total_price_isk: totalPrice,
+        total_margin_isk: totalPrice - totalCost,
+        amount_isk: totalPrice,
+      })
+      .eq("id", dealId);
+  };
+
+  const saveLine = async (line: EditableLine, orderIdx: number) => {
+    if (!line.product_name.trim()) return; // don't save until name exists
+    const payload = {
+      deal_id: dealId,
+      line_order: orderIdx + 1,
+      product_name: line.product_name.trim(),
+      product_supplier_sku: line.product_supplier_sku.trim() || null,
+      description: null,
+      quantity: line.quantity,
+      unit_cost: line.unit_cost,
+      cost_currency: line.cost_currency,
+      exchange_rate: line.exchange_rate,
+      unit_cost_isk: line.unit_cost_isk,
+      markup_pct: line.markup_pct,
+      unit_price_isk: line.unit_price_isk,
+      line_cost_isk: lineCostIsk(line),
+      line_total_isk: lineTotalIsk(line),
+      line_margin_isk: lineMarginIsk(line),
+      notes: line.notes || null,
+    };
+    const serialized = JSON.stringify(payload);
+    if (lastSerialized.current.get(line.id) === serialized) return;
+
+    if (persistedIds.current.has(line.id)) {
+      const { error } = await supabase
+        .from("deal_lines")
+        .update(payload)
+        .eq("id", line.id);
+      if (error) {
+        toast.error(t.status.somethingWentWrong);
+        return;
+      }
+    } else {
+      const { data, error } = await supabase
+        .from("deal_lines")
+        .insert(payload)
+        .select("id")
+        .single();
+      if (error || !data) {
+        toast.error(t.status.somethingWentWrong);
+        return;
+      }
+      // Swap temp id for real id
+      const newId = data.id;
+      persistedIds.current.add(newId);
+      lastSerialized.current.set(newId, serialized);
+      setLines(
+        lines.map((l) =>
+          l.id === line.id ? { ...l, id: newId, isNew: false } : l,
+        ),
+      );
+      return;
+    }
+    lastSerialized.current.set(line.id, serialized);
+  };
+
+  // Debounced auto-save whenever lines change
+  useEffect(() => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => {
+      const snapshot = lines;
+      for (let i = 0; i < snapshot.length; i++) {
+        await saveLine(snapshot[i], i);
+      }
+      await persistTotals(snapshot);
+    }, 600);
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lines]);
 
   const updateLine = (idx: number, patch: Partial<EditableLine>) => {
     const next = [...lines];
     let line = { ...next[idx], ...patch };
+
+    // Auto-fill exchange rate when currency changes (before unit_cost_isk recalc)
+    if (patch.cost_currency !== undefined) {
+      const r = rates[patch.cost_currency];
+      if (r) {
+        line.exchange_rate = Math.round(r * 100) / 100;
+      }
+    }
 
     // Recalc unit_cost_isk if cost inputs changed
     if (
@@ -112,15 +216,6 @@ export function DealLinesEditor({
       patch.exchange_rate !== undefined
     ) {
       line.unit_cost_isk = calcUnitCostIsk(line);
-    }
-
-    // Auto-fill exchange rate when currency changes
-    if (patch.cost_currency !== undefined) {
-      const r = rates[patch.cost_currency];
-      if (r) {
-        line.exchange_rate = Math.round(r * 100) / 100;
-        line.unit_cost_isk = calcUnitCostIsk(line);
-      }
     }
 
     // Recalc unit_price_isk unless price is manually overridden
@@ -170,8 +265,12 @@ export function DealLinesEditor({
     const line = lines[idx];
     const next = lines.filter((_, i) => i !== idx);
     setLines(next);
-    if (!line.isNew) {
+    if (persistedIds.current.has(line.id)) {
       await supabase.from("deal_lines").delete().eq("id", line.id);
+      persistedIds.current.delete(line.id);
+      lastSerialized.current.delete(line.id);
+      await persistTotals(next);
+      await onSaved();
     }
   };
 
@@ -185,80 +284,12 @@ export function DealLinesEditor({
     );
   };
 
-  const saveAll = async () => {
-    setSaving(true);
-    try {
-      // Validate
-      for (const l of lines) {
-        if (!l.product_name.trim()) {
-          toast.error("Vörunafn vantar");
-          setSaving(false);
-          return;
-        }
-      }
-
-      const rows = lines.map((l, idx) => ({
-        ...(l.isNew ? {} : { id: l.id }),
-        deal_id: dealId,
-        line_order: idx + 1,
-        product_name: l.product_name.trim(),
-        product_supplier_sku: l.product_supplier_sku.trim() || null,
-        description: null,
-        quantity: l.quantity,
-        unit_cost: l.unit_cost,
-        cost_currency: l.cost_currency,
-        exchange_rate: l.exchange_rate,
-        unit_cost_isk: l.unit_cost_isk,
-        markup_pct: l.markup_pct,
-        unit_price_isk: l.unit_price_isk,
-        line_cost_isk: lineCostIsk(l),
-        line_total_isk: lineTotalIsk(l),
-        line_margin_isk: lineMarginIsk(l),
-        notes: l.notes || null,
-      }));
-
-      const { error: upsertError } = await supabase
-        .from("deal_lines")
-        .upsert(rows);
-      if (upsertError) throw upsertError;
-
-      const totalCost = lines.reduce((s, l) => s + lineCostIsk(l), 0);
-      const totalPrice = lines.reduce((s, l) => s + lineTotalIsk(l), 0);
-
-      const { error: dealError } = await supabase
-        .from("deals")
-        .update({
-          total_cost_isk: totalCost,
-          total_price_isk: totalPrice,
-          total_margin_isk: totalPrice - totalCost,
-          amount_isk: totalPrice,
-        })
-        .eq("id", dealId);
-      if (dealError) throw dealError;
-
-      toast.success(t.status.savedSuccessfully);
-      await onSaved();
-    } catch (e) {
-      console.error(e);
-      toast.error(t.status.somethingWentWrong);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">
           {t.dealLine.title} ({lines.length})
         </h2>
-        <Button
-          onClick={saveAll}
-          disabled={saving}
-          className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-        >
-          {saving ? t.status.saving : t.actions.save}
-        </Button>
       </div>
 
       {ratesError && (
@@ -299,13 +330,12 @@ export function DealLinesEditor({
               <th className="px-2 py-2 text-right">{t.dealLine.unit_cost_isk}</th>
               <th className="px-2 py-2 text-right">{t.dealLine.markup_pct}</th>
               <th className="px-2 py-2 text-right">{t.dealLine.unit_price_isk}</th>
-              <th className="px-2 py-2 text-right">{t.dealLine.line_margin_isk}</th>
+              <th className="px-2 py-2 text-right">{t.dealLine.line_total_isk}</th>
               <th className="w-8 px-2 py-2"></th>
             </tr>
           </thead>
           <tbody>
             {lines.map((line, idx) => {
-              const margin = lineMarginIsk(line);
               const liveRate = rates[line.cost_currency];
               return (
                 <tr key={line.id} className="border-t border-border">
@@ -392,11 +422,9 @@ export function DealLinesEditor({
                       onChange={(e) =>
                         updateLine(idx, {
                           markup_pct: Number(e.target.value),
-                          // re-enable auto recalc on markup change
                         })
                       }
                       onBlur={() => {
-                        // Re-apply auto-calc when markup changes
                         const updated = {
                           ...line,
                           manualPrice: false,
@@ -429,13 +457,8 @@ export function DealLinesEditor({
                       />
                     </div>
                   </td>
-                  <td
-                    className={cn(
-                      "px-2 py-2 text-right tabular-nums font-medium",
-                      margin >= 0 ? "text-green-700" : "text-red-700",
-                    )}
-                  >
-                    {formatIsk(margin)}
+                  <td className="px-2 py-2 text-right tabular-nums font-medium">
+                    {formatIsk(lineTotalIsk(line))}
                   </td>
                   <td className="px-2 py-2">
                     <Button
