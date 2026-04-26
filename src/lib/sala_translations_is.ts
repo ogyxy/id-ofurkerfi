@@ -287,7 +287,7 @@ export const t = {
     name:                    'Heiti',
     stage:                   'Staða',
     amount_isk:              'Upphæð',
-    promised_delivery_date:  'Lofuð afhending',
+    promised_delivery_date:  'Áætluð afhending',
     estimated_delivery_date: 'Áætluð afhending',
     actual_close_date:       'Raunveruleg lokadagsetning',
     tracking_numbers:        'Sendingarnúmer',
