@@ -359,22 +359,27 @@ export function DealLinesEditor({
                     />
                   </td>
                   <td className="px-2 py-2">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={line.unit_cost}
-                      onChange={(e) =>
-                        updateLine(idx, { unit_cost: Number(e.target.value) })
-                      }
-                      className="w-24 text-right"
-                    />
+                    <div className="relative w-24 mx-auto">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={line.unit_cost}
+                        onChange={(e) =>
+                          updateLine(idx, { unit_cost: Number(e.target.value) })
+                        }
+                        className="w-24 pr-10 text-right"
+                      />
+                      <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
+                        {line.cost_currency}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-2 py-2">
                     <Select
                       value={line.cost_currency}
                       onValueChange={(v) => updateLine(idx, { cost_currency: v })}
                     >
-                      <SelectTrigger className="w-24">
+                      <SelectTrigger className="w-24 mx-auto">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -387,21 +392,26 @@ export function DealLinesEditor({
                     </Select>
                   </td>
                   <td className="px-2 py-2">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={line.exchange_rate}
-                      onChange={(e) =>
-                        updateLine(idx, {
-                          exchange_rate: Number(e.target.value),
-                        })
-                      }
-                      placeholder={ratesError ? "Sláðu inn gengi" : ""}
-                      className="w-24 text-right"
-                    />
+                    <div className="relative w-24 mx-auto">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={line.exchange_rate}
+                        onChange={(e) =>
+                          updateLine(idx, {
+                            exchange_rate: Number(e.target.value),
+                          })
+                        }
+                        placeholder={ratesError ? "Sláðu inn gengi" : ""}
+                        className="w-24 pr-8 text-right"
+                      />
+                      <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
+                        kr.
+                      </span>
+                    </div>
                   </td>
                   <td className="px-2 py-2">
-                    <div className="relative w-24 ml-auto">
+                    <div className="relative w-24 mx-auto">
                       <Input
                         type="number"
                         step="0.1"
@@ -432,24 +442,32 @@ export function DealLinesEditor({
                     </div>
                   </td>
                   <td className="px-2 py-2">
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-center gap-1">
                       {line.manualPrice && (
                         <Pencil className="h-3 w-3 text-amber-600" />
                       )}
-                      <Input
-                        type="number"
-                        value={line.unit_price_isk}
-                        onChange={(e) =>
-                          updateLine(idx, {
-                            unit_price_isk: Number(e.target.value),
-                          })
-                        }
-                        className="w-28 text-right"
-                      />
+                      <div className="relative w-28">
+                        <Input
+                          type="number"
+                          value={line.unit_price_isk}
+                          onChange={(e) =>
+                            updateLine(idx, {
+                              unit_price_isk: Number(e.target.value),
+                            })
+                          }
+                          className="w-28 pr-8 text-right"
+                        />
+                        <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
+                          kr.
+                        </span>
+                      </div>
                     </div>
                   </td>
-                  <td className="px-2 py-2 text-right tabular-nums font-medium">
-                    {formatIsk(lineTotalIsk(line))}
+                  <td className="px-2 py-2 tabular-nums font-medium">
+                    <div className="flex items-center justify-end gap-1">
+                      <span>{formatIsk(lineTotalIsk(line)).replace(' kr.', '')}</span>
+                      <span className="text-muted-foreground">kr.</span>
+                    </div>
                   </td>
                   <td className="px-2 py-2">
                     <Button
