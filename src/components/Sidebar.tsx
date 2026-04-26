@@ -10,10 +10,9 @@ interface SidebarProps {
   activeKey:
     | "dashboard"
     | "companies"
-    | "contacts"
     | "deals"
     | "designs"
-    | "quotes"
+    | "products"
     | "purchaseOrders"
     | "activities";
   userEmail: string;
@@ -26,10 +25,9 @@ const navItems: Array<{
 }> = [
   { key: "dashboard", label: t.nav.dashboard },
   { key: "companies", label: t.nav.companies, to: "/companies" },
-  { key: "contacts", label: t.nav.contacts },
   { key: "deals", label: t.nav.deals },
   { key: "designs", label: t.nav.designs },
-  { key: "quotes", label: t.nav.quotes },
+  { key: "products", label: t.nav.products },
   { key: "purchaseOrders", label: t.nav.purchaseOrders },
   { key: "activities", label: t.nav.activities },
 ];
