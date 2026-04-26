@@ -302,7 +302,28 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
             {saving ? t.status.saving : t.actions.save}
           </Button>
         </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.status.unsavedChanges}</AlertDialogTitle>
+            <AlertDialogDescription>{t.status.unsavedChangesBody}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={discardAndClose}>
+              {t.status.discardChanges}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={saveFromConfirm}
+              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+            >
+              {t.status.saveChanges}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
