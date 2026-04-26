@@ -33,7 +33,7 @@ export const t = {
   nav: {
     dashboard:      'Yfirlit',
     companies:      'Viðskiptavinir',
-    contacts:       'Tengiliðir',
+    contacts:       'tengilið',
     deals:          'Sölur',
     designs:        'Hönnun',
     quotes:         'Tilboð',
