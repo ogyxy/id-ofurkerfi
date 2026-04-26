@@ -34,9 +34,7 @@ export function CompanyHeader({ company, onEdit }: Props) {
                 {t.company.vsk_number}: {company.vsk_number}
               </span>
             )}
-            <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
-              {t.company.vsk_status}: {t.vskStatus[company.vsk_status]}
-            </span>
+          
           </div>
         </div>
         <Button variant="outline" onClick={onEdit}>
