@@ -408,9 +408,6 @@ export function DealLinesEditor({
                       )}
                     </div>
                   </td>
-                  <td className="px-2 py-2 text-right tabular-nums text-muted-foreground">
-                    {formatIsk(line.unit_cost_isk)}
-                  </td>
                   <td className="px-2 py-2">
                     <Input
                       type="number"
