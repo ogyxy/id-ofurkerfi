@@ -322,12 +322,12 @@ export function DealLinesEditor({
             <tr>
               <th className="w-8 px-2 py-2"></th>
               <th className="px-2 py-2 text-left">{t.dealLine.product_name}</th>
-              <th className="px-2 py-2 text-right">{t.dealLine.quantity}</th>
-              <th className="px-2 py-2 text-right">{t.dealLine.unit_cost}</th>
-              <th className="px-2 py-2 text-left">{t.dealLine.cost_currency}</th>
-              <th className="px-2 py-2 text-right">{t.dealLine.exchange_rate}</th>
-              <th className="px-2 py-2 text-right">{t.dealLine.markup_pct}</th>
-              <th className="px-2 py-2 text-right">{t.dealLine.unit_price_isk}</th>
+              <th className="px-2 py-2 text-center">{t.dealLine.quantity}</th>
+              <th className="px-2 py-2 text-center">{t.dealLine.unit_cost}</th>
+              <th className="px-2 py-2 text-center">{t.dealLine.cost_currency}</th>
+              <th className="px-2 py-2 text-center">{t.dealLine.exchange_rate}</th>
+              <th className="px-2 py-2 text-center">{t.dealLine.markup_pct}</th>
+              <th className="px-2 py-2 text-center">{t.dealLine.unit_price_isk}</th>
               <th className="px-2 py-2 text-right">{t.dealLine.line_total_isk}</th>
               <th className="w-8 px-2 py-2"></th>
             </tr>
