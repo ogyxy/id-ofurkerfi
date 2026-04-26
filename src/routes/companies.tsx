@@ -18,7 +18,7 @@ function CompaniesPage() {
       {(session) => (
         <div className="min-h-screen bg-background">
           <Sidebar activeKey="companies" userEmail={session.user.email ?? ""} />
-          <main className="ml-60 px-8 py-8">
+          <main className="px-4 pb-8 pt-20 md:ml-60 md:px-8 md:pt-8">
             <h1 className="mb-6 text-2xl font-semibold text-foreground">
               {t.nav.companies}
             </h1>

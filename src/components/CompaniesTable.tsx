@@ -68,7 +68,7 @@ export function CompaniesTable() {
         className="max-w-sm"
       />
 
-      <div className="rounded-md border border-border bg-card">
+      <div className="overflow-x-auto rounded-md border border-border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
