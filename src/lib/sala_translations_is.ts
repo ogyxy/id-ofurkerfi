@@ -325,7 +325,7 @@ export const t = {
     markup_pct:           'Álag (%)',
     unit_price_isk:       'Söluverð (ISK)',
     line_cost_isk:        'Heildarkostnaður línu',
-    line_total_isk:       'Heildarverð línu',
+    line_total_isk:       'Samtals',
     line_margin_isk:      'Framlegð línu',
     notes:                'Athugasemdir',
     exchangeRateBar:      'Gengi í dag',
