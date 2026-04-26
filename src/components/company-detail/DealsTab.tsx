@@ -160,7 +160,7 @@ export function DealsTab({ companyId, deals, contacts, onChanged, onOpenDeal }: 
           className="bg-ide-navy text-white hover:bg-ide-navy-hover"
         >
           <Plus className="mr-1 h-4 w-4" />
-          {t.actions.create} {t.nav.deals.toLowerCase()}
+          {t.actions.create} {t.nav.dealSingle.toLowerCase()}
         </Button>
       </div>
 
