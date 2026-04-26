@@ -197,7 +197,7 @@ function CompanyDetailContent() {
             deals={deals}
             contacts={contacts}
             onChanged={loadAll}
-            onOpenDeal={(dealId) => console.log("open deal", dealId)}
+            onOpenDeal={(dealId) => navigate({ to: "/deals/$id", params: { id: dealId } })}
           />
         )}
         {activeTab === "designs" && (
