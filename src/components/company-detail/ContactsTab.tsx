@@ -123,7 +123,7 @@ export function ContactsTab({ companyId, contacts, onChanged }: Props) {
   };
 
   if (contacts.length === 0 && !showForm) {
-    return <EmptyState label={t.nav.contacts} onAdd={openAdd} />;
+    return <EmptyState label={t.nav.contactSingle} onAdd={openAdd} />;
   }
 
   return (
