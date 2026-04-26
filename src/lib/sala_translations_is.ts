@@ -36,6 +36,7 @@ export const t = {
     contacts:       'Tengiliðir',
     contactSingle:  'Tengiliður',
     deals:          'Sölur',
+    dealSingle:     'Sölu',
     designs:        'Hönnun',
     products:       'Vörur',
     quotes:         'Tilboð',
