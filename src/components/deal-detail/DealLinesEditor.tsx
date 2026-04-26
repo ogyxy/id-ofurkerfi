@@ -334,7 +334,6 @@ export function DealLinesEditor({
           </thead>
           <tbody>
             {lines.map((line, idx) => {
-              const liveRate = rates[line.cost_currency];
               return (
                 <tr key={line.id} className="border-t border-border">
                   <td className="px-2 py-2 text-muted-foreground">
