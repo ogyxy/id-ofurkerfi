@@ -72,7 +72,7 @@ function CompanyDetailContent() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [designs, setDesigns] = useState<Design[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [activeTab, setActiveTab] = useState<TabKey>("contacts");
+  const [activeTab, setActiveTab] = useState<TabKey>("deals");
   const [editOpen, setEditOpen] = useState(false);
 
   const loadAll = useCallback(async () => {
@@ -145,8 +145,8 @@ function CompanyDetailContent() {
   }
 
   const tabs: Array<{ key: TabKey; label: string; count: number }> = [
-    { key: "contacts", label: t.nav.contacts, count: contacts.length },
     { key: "deals", label: t.nav.deals, count: deals.length },
+    { key: "contacts", label: t.nav.contacts, count: contacts.length },
     { key: "designs", label: t.nav.designs, count: designs.length },
     { key: "activities", label: t.nav.activities, count: activities.length },
   ];
