@@ -333,8 +333,8 @@ export const t = {
     marginLabel:          'Framlegð',
     shippingCost:         'Sendingarkostnaður (kostnaður)',
     shippingNote:         'Sendingarkostnaður er ekki reiknaður inn í söluverð — hann lækkar framlegð.',
-    defaultMarkup:        'Sjálfgefið álag',
-    applyToAll:           'Beita á allar línur',
+    defaultMarkup:        'Sjálfgefin álagning',
+    applyToAll:           'Nota á allar línur',
   },
 
   // ---------------------------------------------------------------------------
