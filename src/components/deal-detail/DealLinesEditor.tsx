@@ -286,11 +286,6 @@ export function DealLinesEditor({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">
-          {t.dealLine.title} ({lines.length})
-        </h2>
-      </div>
 
       {ratesError && (
         <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
