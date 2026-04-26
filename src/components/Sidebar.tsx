@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { t } from "@/lib/sala_translations_is";
 import { SidebarNavLink } from "./SidebarNavLink";
+import ideLogo from "@/assets/ide-logo.png";
 
 interface SidebarProps {
   activeKey:
@@ -38,9 +39,11 @@ export function Sidebar({ activeKey, userEmail }: SidebarProps) {
   return (
     <aside className="fixed inset-y-0 left-0 flex w-60 flex-col bg-ide-navy text-white">
       <div className="px-6 py-6">
-        <span className="text-2xl font-semibold tracking-wide text-white">
-          {t.brand.short}
-        </span>
+        <img
+          src={ideLogo}
+          alt={t.brand.name}
+          className="h-8 w-auto object-contain"
+        />
       </div>
 
       <nav className="flex-1 py-2">
