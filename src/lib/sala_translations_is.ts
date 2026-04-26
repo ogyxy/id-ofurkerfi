@@ -409,11 +409,12 @@ export const t = {
 
 export const formatIsk = (n: number | null | undefined): string => {
   if (n === null || n === undefined) return '';
-  return new Intl.NumberFormat('is-IS', {
-    style: 'currency',
-    currency: 'ISK',
+  // Format: "123.456 kr." — dot as thousands separator, "kr." suffix
+  const rounded = Math.round(n);
+  const formatted = new Intl.NumberFormat('is-IS', {
     maximumFractionDigits: 0,
-  }).format(n);
+  }).format(rounded);
+  return `${formatted} kr.`;
 };
 
 export const formatNumber = (n: number | null | undefined, decimals = 2): string => {
