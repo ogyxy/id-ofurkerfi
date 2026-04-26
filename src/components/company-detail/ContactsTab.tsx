@@ -123,7 +123,7 @@ export function ContactsTab({ companyId, contacts, onChanged }: Props) {
   };
 
   if (contacts.length === 0 && !showForm) {
-    return <EmptyState label={t.nav.contacts} onAdd={openAdd} />;
+    return <EmptyState label={t.nav.contactSingle} onAdd={openAdd} />;
   }
 
   return (
@@ -134,7 +134,7 @@ export function ContactsTab({ companyId, contacts, onChanged }: Props) {
           className="bg-ide-navy text-white hover:bg-ide-navy-hover"
         >
           <Plus className="mr-1 h-4 w-4" />
-          {t.actions.add} {t.nav.contacts}
+          {t.actions.add} {t.nav.contactSingle}
         </Button>
       </div>
 
