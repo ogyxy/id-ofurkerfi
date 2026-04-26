@@ -409,12 +409,13 @@ export const t = {
 
 export const formatIsk = (n: number | null | undefined): string => {
   if (n === null || n === undefined) return '';
-  // Format: "123.456 kr." — dot as thousands separator, "kr." suffix
+  // Format: "123.456 kr." — dot as thousands separator, "kr." suffix.
+  // Manually inserting dots to be locale-data independent.
   const rounded = Math.round(n);
-  const formatted = new Intl.NumberFormat('is-IS', {
-    maximumFractionDigits: 0,
-  }).format(rounded);
-  return `${formatted} kr.`;
+  const sign = rounded < 0 ? '-' : '';
+  const digits = Math.abs(rounded).toString();
+  const withDots = digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${sign}${withDots} kr.`;
 };
 
 export const formatNumber = (n: number | null | undefined, decimals = 2): string => {
