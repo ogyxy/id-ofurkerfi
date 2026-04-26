@@ -301,6 +301,53 @@ export const t = {
     payday_invoice_number:   'Payday-reikningsnúmer',
     owner_id:                'Söluaðili',
     notes:                   'Athugasemdir',
+    default_markup_pct:      'Sjálfgefið álag (%)',
+    shipping_cost_isk:       'Sendingarkostnaður (ISK)',
+    total_cost_isk:          'Heildarkostnaður',
+    total_price_isk:         'Heildarverð',
+    total_margin_isk:        'Heildarmunur',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Field labels — Deal lines (Línur)
+  // ---------------------------------------------------------------------------
+  dealLine: {
+    title:                'Línur',
+    addLine:              'Bæta við línu',
+    product_name:         'Vara',
+    product_supplier_sku: 'Vörunúmer (birgir)',
+    description:          'Lýsing',
+    quantity:             'Magn',
+    unit_cost:            'Innkaupsverð',
+    cost_currency:        'Gjaldmiðill',
+    exchange_rate:        'Gengi',
+    unit_cost_isk:        'Innkaupsverð (ISK)',
+    markup_pct:           'Álag (%)',
+    unit_price_isk:       'Söluverð (ISK)',
+    line_cost_isk:        'Heildarkostnaður línu',
+    line_total_isk:       'Heildarverð línu',
+    line_margin_isk:      'Framlegð línu',
+    notes:                'Athugasemdir',
+    exchangeRateBar:      'Gengi í dag',
+    roundedNote:          'Verð hefur verið sléttað',
+    marginLabel:          'Framlegð',
+    shippingCost:         'Sendingarkostnaður (kostnaður)',
+    shippingNote:         'Sendingarkostnaður er ekki reiknaður inn í söluverð — hann lækkar framlegð.',
+    defaultMarkup:        'Sjálfgefið álag',
+    applyToAll:           'Beita á allar línur',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Deal summary footer labels
+  // ---------------------------------------------------------------------------
+  dealSummary: {
+    subtotal:    'Samtals verð',
+    totalCost:   'Heildarkostnaður',
+    shipping:    'Sending (kostnaður)',
+    totalMargin: 'Heildarmunur',
+    marginPct:   'Framlegð %',
+    vat:         'VSK',
+    grandTotal:  'Heildarupphæð',
   },
 
   // ---------------------------------------------------------------------------

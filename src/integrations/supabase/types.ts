@@ -256,6 +256,80 @@ export type Database = {
           },
         ]
       }
+      deal_lines: {
+        Row: {
+          cost_currency: string
+          created_at: string
+          deal_id: string
+          description: string | null
+          exchange_rate: number
+          id: string
+          line_cost_isk: number
+          line_margin_isk: number
+          line_order: number
+          line_total_isk: number
+          markup_pct: number
+          notes: string | null
+          product_name: string
+          product_supplier_sku: string | null
+          quantity: number
+          unit_cost: number
+          unit_cost_isk: number
+          unit_price_isk: number
+          updated_at: string
+        }
+        Insert: {
+          cost_currency?: string
+          created_at?: string
+          deal_id: string
+          description?: string | null
+          exchange_rate?: number
+          id?: string
+          line_cost_isk?: number
+          line_margin_isk?: number
+          line_order?: number
+          line_total_isk?: number
+          markup_pct?: number
+          notes?: string | null
+          product_name: string
+          product_supplier_sku?: string | null
+          quantity?: number
+          unit_cost?: number
+          unit_cost_isk?: number
+          unit_price_isk?: number
+          updated_at?: string
+        }
+        Update: {
+          cost_currency?: string
+          created_at?: string
+          deal_id?: string
+          description?: string | null
+          exchange_rate?: number
+          id?: string
+          line_cost_isk?: number
+          line_margin_isk?: number
+          line_order?: number
+          line_total_isk?: number
+          markup_pct?: number
+          notes?: string | null
+          product_name?: string
+          product_supplier_sku?: string | null
+          quantity?: number
+          unit_cost?: number
+          unit_cost_isk?: number
+          unit_price_isk?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_lines_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           actual_close_date: string | null
@@ -266,6 +340,7 @@ export type Database = {
           company_id: string
           contact_id: string | null
           created_at: string
+          default_markup_pct: number
           estimated_delivery_date: string | null
           id: string
           invoice_date: string | null
@@ -278,8 +353,12 @@ export type Database = {
           payday_invoice_number: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           promised_delivery_date: string | null
+          shipping_cost_isk: number
           so_number: string
           stage: Database["public"]["Enums"]["deal_stage"]
+          total_cost_isk: number
+          total_margin_isk: number
+          total_price_isk: number
           tracking_numbers: string[]
           updated_at: string
         }
@@ -292,6 +371,7 @@ export type Database = {
           company_id: string
           contact_id?: string | null
           created_at?: string
+          default_markup_pct?: number
           estimated_delivery_date?: string | null
           id?: string
           invoice_date?: string | null
@@ -304,8 +384,12 @@ export type Database = {
           payday_invoice_number?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           promised_delivery_date?: string | null
+          shipping_cost_isk?: number
           so_number?: string
           stage?: Database["public"]["Enums"]["deal_stage"]
+          total_cost_isk?: number
+          total_margin_isk?: number
+          total_price_isk?: number
           tracking_numbers?: string[]
           updated_at?: string
         }
@@ -318,6 +402,7 @@ export type Database = {
           company_id?: string
           contact_id?: string | null
           created_at?: string
+          default_markup_pct?: number
           estimated_delivery_date?: string | null
           id?: string
           invoice_date?: string | null
@@ -330,8 +415,12 @@ export type Database = {
           payday_invoice_number?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           promised_delivery_date?: string | null
+          shipping_cost_isk?: number
           so_number?: string
           stage?: Database["public"]["Enums"]["deal_stage"]
+          total_cost_isk?: number
+          total_margin_isk?: number
+          total_price_isk?: number
           tracking_numbers?: string[]
           updated_at?: string
         }
