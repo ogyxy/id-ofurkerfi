@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Pencil, Trash2, Plus, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { t, formatIsk, formatNumber } from "@/lib/sala_translations_is";
+import { t, formatIsk } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -334,7 +334,6 @@ export function DealLinesEditor({
           </thead>
           <tbody>
             {lines.map((line, idx) => {
-              const liveRate = rates[line.cost_currency];
               return (
                 <tr key={line.id} className="border-t border-border">
                   <td className="px-2 py-2 text-muted-foreground">
@@ -388,51 +387,49 @@ export function DealLinesEditor({
                     </Select>
                   </td>
                   <td className="px-2 py-2">
-                    <div className="flex flex-col items-end">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={line.exchange_rate}
-                        onChange={(e) =>
-                          updateLine(idx, {
-                            exchange_rate: Number(e.target.value),
-                          })
-                        }
-                        placeholder={ratesError ? "Sláðu inn gengi" : ""}
-                        className="w-24 text-right"
-                      />
-                      {liveRate && (
-                        <span className="mt-0.5 text-[10px] text-muted-foreground">
-                          {line.cost_currency} · {formatNumber(liveRate, 1)}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-2 py-2">
                     <Input
                       type="number"
-                      step="0.1"
-                      value={line.markup_pct}
+                      step="0.01"
+                      value={line.exchange_rate}
                       onChange={(e) =>
                         updateLine(idx, {
-                          markup_pct: Number(e.target.value),
+                          exchange_rate: Number(e.target.value),
                         })
                       }
-                      onBlur={() => {
-                        const updated = {
-                          ...line,
-                          manualPrice: false,
-                          unit_price_isk: calcUnitPriceIsk(
-                            line.unit_cost_isk,
-                            line.markup_pct,
-                          ),
-                        };
-                        const next = [...lines];
-                        next[idx] = updated;
-                        setLines(next);
-                      }}
-                      className="w-20 text-right"
+                      placeholder={ratesError ? "Sláðu inn gengi" : ""}
+                      className="w-24 text-right"
                     />
+                  </td>
+                  <td className="px-2 py-2">
+                    <div className="relative w-24 ml-auto">
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={line.markup_pct}
+                        onChange={(e) =>
+                          updateLine(idx, {
+                            markup_pct: Number(e.target.value),
+                          })
+                        }
+                        onBlur={() => {
+                          const updated = {
+                            ...line,
+                            manualPrice: false,
+                            unit_price_isk: calcUnitPriceIsk(
+                              line.unit_cost_isk,
+                              line.markup_pct,
+                            ),
+                          };
+                          const next = [...lines];
+                          next[idx] = updated;
+                          setLines(next);
+                        }}
+                        className="w-24 pr-6 text-right"
+                      />
+                      <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
+                        %
+                      </span>
+                    </div>
                   </td>
                   <td className="px-2 py-2">
                     <div className="flex items-center justify-end gap-1">
