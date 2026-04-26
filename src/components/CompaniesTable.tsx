@@ -127,7 +127,8 @@ export function CompaniesTable() {
         className="max-w-sm"
       />
 
-      <div className="overflow-x-auto rounded-md border border-border bg-card">
+      {/* Desktop / tablet table */}
+      <div className="hidden overflow-x-auto rounded-md border border-border bg-card md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -191,6 +192,40 @@ export function CompaniesTable() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile list */}
+      <div className="md:hidden">
+        {loading ? (
+          <div className="rounded-md border border-border bg-card py-10 text-center text-sm text-muted-foreground">
+            {t.status.loading}
+          </div>
+        ) : loadError ? (
+          <div className="rounded-md border border-border bg-card py-10 text-center text-sm text-destructive">
+            {loadError}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-md border border-border bg-card py-10 text-center text-sm text-muted-foreground">
+            {t.status.noResults}
+          </div>
+        ) : (
+          <ul className="divide-y divide-border overflow-hidden rounded-md border border-border bg-card">
+            {filtered.map((company) => (
+              <li key={company.id}>
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/companies/$id", params: { id: company.id } })}
+                  className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-muted/50"
+                >
+                  <span className="font-medium">{company.name}</span>
+                  <span className="text-muted-foreground" aria-hidden>
+                    ›
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
