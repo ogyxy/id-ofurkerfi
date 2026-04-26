@@ -89,7 +89,7 @@ export function DealSummary({
         muted
       />
       <div className="border-t border-border pt-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between text-sm">
           <span className="font-semibold">{t.dealSummary.totalMargin}</span>
           <span className={cn("font-semibold tabular-nums", marginColor)}>
             {formatIsk(totalMargin)}{" "}
@@ -130,7 +130,7 @@ function Row({
         muted && "text-muted-foreground",
       )}
     >
-      <span>{label}:</span>
+      <span>{label}</span>
       <span className="tabular-nums">{value}</span>
     </div>
   );

@@ -343,7 +343,7 @@ export const t = {
   dealSummary: {
     subtotal:    'Söluverð án vsk',
     totalCost:   'Kostnaðarverð',
-    shipping:    'Sending (kostnaður)',
+    shipping:    'Sendingarkostnaður (ef við á)',
     totalMargin: 'Framlegð',
     marginPct:   'Framlegð %',
     vat:         'VSK',
