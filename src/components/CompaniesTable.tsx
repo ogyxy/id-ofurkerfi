@@ -36,6 +36,7 @@ export function CompaniesTable() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
@@ -169,7 +170,7 @@ export function CompaniesTable() {
               filtered.map((company) => (
                 <TableRow
                   key={company.id}
-                  onClick={() => console.log(company.id)}
+                  onClick={() => navigate({ to: "/companies/$id", params: { id: company.id } })}
                   className="cursor-pointer"
                 >
                   <TableCell className="font-medium">{company.name}</TableCell>
