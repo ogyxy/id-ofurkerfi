@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Pencil, Trash2, Plus, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { t, formatIsk, formatNumber } from "@/lib/sala_translations_is";
+import { t, formatIsk } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
