@@ -134,7 +134,7 @@ export function ContactsTab({ companyId, contacts, onChanged }: Props) {
           className="bg-ide-navy text-white hover:bg-ide-navy-hover"
         >
           <Plus className="mr-1 h-4 w-4" />
-          {t.actions.add} {t.nav.contactSingle}
+          {t.actions.add} {t.nav.contactAcc}
         </Button>
       </div>
 
