@@ -152,11 +152,12 @@ function DealDetailContent() {
     load();
   }, [load]);
 
-  // Fetch live exchange rates
+  // Fetch live exchange rates. Frankfurter does not support ISK as a base,
+  // so we fetch with EUR base and derive X→ISK as ISK_per_EUR / X_per_EUR.
   useEffect(() => {
     let cancelled = false;
     fetch(
-      "https://api.frankfurter.app/latest?base=ISK&symbols=EUR,GBP,USD,NOK,DKK,SEK,CHF",
+      "https://api.frankfurter.dev/v1/latest?base=EUR&symbols=ISK,GBP,USD,NOK,DKK,SEK,CHF",
     )
       .then((r) => {
         if (!r.ok) throw new Error("rate fetch failed");
@@ -164,13 +165,15 @@ function DealDetailContent() {
       })
       .then((data) => {
         if (cancelled) return;
-        const inverted: Record<string, number> = {};
-        Object.entries(data.rates as Record<string, number>).forEach(
-          ([cur, rate]) => {
-            inverted[cur] = 1 / rate;
-          },
-        );
-        setRates(inverted);
+        const raw = data.rates as Record<string, number>;
+        const iskPerEur = raw.ISK;
+        if (!iskPerEur) throw new Error("no ISK rate");
+        const out: Record<string, number> = { EUR: iskPerEur };
+        Object.entries(raw).forEach(([cur, perEur]) => {
+          if (cur === "ISK") return;
+          if (perEur) out[cur] = iskPerEur / perEur;
+        });
+        setRates(out);
       })
       .catch(() => {
         if (!cancelled) setRatesError(true);
