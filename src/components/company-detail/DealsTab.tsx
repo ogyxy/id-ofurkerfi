@@ -241,7 +241,7 @@ function DealDrawer({ open, onOpenChange, form, setForm, contacts, saving, onSav
       <SheetContent className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
           <SheetTitle>
-            {t.actions.create} {t.nav.deals.toLowerCase()}
+            {t.actions.create} {t.nav.dealSingle.toLowerCase()}
           </SheetTitle>
         </SheetHeader>
         <div className="space-y-3 py-4">
