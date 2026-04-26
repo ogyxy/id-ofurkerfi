@@ -369,6 +369,7 @@ export type Database = {
           pantone_colors: string[]
           placement: string | null
           product_category: string | null
+          product_id: string | null
           size_mm_h: number | null
           size_mm_w: number | null
           technique: Database["public"]["Enums"]["decoration_technique"]
@@ -383,6 +384,7 @@ export type Database = {
           pantone_colors?: string[]
           placement?: string | null
           product_category?: string | null
+          product_id?: string | null
           size_mm_h?: number | null
           size_mm_w?: number | null
           technique: Database["public"]["Enums"]["decoration_technique"]
@@ -397,6 +399,7 @@ export type Database = {
           pantone_colors?: string[]
           placement?: string | null
           product_category?: string | null
+          product_id?: string | null
           size_mm_h?: number | null
           size_mm_w?: number | null
           technique?: Database["public"]["Enums"]["decoration_technique"]
@@ -408,6 +411,13 @@ export type Database = {
             columns: ["design_id"]
             isOneToOne: false
             referencedRelation: "designs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "decoration_specs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -536,6 +546,74 @@ export type Database = {
             columns: ["purchase_order_id"]
             isOneToOne: false
             referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean
+          archived: boolean
+          category: string | null
+          cost_currency: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          min_quantity: number
+          name: string
+          supplier: string
+          supplier_sku: string
+          tags: string[]
+          unit_cost: number | null
+          unit_price_isk: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          archived?: boolean
+          category?: string | null
+          cost_currency?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          min_quantity?: number
+          name: string
+          supplier?: string
+          supplier_sku: string
+          tags?: string[]
+          unit_cost?: number | null
+          unit_price_isk?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          archived?: boolean
+          category?: string | null
+          cost_currency?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          min_quantity?: number
+          name?: string
+          supplier?: string
+          supplier_sku?: string
+          tags?: string[]
+          unit_cost?: number | null
+          unit_price_isk?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

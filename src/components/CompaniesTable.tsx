@@ -14,7 +14,6 @@ import {
 type CompanyRow = {
   id: string;
   name: string;
-  kennitala: string | null;
 };
 
 type DealRow = {
@@ -26,6 +25,7 @@ type DealRow = {
 
 type CompanyWithStats = CompanyRow & {
   dealsInProgress: number;
+  totalInProgressIsk: number;
   dealsDelivered: number;
   totalDeliveredIsk: number;
 };
@@ -42,7 +42,7 @@ export function CompaniesTable() {
       const [companiesRes, dealsRes] = await Promise.all([
         supabase
           .from("companies")
-          .select("id, name, kennitala")
+          .select("id, name")
           .eq("archived", false)
           .order("name", { ascending: true }),
         supabase
@@ -64,21 +64,29 @@ export function CompaniesTable() {
 
       const statsByCompany = new Map<
         string,
-        { dealsInProgress: number; dealsDelivered: number; totalDeliveredIsk: number }
+        {
+          dealsInProgress: number;
+          totalInProgressIsk: number;
+          dealsDelivered: number;
+          totalDeliveredIsk: number;
+        }
       >();
 
       for (const deal of deals) {
         if (!deal.company_id) continue;
         const stats = statsByCompany.get(deal.company_id) ?? {
           dealsInProgress: 0,
+          totalInProgressIsk: 0,
           dealsDelivered: 0,
           totalDeliveredIsk: 0,
         };
+        const amount = Number(deal.amount_isk ?? 0);
         if (deal.stage === "delivered") {
           stats.dealsDelivered += 1;
-          stats.totalDeliveredIsk += Number(deal.amount_isk ?? 0);
+          stats.totalDeliveredIsk += amount;
         } else if (deal.stage !== "cancelled") {
           stats.dealsInProgress += 1;
+          stats.totalInProgressIsk += amount;
         }
         statsByCompany.set(deal.company_id, stats);
       }
@@ -86,6 +94,7 @@ export function CompaniesTable() {
       const merged: CompanyWithStats[] = companies.map((c) => {
         const stats = statsByCompany.get(c.id) ?? {
           dealsInProgress: 0,
+          totalInProgressIsk: 0,
           dealsDelivered: 0,
           totalDeliveredIsk: 0,
         };
@@ -121,8 +130,8 @@ export function CompaniesTable() {
           <TableHeader>
             <TableRow>
               <TableHead>{t.company.name}</TableHead>
-              <TableHead>{t.company.kennitala}</TableHead>
               <TableHead className="text-right">Sölur í vinnslu</TableHead>
+              <TableHead className="text-right">Upphæð í vinnslu</TableHead>
               <TableHead className="text-right">Sölur afhentar</TableHead>
               <TableHead className="text-right">Samtals sala</TableHead>
             </TableRow>
@@ -163,9 +172,11 @@ export function CompaniesTable() {
                   className="cursor-pointer"
                 >
                   <TableCell className="font-medium">{company.name}</TableCell>
-                  <TableCell>{company.kennitala ?? ""}</TableCell>
                   <TableCell className="text-right tabular-nums">
                     {company.dealsInProgress}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {formatIsk(company.totalInProgressIsk)}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {company.dealsDelivered}
