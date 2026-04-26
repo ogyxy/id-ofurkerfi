@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
 import { supabase } from "@/integrations/supabase/client";
@@ -152,6 +153,14 @@ function CompanyDetailContent() {
 
   return (
     <div className="space-y-6">
+      <Link
+        to="/companies"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        {t.actions.back}
+      </Link>
+
       <CompanyHeader company={company} onEdit={() => setEditOpen(true)} />
 
       {/* Tabs nav */}
