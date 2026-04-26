@@ -288,7 +288,7 @@ export const t = {
     so_number:               'Sölunúmer',
     name:                    'Heiti',
     stage:                   'Staða',
-    amount_isk:              'Upphæð',
+    amount_isk:              'Upphæð án vsk',
     promised_delivery_date:  'Áætluð afhending',
     estimated_delivery_date: 'Áætluð afhending',
     actual_close_date:       'Raunveruleg lokadagsetning',
