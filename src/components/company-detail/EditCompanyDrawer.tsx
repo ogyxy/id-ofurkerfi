@@ -290,7 +290,7 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
         </div>
 
         <SheetFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>
+          <Button variant="ghost" onClick={requestClose} disabled={saving}>
             {t.actions.cancel}
           </Button>
           <Button
