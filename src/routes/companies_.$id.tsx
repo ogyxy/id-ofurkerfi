@@ -35,7 +35,7 @@ type Activity = Pick<
   "id" | "type" | "subject" | "body" | "created_at" | "due_date" | "completed"
 >;
 
-export const Route = createFileRoute("/companies/$id")({
+export const Route = createFileRoute("/companies_/$id")({
   ssr: false,
   head: () => ({
     meta: [{ title: `${t.nav.companies} — ${t.brand.name}` }],
