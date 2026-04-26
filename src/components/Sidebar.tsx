@@ -76,6 +76,7 @@ export function Sidebar({ activeKey, userEmail }: SidebarProps) {
           <SidebarNavLink
             key={item.key}
             label={item.label}
+            to={item.to}
             active={item.key === activeKey}
             onClick={() => setMobileOpen(false)}
           />
