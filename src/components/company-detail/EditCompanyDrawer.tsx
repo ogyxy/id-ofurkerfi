@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -21,6 +21,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Company = Database["public"]["Tables"]["companies"]["Row"];
 type VskStatus = Database["public"]["Enums"]["vsk_status"];
@@ -73,15 +83,49 @@ function fromCompany(c: Company): FormState {
 }
 
 export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Props) {
-  const [form, setForm] = useState<FormState>(() => fromCompany(company));
+  const initialForm = useMemo(() => fromCompany(company), [company]);
+  const [form, setForm] = useState<FormState>(initialForm);
   const [saving, setSaving] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (open) setForm(fromCompany(company));
   }, [open, company]);
 
+  const isDirty = useMemo(
+    () => JSON.stringify(form) !== JSON.stringify(initialForm),
+    [form, initialForm],
+  );
+
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const requestClose = () => {
+    if (isDirty) {
+      setConfirmOpen(true);
+    } else {
+      onOpenChange(false);
+    }
+  };
+
+  const handleSheetOpenChange = (next: boolean) => {
+    if (!next) {
+      requestClose();
+      return;
+    }
+    onOpenChange(next);
+  };
+
+  const discardAndClose = () => {
+    setForm(initialForm);
+    setConfirmOpen(false);
+    onOpenChange(false);
+  };
+
+  const saveFromConfirm = async () => {
+    setConfirmOpen(false);
+    await handleSave();
   };
 
   const handleSave = async () => {
@@ -122,8 +166,9 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+    <>
+      <Sheet open={open} onOpenChange={handleSheetOpenChange}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>
             {t.actions.edit} — {company.name}
@@ -246,7 +291,7 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
         </div>
 
         <SheetFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>
+          <Button variant="ghost" onClick={requestClose} disabled={saving}>
             {t.actions.cancel}
           </Button>
           <Button
@@ -257,7 +302,28 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
             {saving ? t.status.saving : t.actions.save}
           </Button>
         </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.status.unsavedChanges}</AlertDialogTitle>
+            <AlertDialogDescription>{t.status.unsavedChangesBody}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={discardAndClose}>
+              {t.status.discardChanges}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={saveFromConfirm}
+              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+            >
+              {t.status.saveChanges}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

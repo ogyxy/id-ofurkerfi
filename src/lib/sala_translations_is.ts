@@ -216,6 +216,10 @@ export const t = {
     noDataYet:            'Engin gögn enn',
     areYouSure:           'Ertu viss?',
     cannotBeUndone:       'Þetta er ekki hægt að afturkalla',
+    unsavedChanges:       'Óvistaðar breytingar',
+    unsavedChangesBody:   'Þú ert með óvistaðar breytingar. Viltu vista þær eða henda?',
+    saveChanges:          'Vista breytingar',
+    discardChanges:       'Henda breytingum',
   },
 
   // ---------------------------------------------------------------------------
