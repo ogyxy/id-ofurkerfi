@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { t, formatDate } from "@/lib/sala_translations_is";
+import { t, formatIsk } from "@/lib/sala_translations_is";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -15,13 +15,23 @@ type CompanyRow = {
   id: string;
   name: string;
   kennitala: string | null;
-  city: string | null;
-  vsk_status: keyof typeof t.vskStatus;
-  created_at: string;
+};
+
+type DealRow = {
+  company_id: string;
+  stage: string;
+  amount_isk: number | null;
+  archived: boolean;
+};
+
+type CompanyWithStats = CompanyRow & {
+  dealsInProgress: number;
+  dealsDelivered: number;
+  totalDeliveredIsk: number;
 };
 
 export function CompaniesTable() {
-  const [companies, setCompanies] = useState<CompanyRow[]>([]);
+  const [rows, setRows] = useState<CompanyWithStats[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -29,20 +39,60 @@ export function CompaniesTable() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase
-        .from("companies")
-        .select("id, name, kennitala, city, vsk_status, created_at")
-        .eq("archived", false)
-        .order("name", { ascending: true });
+      const [companiesRes, dealsRes] = await Promise.all([
+        supabase
+          .from("companies")
+          .select("id, name, kennitala")
+          .eq("archived", false)
+          .order("name", { ascending: true }),
+        supabase
+          .from("deals")
+          .select("company_id, stage, amount_isk, archived")
+          .eq("archived", false),
+      ]);
 
       if (cancelled) return;
 
-      if (error) {
+      if (companiesRes.error || dealsRes.error) {
         setLoadError(t.status.somethingWentWrong);
         setLoading(false);
         return;
       }
-      setCompanies((data ?? []) as CompanyRow[]);
+
+      const companies = (companiesRes.data ?? []) as CompanyRow[];
+      const deals = (dealsRes.data ?? []) as DealRow[];
+
+      const statsByCompany = new Map<
+        string,
+        { dealsInProgress: number; dealsDelivered: number; totalDeliveredIsk: number }
+      >();
+
+      for (const deal of deals) {
+        if (!deal.company_id) continue;
+        const stats = statsByCompany.get(deal.company_id) ?? {
+          dealsInProgress: 0,
+          dealsDelivered: 0,
+          totalDeliveredIsk: 0,
+        };
+        if (deal.stage === "delivered") {
+          stats.dealsDelivered += 1;
+          stats.totalDeliveredIsk += Number(deal.amount_isk ?? 0);
+        } else if (deal.stage !== "cancelled") {
+          stats.dealsInProgress += 1;
+        }
+        statsByCompany.set(deal.company_id, stats);
+      }
+
+      const merged: CompanyWithStats[] = companies.map((c) => {
+        const stats = statsByCompany.get(c.id) ?? {
+          dealsInProgress: 0,
+          dealsDelivered: 0,
+          totalDeliveredIsk: 0,
+        };
+        return { ...c, ...stats };
+      });
+
+      setRows(merged);
       setLoading(false);
     })();
     return () => {
@@ -52,11 +102,9 @@ export function CompaniesTable() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLocaleLowerCase("is");
-    if (!q) return companies;
-    return companies.filter((c) =>
-      c.name.toLocaleLowerCase("is").includes(q),
-    );
-  }, [companies, search]);
+    if (!q) return rows;
+    return rows.filter((c) => c.name.toLocaleLowerCase("is").includes(q));
+  }, [rows, search]);
 
   return (
     <div className="space-y-4">
@@ -74,9 +122,9 @@ export function CompaniesTable() {
             <TableRow>
               <TableHead>{t.company.name}</TableHead>
               <TableHead>{t.company.kennitala}</TableHead>
-              <TableHead>{t.company.city}</TableHead>
-              <TableHead>{t.company.vsk_status}</TableHead>
-              <TableHead>{t.company.created_at}</TableHead>
+              <TableHead className="text-right">Sölur í vinnslu</TableHead>
+              <TableHead className="text-right">Sölur afhentar</TableHead>
+              <TableHead className="text-right">Samtals sala</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -116,9 +164,15 @@ export function CompaniesTable() {
                 >
                   <TableCell className="font-medium">{company.name}</TableCell>
                   <TableCell>{company.kennitala ?? ""}</TableCell>
-                  <TableCell>{company.city ?? ""}</TableCell>
-                  <TableCell>{t.vskStatus[company.vsk_status]}</TableCell>
-                  <TableCell>{formatDate(company.created_at)}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {company.dealsInProgress}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {company.dealsDelivered}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {formatIsk(company.totalDeliveredIsk)}
+                  </TableCell>
                 </TableRow>
               ))
             )}
