@@ -68,14 +68,9 @@ export function DealSummary({
   return (
     <div className="ml-auto max-w-md space-y-3 rounded-md border border-border bg-card p-4">
       <Row label={t.dealSummary.subtotal} value={formatIsk(subtotal)} />
-      <Row
-        label={t.dealSummary.totalCost}
-        value={formatIsk(totalCost)}
-        muted
-      />
       <div className="flex items-center justify-between gap-3">
         <Label className="text-sm text-muted-foreground">
-          {t.dealLine.shippingCost}
+          {t.dealSummary.shipping}
         </Label>
         <Input
           type="number"
@@ -88,9 +83,11 @@ export function DealSummary({
           className="w-32 text-right"
         />
       </div>
-      <p className="text-xs italic text-muted-foreground">
-        {t.dealLine.shippingNote}
-      </p>
+      <Row
+        label={t.dealSummary.totalCost}
+        value={formatIsk(totalCost + shippingCost)}
+        muted
+      />
       <div className="border-t border-border pt-3">
         <div className="flex items-center justify-between">
           <span className="font-semibold">{t.dealSummary.totalMargin}</span>
