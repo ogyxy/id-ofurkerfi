@@ -469,7 +469,7 @@ export function DealLinesEditor({
             {lines.length === 0 && (
               <tr>
                 <td
-                  colSpan={12}
+                  colSpan={10}
                   className="px-4 py-8 text-center text-sm text-muted-foreground"
                 >
                   {t.status.noDataYet}
