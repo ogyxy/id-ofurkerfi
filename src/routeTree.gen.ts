@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DealsIdRouteImport } from './routes/deals_.$id'
 import { Route as CompaniesIdRouteImport } from './routes/companies_.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DealsIdRoute = DealsIdRouteImport.update({
+  id: '/deals_/$id',
+  path: '/deals/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CompaniesIdRoute = CompaniesIdRouteImport.update({
   id: '/companies_/$id',
   path: '/companies/$id',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/companies': typeof CompaniesRoute
   '/login': typeof LoginRoute
   '/companies/$id': typeof CompaniesIdRoute
+  '/deals/$id': typeof DealsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/companies': typeof CompaniesRoute
   '/login': typeof LoginRoute
   '/companies/$id': typeof CompaniesIdRoute
+  '/deals/$id': typeof DealsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,20 @@ export interface FileRoutesById {
   '/companies': typeof CompaniesRoute
   '/login': typeof LoginRoute
   '/companies_/$id': typeof CompaniesIdRoute
+  '/deals_/$id': typeof DealsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/companies' | '/login' | '/companies/$id'
+  fullPaths: '/' | '/companies' | '/login' | '/companies/$id' | '/deals/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/companies' | '/login' | '/companies/$id'
-  id: '__root__' | '/' | '/companies' | '/login' | '/companies_/$id'
+  to: '/' | '/companies' | '/login' | '/companies/$id' | '/deals/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/companies'
+    | '/login'
+    | '/companies_/$id'
+    | '/deals_/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +82,7 @@ export interface RootRouteChildren {
   CompaniesRoute: typeof CompaniesRoute
   LoginRoute: typeof LoginRoute
   CompaniesIdRoute: typeof CompaniesIdRoute
+  DealsIdRoute: typeof DealsIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -92,6 +108,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/deals_/$id': {
+      id: '/deals_/$id'
+      path: '/deals/$id'
+      fullPath: '/deals/$id'
+      preLoaderRoute: typeof DealsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/companies_/$id': {
       id: '/companies_/$id'
       path: '/companies/$id'
@@ -107,6 +130,7 @@ const rootRouteChildren: RootRouteChildren = {
   CompaniesRoute: CompaniesRoute,
   LoginRoute: LoginRoute,
   CompaniesIdRoute: CompaniesIdRoute,
+  DealsIdRoute: DealsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
