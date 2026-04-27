@@ -44,9 +44,11 @@ const RESOLUTIONS: DefectResolution[] = [
 interface Props {
   deal: Deal;
   onChanged: () => void | Promise<void>;
+  onStageChanged?: (next: Database["public"]["Enums"]["deal_stage"]) => Promise<void> | void;
+  currentProfileId?: string | null;
 }
 
-export function DefectBar({ deal, onChanged }: Props) {
+export function DefectBar({ deal, onChanged, onStageChanged, currentProfileId }: Props) {
   const navigate = useNavigate();
   const [resolution, setResolution] = useState<DefectResolution>(
     deal.defect_resolution ?? "pending",
