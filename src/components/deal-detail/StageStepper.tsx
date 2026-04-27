@@ -149,10 +149,6 @@ export function StageStepper({ stage, onChange }: Props) {
               <button
                 type="button"
                 disabled={!isNext && !isPrev}
-                onClick={() => {
-                  if (isNext) setConfirmIdx(idx);
-                  else if (isPrev) setConfirmBackIdx(idx);
-                }}
                 className={cn(
                   "relative flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-semibold transition-all",
                   isCompleted &&
@@ -185,7 +181,9 @@ export function StageStepper({ stage, onChange }: Props) {
                   {isNext ? (
                     <Popover
                       open={confirmIdx === idx}
-                      onOpenChange={(o) => !o && setConfirmIdx(null)}
+                      onOpenChange={(o) =>
+                        setConfirmIdx(o ? idx : null)
+                      }
                     >
                       <PopoverTrigger asChild>{circle}</PopoverTrigger>
                       <PopoverContent className="w-64">
@@ -222,7 +220,9 @@ export function StageStepper({ stage, onChange }: Props) {
                   ) : isPrev ? (
                     <Popover
                       open={confirmBackIdx === idx}
-                      onOpenChange={(o) => !o && setConfirmBackIdx(null)}
+                      onOpenChange={(o) =>
+                        setConfirmBackIdx(o ? idx : null)
+                      }
                     >
                       <PopoverTrigger asChild>{circle}</PopoverTrigger>
                       <PopoverContent className="w-64">
