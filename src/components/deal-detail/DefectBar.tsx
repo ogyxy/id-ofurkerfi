@@ -306,6 +306,34 @@ export function DefectBar({ deal, onChanged }: Props) {
               <AlertDialogHeader>
                 <AlertDialogTitle>{t.defectResolution.resolved}</AlertDialogTitle>
                 <AlertDialogDescription>
+                  Var málið leyst án gallapöntunar og/eða endurgreiðslu?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={busy}>Nei</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setResolvedOpen(false);
+                    setDeliveredAskOpen(true);
+                  }}
+                  disabled={busy}
+                  className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+                >
+                  Já
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog
+            open={deliveredAskOpen}
+            onOpenChange={setDeliveredAskOpen}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t.defectResolution.resolved}</AlertDialogTitle>
+                <AlertDialogDescription>
                   Er pöntunin þegar afhent?
                 </AlertDialogDescription>
               </AlertDialogHeader>
