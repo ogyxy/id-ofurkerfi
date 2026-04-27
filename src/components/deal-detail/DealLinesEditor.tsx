@@ -316,9 +316,10 @@ export function DealLinesEditor({
             onChange={(e) => setDefaultMarkupPct(Number(e.target.value))}
             onBlur={() => onSaveDefaultMarkup(defaultMarkupPct)}
             className="w-32"
+            disabled={readOnly}
           />
         </div>
-        <Button variant="outline" size="sm" onClick={applyDefaultMarkup}>
+        <Button variant="outline" size="sm" onClick={applyDefaultMarkup} disabled={readOnly}>
           {t.dealLine.applyToAll}
         </Button>
       </div>
