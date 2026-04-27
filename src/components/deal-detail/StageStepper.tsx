@@ -33,6 +33,7 @@ interface Props {
 
 export function StageStepper({ stage, onChange }: Props) {
   const [confirmIdx, setConfirmIdx] = useState<number | null>(null);
+  const [confirmBackIdx, setConfirmBackIdx] = useState<number | null>(null);
 
   if (stage === "cancelled" || stage === "defect_reorder") {
     const tone =
