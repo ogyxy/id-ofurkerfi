@@ -213,8 +213,7 @@ export function DefectBar({ deal, onChanged }: Props) {
             placeholder={t.deal.defectModal.placeholder}
           />
         </div>
-
-
+        <div className="flex flex-col flex-wrap gap-2 sm:flex-row md:flex-col md:items-end md:flex-shrink-0">
           <Popover open={reorderOpen} onOpenChange={setReorderOpen}>
             <PopoverTrigger asChild>
               <Button
