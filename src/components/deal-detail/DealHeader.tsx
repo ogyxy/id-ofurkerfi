@@ -3,6 +3,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { t, formatDate } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { TrackingNumbersInline } from "./TrackingNumbersInline";
 
 type Deal = Database["public"]["Tables"]["deals"]["Row"];
 type Company = Pick<
@@ -85,6 +86,10 @@ export function DealHeader({
               {contact.phone && <> · {contact.phone}</>}
             </div>
           )}
+          <TrackingNumbersInline
+            dealId={deal.id}
+            initial={deal.tracking_numbers ?? []}
+          />
           {ownerName && (
             <div className="text-xs text-muted-foreground">
               {t.deal.owner_id}: {ownerName}
