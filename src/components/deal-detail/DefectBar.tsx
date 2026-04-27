@@ -114,13 +114,16 @@ export function DefectBar({ deal, onChanged, onStageChanged, currentProfileId }:
 
   const markResolved = async (delivered: boolean) => {
     setBusy(true);
+    const nextStage: Database["public"]["Enums"]["deal_stage"] = delivered
+      ? "delivered"
+      : "order_confirmed";
     const update: {
       defect_resolution: DefectResolution;
       stage: Database["public"]["Enums"]["deal_stage"];
       delivered_at?: string;
     } = {
       defect_resolution: "resolved",
-      stage: delivered ? "delivered" : "order_confirmed",
+      stage: nextStage,
     };
     if (delivered) {
       update.delivered_at =
@@ -136,6 +139,7 @@ export function DefectBar({ deal, onChanged, onStageChanged, currentProfileId }:
       toast.error(t.status.somethingWentWrong);
       return;
     }
+    await onStageChanged?.(nextStage);
     toast.success(t.status.savedSuccessfully);
     await onChanged();
   };
