@@ -20,6 +20,7 @@ interface Props {
   shippingCost: number;
   setShippingCost: (n: number) => void;
   vskStatus: VskStatus;
+  readOnly?: boolean;
 }
 
 export function DealSummary({
@@ -28,6 +29,7 @@ export function DealSummary({
   shippingCost,
   setShippingCost,
   vskStatus,
+  readOnly = false,
 }: Props) {
   const [localShipping, setLocalShipping] = useState(String(shippingCost));
 
