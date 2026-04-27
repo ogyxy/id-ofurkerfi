@@ -55,6 +55,7 @@ export function DefectBar({ deal, onChanged }: Props) {
   const [reorderOpen, setReorderOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [resolvedOpen, setResolvedOpen] = useState(false);
+  const [deliveredAskOpen, setDeliveredAskOpen] = useState(false);
   const [description, setDescription] = useState(deal.defect_description ?? "");
   const lastSavedRef = useRef(deal.defect_description ?? "");
 
@@ -128,7 +129,7 @@ export function DefectBar({ deal, onChanged }: Props) {
       .update(update)
       .eq("id", deal.id);
     setBusy(false);
-    setResolvedOpen(false);
+    setDeliveredAskOpen(false);
     if (error) {
       toast.error(t.status.somethingWentWrong);
       return;
@@ -301,6 +302,34 @@ export function DefectBar({ deal, onChanged }: Props) {
           </AlertDialog>
 
           <AlertDialog open={resolvedOpen} onOpenChange={setResolvedOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t.defectResolution.resolved}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Var málið leyst án gallapöntunar og/eða endurgreiðslu?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={busy}>Nei</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setResolvedOpen(false);
+                    setDeliveredAskOpen(true);
+                  }}
+                  disabled={busy}
+                  className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+                >
+                  Já
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog
+            open={deliveredAskOpen}
+            onOpenChange={setDeliveredAskOpen}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>{t.defectResolution.resolved}</AlertDialogTitle>
