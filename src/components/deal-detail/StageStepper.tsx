@@ -220,7 +220,9 @@ export function StageStepper({ stage, onChange }: Props) {
                   ) : isPrev ? (
                     <Popover
                       open={confirmBackIdx === idx}
-                      onOpenChange={(o) => !o && setConfirmBackIdx(null)}
+                      onOpenChange={(o) =>
+                        setConfirmBackIdx(o ? idx : null)
+                      }
                     >
                       <PopoverTrigger asChild>{circle}</PopoverTrigger>
                       <PopoverContent className="w-64">
