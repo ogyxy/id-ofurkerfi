@@ -86,6 +86,7 @@ export function DeliveredBar({ deal, onChanged, onStageChanged, currentProfileId
       toast.error(t.status.somethingWentWrong);
       return;
     }
+    await onStageChanged?.("defect_reorder");
     toast.success(t.status.savedSuccessfully);
     await onChanged();
   };
