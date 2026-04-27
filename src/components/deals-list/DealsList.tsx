@@ -6,7 +6,10 @@ import type { Database } from "@/integrations/supabase/types";
 import { t, formatIsk, formatDate } from "@/lib/sala_translations_is";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { rememberDealReturnPath } from "@/lib/dealReturn";
+import { toast } from "sonner";
 import { CreateDealDrawer } from "./CreateDealDrawer";
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
@@ -20,6 +23,7 @@ type DealRow = {
   name: string;
   stage: DealStage;
   amount_isk: number | null;
+  promised_delivery_date: string | null;
   estimated_delivery_date: string | null;
   delivered_at: string | null;
   invoice_status: InvoiceStatus;
@@ -63,6 +67,7 @@ const SELECT = `
   name,
   stage,
   amount_isk,
+  promised_delivery_date,
   estimated_delivery_date,
   delivered_at,
   invoice_status,
