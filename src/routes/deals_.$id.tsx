@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
+import { consumeDealReturnPath } from "@/lib/dealReturn";
 import { StageStepper } from "@/components/deal-detail/StageStepper";
 import { DeliveredBar } from "@/components/deal-detail/DeliveredBar";
 import { DefectBar } from "@/components/deal-detail/DefectBar";
