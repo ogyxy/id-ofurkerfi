@@ -19,6 +19,16 @@ type DealLineRow = Database["public"]["Tables"]["deal_lines"]["Row"];
 
 const CURRENCIES = ["EUR", "GBP", "USD", "NOK", "DKK", "SEK", "CHF"] as const;
 
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  EUR: "€",
+  GBP: "£",
+  USD: "$",
+  NOK: "kr.",
+  DKK: "kr.",
+  SEK: "kr.",
+  CHF: "Fr.",
+};
+
 export type EditableLine = {
   id: string; // local id (uuid or temp id)
   isNew: boolean;
