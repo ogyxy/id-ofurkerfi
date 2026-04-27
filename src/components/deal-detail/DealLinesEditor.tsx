@@ -17,9 +17,10 @@ import {
 
 type DealLineRow = Database["public"]["Tables"]["deal_lines"]["Row"];
 
-const CURRENCIES = ["EUR", "GBP", "USD", "NOK", "DKK", "SEK", "CHF"] as const;
+const CURRENCIES = ["ISK", "EUR", "GBP", "USD", "NOK", "DKK", "SEK", "CHF"] as const;
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
+  ISK: "kr.",
   EUR: "€",
   GBP: "£",
   USD: "$",
