@@ -9,6 +9,9 @@ import { t } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
 import { StageStepper } from "@/components/deal-detail/StageStepper";
 import { DeliveredBar } from "@/components/deal-detail/DeliveredBar";
+import { DefectBar } from "@/components/deal-detail/DefectBar";
+import { DefectDescriptionModal } from "@/components/deal-detail/DefectDescriptionModal";
+import { ParentDealBanner } from "@/components/deal-detail/ParentDealBanner";
 import { DealHeader } from "@/components/deal-detail/DealHeader";
 import {
   DealLinesEditor,
@@ -83,6 +86,13 @@ function DealDetailContent() {
   const [rates, setRates] = useState<Record<string, number>>({});
   const [ratesError, setRatesError] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [defectModalOpen, setDefectModalOpen] = useState(false);
+  const [defectBusy, setDefectBusy] = useState(false);
+  const [parentDeal, setParentDeal] = useState<{
+    id: string;
+    so_number: string;
+    name: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     const [dealRes, linesRes, posRes, actsRes] = await Promise.all([
@@ -130,6 +140,18 @@ function DealDetailContent() {
       (posRes.data ?? []) as Array<PurchaseOrder & { po_lines: POLine[] }>,
     );
     setActivities((actsRes.data ?? []) as Activity[]);
+
+    // Parent deal lookup
+    if (d.parent_deal_id) {
+      const { data: parent } = await supabase
+        .from("deals")
+        .select("id, so_number, name")
+        .eq("id", d.parent_deal_id)
+        .maybeSingle();
+      setParentDeal(parent ?? null);
+    } else {
+      setParentDeal(null);
+    }
 
     // Load company contacts + profiles for edit drawer
     const [cRes, pRes] = await Promise.all([
