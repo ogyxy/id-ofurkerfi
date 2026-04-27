@@ -217,9 +217,13 @@ export function DealLinesEditor({
 
     // Auto-fill exchange rate when currency changes (before unit_cost_isk recalc)
     if (patch.cost_currency !== undefined) {
-      const r = rates[patch.cost_currency];
-      if (r) {
-        line.exchange_rate = Math.round(r * 100) / 100;
+      if (patch.cost_currency === "ISK") {
+        line.exchange_rate = 1;
+      } else {
+        const r = rates[patch.cost_currency];
+        if (r) {
+          line.exchange_rate = Math.round(r * 100) / 100;
+        }
       }
     }
 
