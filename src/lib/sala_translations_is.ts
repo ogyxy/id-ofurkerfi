@@ -150,7 +150,7 @@ export const t = {
   // ---------------------------------------------------------------------------
   defectResolution: {
     pending:     'Í bið',
-    reorder:     'Endurpöntun',
+    reorder:     'Gallapöntun',
     refund:      'Endurgreiðsla',
     credit_note: 'Kreditnóta',
     resolved:    'Leyst',
