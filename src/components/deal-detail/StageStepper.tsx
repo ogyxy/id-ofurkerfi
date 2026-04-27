@@ -66,16 +66,55 @@ export function StageStepper({ stage, onChange }: Props) {
       <div className="flex items-start gap-2">
         {/* Mobile: collapsed view */}
         <div className="flex flex-1 items-center justify-between md:hidden">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={currentIdx <= 0}
-            onClick={() =>
-              currentIdx > 0 && onChange(HAPPY_PATH[currentIdx - 1])
-            }
+          <Popover
+            open={confirmBackIdx === currentIdx - 1}
+            onOpenChange={(o) => !o && setConfirmBackIdx(null)}
           >
-            ←
-          </Button>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={currentIdx <= 0}
+                onClick={() =>
+                  currentIdx > 0 && setConfirmBackIdx(currentIdx - 1)
+                }
+              >
+                ←
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64">
+              <div className="space-y-3">
+                <p className="text-sm">
+                  Færa til baka í{" "}
+                  <span className="font-semibold">
+                    {currentIdx > 0 && t.dealStage[HAPPY_PATH[currentIdx - 1]]}
+                  </span>
+                  ?
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setConfirmBackIdx(null)}
+                  >
+                    {t.actions.cancel}
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+                    onClick={() => {
+                      if (currentIdx > 0) {
+                        onChange(HAPPY_PATH[currentIdx - 1]);
+                        setConfirmBackIdx(null);
+                      }
+                    }}
+                  >
+                    {t.actions.confirm}
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
           <div className="text-center">
             <div className="text-xs text-muted-foreground">
               {currentIdx + 1} / {HAPPY_PATH.length}
