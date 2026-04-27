@@ -305,22 +305,29 @@ export function DefectBar({ deal, onChanged }: Props) {
               <AlertDialogHeader>
                 <AlertDialogTitle>{t.defectResolution.resolved}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Var málið leyst án gallapöntunar og/eða endurgreiðslu?
+                  Er pöntunin þegar afhent?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel disabled={busy}>
                   {t.actions.cancel}
                 </AlertDialogCancel>
+                <Button
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => void markResolved(false)}
+                >
+                  Nei
+                </Button>
                 <AlertDialogAction
                   onClick={(e) => {
                     e.preventDefault();
-                    void markResolved();
+                    void markResolved(true);
                   }}
                   disabled={busy}
                   className="bg-ide-navy text-white hover:bg-ide-navy-hover"
                 >
-                  {t.actions.confirm}
+                  Já
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
