@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatIsk } from "@/lib/sala_translations_is";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -31,11 +34,21 @@ type CompanyWithStats = CompanyRow & {
   totalDeliveredIsk: number;
 };
 
+type SortKey =
+  | "name"
+  | "dealsInProgress"
+  | "totalInProgressIsk"
+  | "dealsDelivered"
+  | "totalDeliveredIsk";
+type SortDir = "asc" | "desc";
+
 export function CompaniesTable() {
   const [rows, setRows] = useState<CompanyWithStats[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -117,6 +130,76 @@ export function CompaniesTable() {
     return rows.filter((c) => c.name.toLocaleLowerCase("is").includes(q));
   }, [rows, search]);
 
+  const sorted = useMemo(() => {
+    const copy = [...filtered];
+    const dir = sortDir === "asc" ? 1 : -1;
+    copy.sort((a, b) => {
+      if (sortKey === "name") {
+        return a.name.localeCompare(b.name, "is") * dir;
+      }
+      return ((a[sortKey] as number) - (b[sortKey] as number)) * dir;
+    });
+    return copy;
+  }, [filtered, sortKey, sortDir]);
+
+  const totals = useMemo(() => {
+    return sorted.reduce(
+      (acc, c) => {
+        acc.dealsInProgress += c.dealsInProgress;
+        acc.totalInProgressIsk += c.totalInProgressIsk;
+        acc.dealsDelivered += c.dealsDelivered;
+        acc.totalDeliveredIsk += c.totalDeliveredIsk;
+        return acc;
+      },
+      {
+        dealsInProgress: 0,
+        totalInProgressIsk: 0,
+        dealsDelivered: 0,
+        totalDeliveredIsk: 0,
+      },
+    );
+  }, [sorted]);
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(key === "name" ? "asc" : "desc");
+    }
+  };
+
+  const SortIcon = ({ column }: { column: SortKey }) => {
+    if (sortKey !== column) {
+      return <ArrowUpDown className="ml-1 inline h-3.5 w-3.5 opacity-40" />;
+    }
+    return sortDir === "asc" ? (
+      <ArrowUp className="ml-1 inline h-3.5 w-3.5" />
+    ) : (
+      <ArrowDown className="ml-1 inline h-3.5 w-3.5" />
+    );
+  };
+
+  const sortableHead = (
+    label: string,
+    key: SortKey,
+    align: "left" | "right" = "left",
+  ) => (
+    <TableHead className={align === "right" ? "text-right" : undefined}>
+      <button
+        type="button"
+        onClick={() => handleSort(key)}
+        className={cn(
+          "inline-flex items-center gap-0.5 font-medium hover:text-foreground transition-colors",
+          align === "right" && "ml-auto",
+        )}
+      >
+        {label}
+        <SortIcon column={key} />
+      </button>
+    </TableHead>
+  );
+
   return (
     <div className="space-y-4">
       <Input
@@ -128,70 +211,95 @@ export function CompaniesTable() {
       />
 
       {/* Desktop / tablet table */}
-      <div className="hidden overflow-x-auto rounded-md border border-border bg-card md:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t.company.name}</TableHead>
-              <TableHead className="text-right">Sölur í vinnslu</TableHead>
-              <TableHead className="text-right">Upphæð í vinnslu</TableHead>
-              <TableHead className="text-right">Sölur afhentar</TableHead>
-              <TableHead className="text-right">Samtals sala</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
+      <div className="hidden rounded-md border border-border bg-card md:block">
+        <div className="max-h-[calc(100vh-16rem)] overflow-auto">
+          <Table>
+            <TableHeader className="sticky top-0 z-10 bg-card shadow-[0_1px_0_0_hsl(var(--border))]">
               <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="py-10 text-center text-sm text-muted-foreground"
-                >
-                  {t.status.loading}
-                </TableCell>
+                {sortableHead(t.company.name, "name", "left")}
+                {sortableHead("Sölur í vinnslu", "dealsInProgress", "right")}
+                {sortableHead("Upphæð í vinnslu", "totalInProgressIsk", "right")}
+                {sortableHead("Sölur afhentar", "dealsDelivered", "right")}
+                {sortableHead("Samtals sala", "totalDeliveredIsk", "right")}
               </TableRow>
-            ) : loadError ? (
-              <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="py-10 text-center text-sm text-destructive"
-                >
-                  {loadError}
-                </TableCell>
-              </TableRow>
-            ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="py-10 text-center text-sm text-muted-foreground"
-                >
-                  {t.status.noResults}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filtered.map((company) => (
-                <TableRow
-                  key={company.id}
-                  onClick={() => navigate({ to: "/companies/$id", params: { id: company.id } })}
-                  className="cursor-pointer"
-                >
-                  <TableCell className="font-medium">{company.name}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {company.dealsInProgress}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatIsk(company.totalInProgressIsk)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {company.dealsDelivered}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatIsk(company.totalDeliveredIsk)}
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="py-10 text-center text-sm text-muted-foreground"
+                  >
+                    {t.status.loading}
                   </TableCell>
                 </TableRow>
-              ))
+              ) : loadError ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="py-10 text-center text-sm text-destructive"
+                  >
+                    {loadError}
+                  </TableCell>
+                </TableRow>
+              ) : sorted.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="py-10 text-center text-sm text-muted-foreground"
+                  >
+                    {t.status.noResults}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sorted.map((company) => (
+                  <TableRow
+                    key={company.id}
+                    onClick={() =>
+                      navigate({ to: "/companies/$id", params: { id: company.id } })
+                    }
+                    className="cursor-pointer"
+                  >
+                    <TableCell className="font-medium">{company.name}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {company.dealsInProgress}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatIsk(company.totalInProgressIsk)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {company.dealsDelivered}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatIsk(company.totalDeliveredIsk)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+            {!loading && !loadError && sorted.length > 0 && (
+              <TableFooter className="sticky bottom-0 z-10 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/80">
+                <TableRow className="hover:bg-muted/95">
+                  <TableCell className="font-semibold">
+                    {t.status.total ?? "Samtals"} ({sorted.length})
+                  </TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">
+                    {totals.dealsInProgress}
+                  </TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">
+                    {formatIsk(totals.totalInProgressIsk)}
+                  </TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">
+                    {totals.dealsDelivered}
+                  </TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">
+                    {formatIsk(totals.totalDeliveredIsk)}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
             )}
-          </TableBody>
-        </Table>
+          </Table>
+        </div>
       </div>
 
       {/* Mobile list */}
@@ -204,27 +312,34 @@ export function CompaniesTable() {
           <div className="rounded-md border border-border bg-card py-10 text-center text-sm text-destructive">
             {loadError}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : sorted.length === 0 ? (
           <div className="rounded-md border border-border bg-card py-10 text-center text-sm text-muted-foreground">
             {t.status.noResults}
           </div>
         ) : (
-          <ul className="divide-y divide-border overflow-hidden rounded-md border border-border bg-card">
-            {filtered.map((company) => (
-              <li key={company.id}>
-                <button
-                  type="button"
-                  onClick={() => navigate({ to: "/companies/$id", params: { id: company.id } })}
-                  className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-muted/50"
-                >
-                  <span className="font-medium">{company.name}</span>
-                  <span className="text-muted-foreground" aria-hidden>
-                    ›
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="divide-y divide-border overflow-hidden rounded-md border border-border bg-card">
+              {sorted.map((company) => (
+                <li key={company.id}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate({ to: "/companies/$id", params: { id: company.id } })
+                    }
+                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-muted/50"
+                  >
+                    <span className="font-medium">{company.name}</span>
+                    <span className="text-muted-foreground" aria-hidden>
+                      ›
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="sticky bottom-0 mt-2 rounded-md border border-border bg-muted/95 px-4 py-3 text-sm font-semibold backdrop-blur">
+              {t.status.total ?? "Samtals"}: {sorted.length}
+            </div>
+          </>
         )}
       </div>
     </div>
