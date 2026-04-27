@@ -66,7 +66,7 @@ export function DealSummary({
   };
 
   return (
-    <div className="ml-auto max-w-md space-y-3 rounded-md border border-border bg-card p-4">
+    <div className="mr-auto max-w-md space-y-3 rounded-md border border-border bg-card p-4">
       <Row label={t.dealSummary.subtotal} value={formatIsk(subtotal)} />
       <div className="flex items-center justify-between gap-3">
         <Label className="text-sm text-muted-foreground">
