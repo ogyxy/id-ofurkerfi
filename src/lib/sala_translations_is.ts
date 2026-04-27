@@ -471,6 +471,20 @@ export const t = {
     completed_at: 'Lokið (dagsetning)',
   },
 
+  // ---------------------------------------------------------------------------
+  // Log feed (deal detail)
+  // ---------------------------------------------------------------------------
+  log: {
+    title:           'Log',
+    placeholder:     'Skráðu athugasemd...',
+    send:            'Senda',
+    stageChanged:    'Sala færð í',
+    by:              '·',
+    noEntries:       'Engar færslur enn',
+    comment:         'Athugasemd',
+    defectEntry:     'Gallafærsla',
+  },
+
 } as const;
 
 
