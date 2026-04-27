@@ -71,7 +71,7 @@ export const t = {
     order_confirmed:   'Staðfest pöntun',
     delivered:         'Pöntun afhent',
     cancelled:         'Hætt við',
-    defect_reorder:    'Galli / endurpöntun',
+    defect_reorder:    'Galli / Vesen',
   },
 
   // ---------------------------------------------------------------------------
