@@ -181,7 +181,9 @@ export function StageStepper({ stage, onChange }: Props) {
                   {isNext ? (
                     <Popover
                       open={confirmIdx === idx}
-                      onOpenChange={(o) => !o && setConfirmIdx(null)}
+                      onOpenChange={(o) =>
+                        setConfirmIdx(o ? idx : null)
+                      }
                     >
                       <PopoverTrigger asChild>{circle}</PopoverTrigger>
                       <PopoverContent className="w-64">
