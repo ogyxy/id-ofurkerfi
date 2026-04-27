@@ -6,7 +6,10 @@ import type { Database } from "@/integrations/supabase/types";
 import { t, formatIsk, formatDate } from "@/lib/sala_translations_is";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { rememberDealReturnPath } from "@/lib/dealReturn";
+import { toast } from "sonner";
 import { CreateDealDrawer } from "./CreateDealDrawer";
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
@@ -20,6 +23,7 @@ type DealRow = {
   name: string;
   stage: DealStage;
   amount_isk: number | null;
+  promised_delivery_date: string | null;
   estimated_delivery_date: string | null;
   delivered_at: string | null;
   invoice_status: InvoiceStatus;
@@ -63,6 +67,7 @@ const SELECT = `
   name,
   stage,
   amount_isk,
+  promised_delivery_date,
   estimated_delivery_date,
   delivered_at,
   invoice_status,
@@ -142,7 +147,7 @@ export function DealsList({ currentUserId }: Props) {
         }
       }
 
-      query = query.order("estimated_delivery_date", {
+      query = query.order("promised_delivery_date", {
         ascending: true,
         nullsFirst: false,
       });
@@ -235,6 +240,37 @@ export function DealsList({ currentUserId }: Props) {
     setSearch("");
     setSelectedStages(new Set(["all"]));
     setSelectedOwners(new Set());
+  };
+
+  const openDeal = (id: string) => {
+    rememberDealReturnPath("/deals");
+    navigate({ to: "/deals/$id", params: { id } });
+  };
+
+  const handleStageChange = async (deal: DealRow, newStage: DealStage) => {
+    const today = new Date().toISOString().split("T")[0];
+    const patch =
+      newStage === "delivered"
+        ? { stage: newStage, delivered_at: today }
+        : { stage: newStage };
+    const { error } = await supabase.from("deals").update(patch).eq("id", deal.id);
+    if (error) {
+      toast.error(t.status.somethingWentWrong);
+      return;
+    }
+    // Optimistic local update
+    setDeals((prev) =>
+      prev.map((d) =>
+        d.id === deal.id
+          ? {
+              ...d,
+              stage: newStage,
+              delivered_at: newStage === "delivered" ? today : d.delivered_at,
+            }
+          : d,
+      ),
+    );
+    toast.success(t.status.savedSuccessfully);
   };
 
   const isSearching = debouncedSearch.trim().length > 0;
@@ -387,7 +423,12 @@ export function DealsList({ currentUserId }: Props) {
                 </div>
                 <div className="space-y-2">
                   {rows.map((d) => (
-                    <DealCard key={d.id} deal={d} onOpen={() => navigate({ to: "/deals/$id", params: { id: d.id } })} />
+                    <DealCard
+                      key={d.id}
+                      deal={d}
+                      onOpen={() => openDeal(d.id)}
+                      onStageChange={(stage) => handleStageChange(d, stage)}
+                    />
                   ))}
                 </div>
               </section>
@@ -397,7 +438,12 @@ export function DealsList({ currentUserId }: Props) {
       ) : (
         <div className="space-y-2">
           {visibleDeals.map((d) => (
-            <DealCard key={d.id} deal={d} onOpen={() => navigate({ to: "/deals/$id", params: { id: d.id } })} />
+            <DealCard
+              key={d.id}
+              deal={d}
+              onOpen={() => openDeal(d.id)}
+              onStageChange={(stage) => handleStageChange(d, stage)}
+            />
           ))}
         </div>
       )}
@@ -439,11 +485,143 @@ function StagePill({
   );
 }
 
-function DealCard({ deal, onOpen }: { deal: DealRow; onOpen: () => void }) {
+const POPOVER_STAGES: DealStage[] = [
+  "inquiry",
+  "quote_in_progress",
+  "quote_sent",
+  "order_confirmed",
+  "delivered",
+];
+
+function StagePopover({
+  current,
+  onChange,
+}: {
+  current: DealStage;
+  onChange: (s: DealStage) => void | Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState<DealStage | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const styles = STAGE_STYLES[current];
+
+  const close = () => {
+    setOpen(false);
+    setPending(null);
+  };
+
+  const confirm = async () => {
+    if (!pending) return;
+    setBusy(true);
+    await onChange(pending);
+    setBusy(false);
+    close();
+  };
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) setPending(null);
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(true);
+          }}
+          className={cn(
+            "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium transition hover:opacity-80",
+            styles.border.replace("border-l-", "border-"),
+            styles.bg,
+          )}
+        >
+          {t.dealStage[current]}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="w-56 p-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {pending ? (
+          pending === "defect_reorder" ? null : (
+            <div className="space-y-3 px-1 py-2">
+              <p className="text-sm">
+                {t.deal.moveToStage} {t.dealStage[pending]}?
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={close}
+                  disabled={busy}
+                >
+                  {t.actions.cancel}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={confirm}
+                  disabled={busy}
+                  className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+                >
+                  {t.status.yes}
+                </Button>
+              </div>
+            </div>
+          )
+        ) : (
+          <ul className="space-y-1">
+            {POPOVER_STAGES.map((s) => {
+              const active = s === current;
+              return (
+                <li key={s}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (active) return;
+                      setPending(s);
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm transition hover:bg-muted",
+                      active && "font-medium",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "inline-block h-2.5 w-2.5 rounded-full border",
+                        active ? "bg-ide-navy border-ide-navy" : "border-gray-400",
+                      )}
+                    />
+                    {t.dealStage[s]}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function DealCard({
+  deal,
+  onOpen,
+  onStageChange,
+}: {
+  deal: DealRow;
+  onOpen: () => void;
+  onStageChange: (s: DealStage) => void | Promise<void>;
+}) {
   const styles = STAGE_STYLES[deal.stage];
   const muted = deal.stage === "delivered";
   const cancelled = deal.stage === "cancelled";
-  const overdue = isOverdue(deal.estimated_delivery_date, deal.stage);
+  const overdue = isOverdue(deal.promised_delivery_date, deal.stage);
 
   const showInvoiceBadge =
     deal.invoice_status === "not_invoiced" && deal.stage === "delivered";
@@ -468,11 +646,14 @@ function DealCard({ deal, onOpen }: { deal: DealRow; onOpen: () => void }) {
         cancelled && "italic",
       )}
     >
-      {/* SO number + badges */}
-      <div className="min-w-0">
+      {/* SO number + stage + badges */}
+      <div className="min-w-0 space-y-1">
         <div className="font-mono text-xs text-muted-foreground">{deal.so_number}</div>
+        <div onClick={(e) => e.stopPropagation()}>
+          <StagePopover current={deal.stage} onChange={onStageChange} />
+        </div>
         {(showInvoiceBadge || showPaymentBadge || showDefectBadge) && (
-          <div className="mt-1 flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1">
             {showInvoiceBadge && (
               <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
                 {t.invoiceStatus.not_invoiced}
@@ -560,7 +741,7 @@ function DealCard({ deal, onOpen }: { deal: DealRow; onOpen: () => void }) {
               )}
             >
               {overdue && <AlertTriangle className="h-3 w-3" />}
-              {deal.estimated_delivery_date ? formatDate(deal.estimated_delivery_date) : "—"}
+              {deal.promised_delivery_date ? formatDate(deal.promised_delivery_date) : "—"}
             </div>
           </>
         )}

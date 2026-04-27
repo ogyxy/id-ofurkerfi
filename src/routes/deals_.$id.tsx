@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
+import { consumeDealReturnPath } from "@/lib/dealReturn";
 import { StageStepper } from "@/components/deal-detail/StageStepper";
 import { DeliveredBar } from "@/components/deal-detail/DeliveredBar";
 import { DefectBar } from "@/components/deal-detail/DefectBar";
@@ -323,14 +324,17 @@ function DealDetailContent() {
 
   return (
     <div className="space-y-6">
-      <Link
-        to="/companies/$id"
-        params={{ id: company.id }}
+      <button
+        type="button"
+        onClick={() => {
+          const returnPath = consumeDealReturnPath();
+          navigate({ to: returnPath });
+        }}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         {t.actions.back}
-      </Link>
+      </button>
 
       {parentDeal && <ParentDealBanner parentDeal={parentDeal} />}
 
