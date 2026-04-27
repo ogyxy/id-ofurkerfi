@@ -202,6 +202,15 @@ export function DefectBar({ deal, onChanged, onStageChanged, currentProfileId }:
       .update({ defect_resolution: "reorder" })
       .eq("id", deal.id);
 
+    // Note on the original defect deal pointing to the new gallapöntun
+    await supabase.from("activities").insert({
+      deal_id: deal.id,
+      company_id: deal.company_id,
+      type: "note",
+      body: `Gallapöntun stofnuð: ${newDeal.so_number || "ný sala"}`,
+      created_by: currentProfileId ?? null,
+    });
+
     setBusy(false);
     setReorderOpen(false);
     toast.success(t.status.savedSuccessfully);
@@ -220,6 +229,7 @@ export function DefectBar({ deal, onChanged, onStageChanged, currentProfileId }:
       toast.error(t.status.somethingWentWrong);
       return;
     }
+    await onStageChanged?.("cancelled");
     toast.success(t.status.savedSuccessfully);
     await onChanged();
   };
