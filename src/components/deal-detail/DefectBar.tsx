@@ -55,6 +55,7 @@ export function DefectBar({ deal, onChanged }: Props) {
   const [reorderOpen, setReorderOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [resolvedOpen, setResolvedOpen] = useState(false);
+  const [deliveredAskOpen, setDeliveredAskOpen] = useState(false);
   const [description, setDescription] = useState(deal.defect_description ?? "");
   const lastSavedRef = useRef(deal.defect_description ?? "");
 
