@@ -69,7 +69,7 @@ export function DefectBar({ deal, onChanged }: Props) {
     await onChanged();
   };
 
-  const handleResolutionChange = async (next: DefectResolution) => {
+  const persistResolution = async (next: DefectResolution) => {
     const previous = resolution;
     setResolution(next);
     const { error } = await supabase
@@ -78,6 +78,40 @@ export function DefectBar({ deal, onChanged }: Props) {
       .eq("id", deal.id);
     if (error) {
       setResolution(previous);
+      toast.error(t.status.somethingWentWrong);
+      return false;
+    }
+    toast.success(t.status.savedSuccessfully);
+    await onChanged();
+    return true;
+  };
+
+  const handleResolutionChange = (next: DefectResolution) => {
+    if (next === resolution) return;
+    if (next === "reorder") {
+      setReorderOpen(true);
+      return;
+    }
+    if (next === "resolved") {
+      setResolvedOpen(true);
+      return;
+    }
+    void persistResolution(next);
+  };
+
+  const markResolved = async () => {
+    setBusy(true);
+    const { error } = await supabase
+      .from("deals")
+      .update({
+        defect_resolution: "resolved",
+        stage: "delivered",
+        delivered_at: deal.delivered_at ?? new Date().toISOString().slice(0, 10),
+      })
+      .eq("id", deal.id);
+    setBusy(false);
+    setResolvedOpen(false);
+    if (error) {
       toast.error(t.status.somethingWentWrong);
       return;
     }
