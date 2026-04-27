@@ -17,9 +17,10 @@ import {
 
 type DealLineRow = Database["public"]["Tables"]["deal_lines"]["Row"];
 
-const CURRENCIES = ["EUR", "GBP", "USD", "NOK", "DKK", "SEK", "CHF"] as const;
+const CURRENCIES = ["ISK", "EUR", "GBP", "USD", "NOK", "DKK", "SEK", "CHF"] as const;
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
+  ISK: "kr.",
   EUR: "€",
   GBP: "£",
   USD: "$",
@@ -216,9 +217,13 @@ export function DealLinesEditor({
 
     // Auto-fill exchange rate when currency changes (before unit_cost_isk recalc)
     if (patch.cost_currency !== undefined) {
-      const r = rates[patch.cost_currency];
-      if (r) {
-        line.exchange_rate = Math.round(r * 100) / 100;
+      if (patch.cost_currency === "ISK") {
+        line.exchange_rate = 1;
+      } else {
+        const r = rates[patch.cost_currency];
+        if (r) {
+          line.exchange_rate = Math.round(r * 100) / 100;
+        }
       }
     }
 
@@ -417,7 +422,7 @@ export function DealLinesEditor({
                         }
                         placeholder={ratesError ? "Sláðu inn gengi" : ""}
                         className="w-24 pr-8 text-right"
-                        disabled={readOnly}
+                        disabled={readOnly || line.cost_currency === "ISK"}
                       />
                       <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
                         kr.
