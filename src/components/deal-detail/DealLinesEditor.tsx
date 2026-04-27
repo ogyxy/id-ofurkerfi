@@ -512,7 +512,7 @@ export function DealLinesEditor({
         </table>
       </div>
 
-      <Button variant="outline" onClick={addLine}>
+      <Button variant="outline" onClick={addLine} disabled={readOnly}>
         <Plus className="mr-1 h-4 w-4" />
         {t.dealLine.addLine}
       </Button>
