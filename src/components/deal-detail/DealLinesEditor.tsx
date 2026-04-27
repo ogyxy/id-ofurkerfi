@@ -94,6 +94,7 @@ interface Props {
   ratesError: boolean;
   onSaveDefaultMarkup: (n: number) => Promise<void>;
   onSaved: () => Promise<void>;
+  readOnly?: boolean;
 }
 
 export function DealLinesEditor({
@@ -106,6 +107,7 @@ export function DealLinesEditor({
   ratesError,
   onSaveDefaultMarkup,
   onSaved,
+  readOnly = false,
 }: Props) {
   // Track ids of lines that have been persisted at least once
   const persistedIds = useRef<Set<string>>(new Set());
@@ -193,6 +195,7 @@ export function DealLinesEditor({
 
   // Debounced auto-save whenever lines change
   useEffect(() => {
+    if (readOnly) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
       const snapshot = lines;
@@ -205,7 +208,7 @@ export function DealLinesEditor({
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lines]);
+  }, [lines, readOnly]);
 
   const updateLine = (idx: number, patch: Partial<EditableLine>) => {
     const next = [...lines];
@@ -313,9 +316,10 @@ export function DealLinesEditor({
             onChange={(e) => setDefaultMarkupPct(Number(e.target.value))}
             onBlur={() => onSaveDefaultMarkup(defaultMarkupPct)}
             className="w-32"
+            disabled={readOnly}
           />
         </div>
-        <Button variant="outline" size="sm" onClick={applyDefaultMarkup}>
+        <Button variant="outline" size="sm" onClick={applyDefaultMarkup} disabled={readOnly}>
           {t.dealLine.applyToAll}
         </Button>
       </div>
@@ -351,6 +355,7 @@ export function DealLinesEditor({
                         updateLine(idx, { product_name: e.target.value })
                       }
                       className="min-w-[140px]"
+                      disabled={readOnly}
                     />
                   </td>
                   <td className="px-2 py-2">
@@ -361,6 +366,7 @@ export function DealLinesEditor({
                         updateLine(idx, { quantity: Number(e.target.value) })
                       }
                       className="w-20 mx-auto text-center"
+                      disabled={readOnly}
                     />
                   </td>
                   <td className="px-2 py-2">
@@ -373,6 +379,7 @@ export function DealLinesEditor({
                           updateLine(idx, { unit_cost: Number(e.target.value) })
                         }
                         className="w-24 pr-10 text-right"
+                        disabled={readOnly}
                       />
                       <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
                         {CURRENCY_SYMBOLS[line.cost_currency] ?? line.cost_currency}
@@ -383,6 +390,7 @@ export function DealLinesEditor({
                     <Select
                       value={line.cost_currency}
                       onValueChange={(v) => updateLine(idx, { cost_currency: v })}
+                      disabled={readOnly}
                     >
                       <SelectTrigger className="w-24 mx-auto">
                         <SelectValue />
@@ -409,6 +417,7 @@ export function DealLinesEditor({
                         }
                         placeholder={ratesError ? "Sláðu inn gengi" : ""}
                         className="w-24 pr-8 text-right"
+                        disabled={readOnly}
                       />
                       <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
                         kr.
@@ -440,6 +449,7 @@ export function DealLinesEditor({
                           setLines(next);
                         }}
                         className="w-24 pr-6 text-right"
+                        disabled={readOnly}
                       />
                       <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
                         %
@@ -461,6 +471,7 @@ export function DealLinesEditor({
                             })
                           }
                           className="w-28 pr-8 text-right"
+                          disabled={readOnly}
                         />
                         <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
                           kr.
@@ -479,6 +490,7 @@ export function DealLinesEditor({
                       variant="ghost"
                       size="icon"
                       onClick={() => removeLine(idx)}
+                      disabled={readOnly}
                     >
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
@@ -500,7 +512,7 @@ export function DealLinesEditor({
         </table>
       </div>
 
-      <Button variant="outline" onClick={addLine}>
+      <Button variant="outline" onClick={addLine} disabled={readOnly}>
         <Plus className="mr-1 h-4 w-4" />
         {t.dealLine.addLine}
       </Button>

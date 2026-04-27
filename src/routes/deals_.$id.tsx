@@ -267,6 +267,7 @@ function DealDetailContent() {
         ratesError={ratesError}
         onSaveDefaultMarkup={saveDefaultMarkup}
         onSaved={load}
+        readOnly={deal.stage === "delivered"}
       />
 
       <DealSummary
@@ -275,6 +276,7 @@ function DealDetailContent() {
         shippingCost={shippingCost}
         setShippingCost={setShippingCost}
         vskStatus={company.vsk_status}
+        readOnly={deal.stage === "delivered"}
       />
 
       <PurchaseOrdersSection
