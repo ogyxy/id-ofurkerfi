@@ -137,12 +137,13 @@ export const t = {
   // Enum: activity_type
   // ---------------------------------------------------------------------------
   activityType: {
-    note:        'Glósa',
-    call:        'Símtal',
-    email:       'Tölvupóstur',
-    meeting:     'Fundur',
-    task:        'Verkefni',
-    defect_note: 'Gallafærsla',
+    note:         'Glósa',
+    call:         'Símtal',
+    email:        'Tölvupóstur',
+    meeting:      'Fundur',
+    task:         'Verkefni',
+    defect_note:  'Gallafærsla',
+    stage_change: 'Stöðubreyting',
   },
 
   // ---------------------------------------------------------------------------
