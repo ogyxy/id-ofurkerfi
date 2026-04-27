@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { ChevronDown, Plus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
+import { rememberDealReturnPath } from "@/lib/dealReturn";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,10 +24,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
 type Company = { id: string; name: string };
-type Contact = { id: string; first_name: string | null; last_name: string | null; company_id: string };
+type Contact = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  company_id: string;
+};
 type Profile = { id: string; name: string | null; email: string };
 
 const STAGES: DealStage[] = [
@@ -45,19 +53,36 @@ interface Props {
   profiles: Profile[];
 }
 
-export function CreateDealDrawer({ open, onOpenChange, currentUserId, profiles }: Props) {
+export function CreateDealDrawer({
+  open,
+  onOpenChange,
+  currentUserId,
+  profiles,
+}: Props) {
   const navigate = useNavigate();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+
+  // Combobox state
   const [companySearch, setCompanySearch] = useState("");
   const [companyId, setCompanyId] = useState("");
+  const [companyDropdownOpen, setCompanyDropdownOpen] = useState(false);
+  const comboRef = useRef<HTMLDivElement>(null);
+
+  // New customer mini-form
+  const [newOpen, setNewOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newKennitala, setNewKennitala] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [creatingCompany, setCreatingCompany] = useState(false);
+
   const [contactId, setContactId] = useState("");
   const [name, setName] = useState("");
   const [ownerId, setOwnerId] = useState(currentUserId);
   const [stage, setStage] = useState<DealStage>("inquiry");
   const [markup, setMarkup] = useState("30");
   const [estDate, setEstDate] = useState("");
-  const [notes, setNotes] = useState("");
+  const [firstNote, setFirstNote] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -88,11 +113,30 @@ export function CreateDealDrawer({ open, onOpenChange, currentUserId, profiles }
     })();
   }, [companyId]);
 
+  // Outside click for combobox
+  useEffect(() => {
+    if (!companyDropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (comboRef.current && !comboRef.current.contains(e.target as Node)) {
+        setCompanyDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [companyDropdownOpen]);
+
   const filteredCompanies = useMemo(() => {
     const s = companySearch.trim().toLowerCase();
     if (!s) return companies.slice(0, 50);
-    return companies.filter((c) => c.name.toLowerCase().includes(s)).slice(0, 50);
+    return companies
+      .filter((c) => c.name.toLowerCase().includes(s))
+      .slice(0, 50);
   }, [companies, companySearch]);
+
+  const selectedCompany = useMemo(
+    () => companies.find((c) => c.id === companyId) ?? null,
+    [companies, companyId],
+  );
 
   const reset = () => {
     setCompanyId("");
@@ -101,8 +145,57 @@ export function CreateDealDrawer({ open, onOpenChange, currentUserId, profiles }
     setStage("inquiry");
     setMarkup("30");
     setEstDate("");
-    setNotes("");
+    setFirstNote("");
     setCompanySearch("");
+    setCompanyDropdownOpen(false);
+    setNewOpen(false);
+    setNewName("");
+    setNewKennitala("");
+    setNewEmail("");
+  };
+
+  const selectCompany = (c: Company) => {
+    setCompanyId(c.id);
+    setCompanySearch("");
+    setCompanyDropdownOpen(false);
+  };
+
+  const clearCompany = () => {
+    setCompanyId("");
+    setCompanySearch("");
+  };
+
+  const createNewCompany = async () => {
+    if (!newName.trim()) {
+      toast.error(t.status.somethingWentWrong);
+      return;
+    }
+    setCreatingCompany(true);
+    const { data, error } = await supabase
+      .from("companies")
+      .insert({
+        name: newName.trim(),
+        kennitala: newKennitala.trim() || null,
+        email: newEmail.trim() || null,
+      })
+      .select("id, name")
+      .single();
+    setCreatingCompany(false);
+    if (error || !data) {
+      toast.error(t.status.somethingWentWrong);
+      return;
+    }
+    const newCompany = data as Company;
+    setCompanies((prev) =>
+      [newCompany, ...prev.filter((c) => c.id !== newCompany.id)].sort((a, b) =>
+        a.name.localeCompare(b.name),
+      ),
+    );
+    selectCompany(newCompany);
+    setNewOpen(false);
+    setNewName("");
+    setNewKennitala("");
+    setNewEmail("");
   };
 
   const handleSave = async () => {
@@ -121,17 +214,30 @@ export function CreateDealDrawer({ open, onOpenChange, currentUserId, profiles }
         stage,
         default_markup_pct: Number(markup) || 30,
         estimated_delivery_date: estDate || null,
-        notes: notes || null,
       })
-      .select("id")
+      .select("id, company_id")
       .single();
-    setSaving(false);
     if (error || !data) {
+      setSaving(false);
       toast.error(t.status.somethingWentWrong);
       return;
     }
+
+    // Optional: create first log note
+    if (firstNote.trim()) {
+      await supabase.from("activities").insert({
+        deal_id: data.id,
+        company_id: data.company_id,
+        type: "note",
+        body: firstNote.trim(),
+        created_by: currentUserId,
+      });
+    }
+
+    setSaving(false);
     reset();
     onOpenChange(false);
+    rememberDealReturnPath("/deals");
     navigate({ to: "/deals/$id", params: { id: data.id } });
   };
 
@@ -143,26 +249,125 @@ export function CreateDealDrawer({ open, onOpenChange, currentUserId, profiles }
         </SheetHeader>
 
         <div className="mt-4 space-y-4">
-          <div>
-            <Label>{t.nav.companies}</Label>
-            <Input
-              placeholder={t.actions.search}
-              value={companySearch}
-              onChange={(e) => setCompanySearch(e.target.value)}
-              className="mb-2"
-            />
-            <Select value={companyId} onValueChange={setCompanyId}>
-              <SelectTrigger>
-                <SelectValue placeholder={t.actions.search} />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredCompanies.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Customer combobox */}
+          <div ref={comboRef} className="relative">
+            <div className="mb-1 flex items-center justify-between">
+              <Label>
+                {t.deal.selectCustomer}{" "}
+                <span className="text-destructive">*</span>
+              </Label>
+              <button
+                type="button"
+                onClick={() => setNewOpen((v) => !v)}
+                className="text-xs font-medium text-ide-navy hover:underline"
+              >
+                {t.deal.newCustomer}
+              </button>
+            </div>
+
+            {selectedCompany ? (
+              <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
+                <span className="truncate text-sm font-medium">
+                  {selectedCompany.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={clearCompany}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="clear"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <Input
+                  placeholder={t.deal.searchCustomerPlaceholder}
+                  value={companySearch}
+                  onChange={(e) => {
+                    setCompanySearch(e.target.value);
+                    setCompanyDropdownOpen(true);
+                  }}
+                  onFocus={() => setCompanyDropdownOpen(true)}
+                />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                {companyDropdownOpen && (
+                  <div className="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-border bg-popover shadow-md">
+                    {filteredCompanies.length === 0 ? (
+                      <div className="px-3 py-2 text-sm text-muted-foreground">
+                        {t.status.noResults}
+                      </div>
+                    ) : (
+                      filteredCompanies.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => selectCompany(c)}
+                          className="block w-full truncate px-3 py-2 text-left text-sm hover:bg-muted"
+                        >
+                          {c.name}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Inline new customer mini-form */}
+            {newOpen && (
+              <div className="mt-3 space-y-2 rounded-md border border-dashed border-border bg-muted/20 p-3">
+                <div>
+                  <Label className="text-xs">
+                    {t.company.name}{" "}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{t.company.kennitala}</Label>
+                  <Input
+                    value={newKennitala}
+                    onChange={(e) => setNewKennitala(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{t.company.email}</Label>
+                  <Input
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setNewOpen(false);
+                      setNewName("");
+                      setNewKennitala("");
+                      setNewEmail("");
+                    }}
+                  >
+                    {t.actions.cancel}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={createNewCompany}
+                    disabled={creatingCompany || !newName.trim()}
+                    className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    {creatingCompany ? t.status.saving : t.actions.create}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
@@ -172,14 +377,19 @@ export function CreateDealDrawer({ open, onOpenChange, currentUserId, profiles }
 
           <div>
             <Label>{t.nav.contactSingle}</Label>
-            <Select value={contactId} onValueChange={setContactId} disabled={!companyId}>
+            <Select
+              value={contactId}
+              onValueChange={setContactId}
+              disabled={!companyId}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="—" />
               </SelectTrigger>
               <SelectContent>
                 {contacts.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    {[c.first_name, c.last_name].filter(Boolean).join(" ") || c.id}
+                    {[c.first_name, c.last_name].filter(Boolean).join(" ") ||
+                      c.id}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -237,12 +447,17 @@ export function CreateDealDrawer({ open, onOpenChange, currentUserId, profiles }
           </div>
 
           <div>
-            <Label>{t.deal.notes}</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
+            <Label>{t.deal.firstNoteLabel}</Label>
+            <Textarea
+              value={firstNote}
+              onChange={(e) => setFirstNote(e.target.value)}
+              rows={3}
+              placeholder={t.deal.firstNotePlaceholder}
+            />
           </div>
         </div>
 
-        <SheetFooter className="mt-6">
+        <SheetFooter className={cn("mt-6")}>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t.actions.cancel}
           </Button>
@@ -251,7 +466,7 @@ export function CreateDealDrawer({ open, onOpenChange, currentUserId, profiles }
             disabled={saving || !companyId || !name.trim()}
             className="bg-ide-navy text-white hover:bg-ide-navy-hover"
           >
-            {t.actions.save}
+            {saving ? t.status.saving : t.actions.save}
           </Button>
         </SheetFooter>
       </SheetContent>
