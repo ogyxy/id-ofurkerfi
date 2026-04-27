@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as DealsRouteImport } from './routes/deals'
 import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DealsIdRouteImport } from './routes/deals_.$id'
@@ -18,6 +19,11 @@ import { Route as CompaniesIdRouteImport } from './routes/companies_.$id'
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DealsRoute = DealsRouteImport.update({
+  id: '/deals',
+  path: '/deals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompaniesRoute = CompaniesRouteImport.update({
@@ -44,6 +50,7 @@ const CompaniesIdRoute = CompaniesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/companies': typeof CompaniesRoute
+  '/deals': typeof DealsRoute
   '/login': typeof LoginRoute
   '/companies/$id': typeof CompaniesIdRoute
   '/deals/$id': typeof DealsIdRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/companies': typeof CompaniesRoute
+  '/deals': typeof DealsRoute
   '/login': typeof LoginRoute
   '/companies/$id': typeof CompaniesIdRoute
   '/deals/$id': typeof DealsIdRoute
@@ -59,19 +67,27 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/companies': typeof CompaniesRoute
+  '/deals': typeof DealsRoute
   '/login': typeof LoginRoute
   '/companies_/$id': typeof CompaniesIdRoute
   '/deals_/$id': typeof DealsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/companies' | '/login' | '/companies/$id' | '/deals/$id'
+  fullPaths:
+    | '/'
+    | '/companies'
+    | '/deals'
+    | '/login'
+    | '/companies/$id'
+    | '/deals/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/companies' | '/login' | '/companies/$id' | '/deals/$id'
+  to: '/' | '/companies' | '/deals' | '/login' | '/companies/$id' | '/deals/$id'
   id:
     | '__root__'
     | '/'
     | '/companies'
+    | '/deals'
     | '/login'
     | '/companies_/$id'
     | '/deals_/$id'
@@ -80,6 +96,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CompaniesRoute: typeof CompaniesRoute
+  DealsRoute: typeof DealsRoute
   LoginRoute: typeof LoginRoute
   CompaniesIdRoute: typeof CompaniesIdRoute
   DealsIdRoute: typeof DealsIdRoute
@@ -92,6 +109,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deals': {
+      id: '/deals'
+      path: '/deals'
+      fullPath: '/deals'
+      preLoaderRoute: typeof DealsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/companies': {
@@ -128,6 +152,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CompaniesRoute: CompaniesRoute,
+  DealsRoute: DealsRoute,
   LoginRoute: LoginRoute,
   CompaniesIdRoute: CompaniesIdRoute,
   DealsIdRoute: DealsIdRoute,
