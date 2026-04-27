@@ -94,6 +94,7 @@ interface Props {
   ratesError: boolean;
   onSaveDefaultMarkup: (n: number) => Promise<void>;
   onSaved: () => Promise<void>;
+  readOnly?: boolean;
 }
 
 export function DealLinesEditor({
@@ -106,6 +107,7 @@ export function DealLinesEditor({
   ratesError,
   onSaveDefaultMarkup,
   onSaved,
+  readOnly = false,
 }: Props) {
   // Track ids of lines that have been persisted at least once
   const persistedIds = useRef<Set<string>>(new Set());
