@@ -45,6 +45,29 @@ export function DefectBar({ deal, onChanged }: Props) {
   const [busy, setBusy] = useState(false);
   const [reorderOpen, setReorderOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [description, setDescription] = useState(deal.defect_description ?? "");
+  const lastSavedRef = useRef(deal.defect_description ?? "");
+
+  useEffect(() => {
+    setDescription(deal.defect_description ?? "");
+    lastSavedRef.current = deal.defect_description ?? "";
+  }, [deal.defect_description]);
+
+  const saveDescription = async () => {
+    const value = description;
+    if (value === lastSavedRef.current) return;
+    const { error } = await supabase
+      .from("deals")
+      .update({ defect_description: value })
+      .eq("id", deal.id);
+    if (error) {
+      toast.error(t.status.somethingWentWrong);
+      return;
+    }
+    lastSavedRef.current = value;
+    toast.success(t.status.savedSuccessfully);
+    await onChanged();
+  };
 
   const handleResolutionChange = async (next: DefectResolution) => {
     const previous = resolution;
