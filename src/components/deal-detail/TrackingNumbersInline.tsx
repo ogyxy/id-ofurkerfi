@@ -11,13 +11,7 @@ interface Props {
 }
 
 function getTrackingUrl(trackingNumber: string): string {
-  if (trackingNumber.startsWith("1Z")) {
-    return `https://www.ups.com/track?tracknum=${trackingNumber}`;
-  } else if (/^\d{10,12}$/.test(trackingNumber)) {
-    return `https://gls-group.com/track/${trackingNumber}`;
-  } else {
-    return `https://www.dhl.com/en/express/tracking.html?AWB=${trackingNumber}`;
-  }
+  return `https://parcelsapp.com/en/tracking/${encodeURIComponent(trackingNumber)}`;
 }
 
 export function TrackingNumbersInline({ dealId, initial }: Props) {
