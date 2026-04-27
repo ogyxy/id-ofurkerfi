@@ -149,10 +149,6 @@ export function StageStepper({ stage, onChange }: Props) {
               <button
                 type="button"
                 disabled={!isNext && !isPrev}
-                onClick={() => {
-                  if (isNext) setConfirmIdx(idx);
-                  else if (isPrev) setConfirmBackIdx(idx);
-                }}
                 className={cn(
                   "relative flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-semibold transition-all",
                   isCompleted &&
