@@ -142,13 +142,17 @@ export function StageStepper({ stage, onChange }: Props) {
             const isCompleted = idx < currentIdx;
             const isCurrent = idx === currentIdx;
             const isNext = idx === currentIdx + 1;
+            const isPrev = idx === currentIdx - 1;
             const isFuture = idx > currentIdx;
 
             const circle = (
               <button
                 type="button"
-                disabled={!isNext}
-                onClick={() => isNext && setConfirmIdx(idx)}
+                disabled={!isNext && !isPrev}
+                onClick={() => {
+                  if (isNext) setConfirmIdx(idx);
+                  else if (isPrev) setConfirmBackIdx(idx);
+                }}
                 className={cn(
                   "relative flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-semibold transition-all",
                   isCompleted &&
@@ -157,7 +161,7 @@ export function StageStepper({ stage, onChange }: Props) {
                     "border-ide-navy bg-ide-navy text-white shadow-md ring-4 ring-ide-navy/20",
                   isFuture &&
                     "border-border bg-background text-muted-foreground",
-                  isNext &&
+                  (isNext || isPrev) &&
                     "cursor-pointer hover:border-ide-navy hover:text-ide-navy",
                 )}
               >
@@ -207,6 +211,43 @@ export function StageStepper({ stage, onChange }: Props) {
                               onClick={() => {
                                 onChange(s);
                                 setConfirmIdx(null);
+                              }}
+                            >
+                              {t.actions.confirm}
+                            </Button>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  ) : isPrev ? (
+                    <Popover
+                      open={confirmBackIdx === idx}
+                      onOpenChange={(o) => !o && setConfirmBackIdx(null)}
+                    >
+                      <PopoverTrigger asChild>{circle}</PopoverTrigger>
+                      <PopoverContent className="w-64">
+                        <div className="space-y-3">
+                          <p className="text-sm">
+                            Færa til baka í{" "}
+                            <span className="font-semibold">
+                              {t.dealStage[s]}
+                            </span>
+                            ?
+                          </p>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setConfirmBackIdx(null)}
+                            >
+                              {t.actions.cancel}
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+                              onClick={() => {
+                                onChange(s);
+                                setConfirmBackIdx(null);
                               }}
                             >
                               {t.actions.confirm}
