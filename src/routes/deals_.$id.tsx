@@ -388,10 +388,6 @@ function DealDetailContent() {
         onChanged={load}
       />
 
-      <TrackingNumbersField
-        dealId={deal.id}
-        initial={deal.tracking_numbers ?? []}
-      />
 
       <DealLog
         dealId={deal.id}
