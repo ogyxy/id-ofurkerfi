@@ -211,6 +211,10 @@ function DealDetailContent() {
 
   const updateStage = async (next: Deal["stage"]) => {
     if (!deal) return;
+    if (next === "defect_reorder") {
+      setDefectModalOpen(true);
+      return;
+    }
     const patch: Partial<Deal> =
       next === "delivered"
         ? { stage: next, delivered_at: new Date().toISOString().split("T")[0] }
@@ -223,6 +227,35 @@ function DealDetailContent() {
       toast.error(t.status.somethingWentWrong);
       return;
     }
+    toast.success(t.status.savedSuccessfully);
+    await load();
+  };
+
+  const confirmDefectTransition = async (description: string) => {
+    if (!deal) return;
+    setDefectBusy(true);
+    const { error } = await supabase
+      .from("deals")
+      .update({
+        stage: "defect_reorder",
+        defect_description: description,
+        defect_resolution: "pending",
+      })
+      .eq("id", deal.id);
+    if (error) {
+      setDefectBusy(false);
+      toast.error(t.status.somethingWentWrong);
+      return;
+    }
+    await supabase.from("activities").insert({
+      deal_id: deal.id,
+      company_id: deal.company_id,
+      type: "defect_note",
+      subject: "Galli skráður",
+      body: description,
+    });
+    setDefectBusy(false);
+    setDefectModalOpen(false);
     toast.success(t.status.savedSuccessfully);
     await load();
   };
@@ -265,8 +298,12 @@ function DealDetailContent() {
         {t.actions.back}
       </Link>
 
+      {parentDeal && <ParentDealBanner parentDeal={parentDeal} />}
+
       {deal.stage === "delivered" ? (
         <DeliveredBar deal={deal} onChanged={load} />
+      ) : deal.stage === "defect_reorder" ? (
+        <DefectBar deal={deal} onChanged={load} />
       ) : (
         <StageStepper stage={deal.stage} onChange={updateStage} />
       )}
