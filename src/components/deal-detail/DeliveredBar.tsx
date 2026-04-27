@@ -158,7 +158,7 @@ export function DeliveredBar({ deal, onChanged }: Props) {
                   className="inline-flex items-center gap-1.5 text-sm text-green-900 hover:underline"
                 >
                   <CalendarIcon className="h-3.5 w-3.5" />
-                  Afhent: {formatDate(savedDate) || "—"}
+                  Afhent: {savedDate ? format(parseISO(savedDate), "dd.MM.yyyy") : "—"}
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
