@@ -3,6 +3,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { t, formatDate } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { TrackingNumbersInline } from "./TrackingNumbersInline";
 
 type Deal = Database["public"]["Tables"]["deals"]["Row"];
 type Company = Pick<
