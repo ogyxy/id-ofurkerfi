@@ -147,7 +147,7 @@ export function DealsList({ currentUserId }: Props) {
         }
       }
 
-      query = query.order("estimated_delivery_date", {
+      query = query.order("promised_delivery_date", {
         ascending: true,
         nullsFirst: false,
       });
