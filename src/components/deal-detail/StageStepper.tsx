@@ -5,6 +5,16 @@ import { t } from "@/lib/sala_translations_is";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -33,6 +43,7 @@ interface Props {
 
 export function StageStepper({ stage, onChange }: Props) {
   const [confirmIdx, setConfirmIdx] = useState<number | null>(null);
+  const [confirmBackStage, setConfirmBackStage] = useState<DealStage | null>(null);
 
   if (stage === "cancelled" || stage === "defect_reorder") {
     const tone =
@@ -70,7 +81,7 @@ export function StageStepper({ stage, onChange }: Props) {
             size="sm"
             disabled={currentIdx <= 0}
             onClick={() =>
-              currentIdx > 0 && onChange(HAPPY_PATH[currentIdx - 1])
+              currentIdx > 0 && setConfirmBackStage(HAPPY_PATH[currentIdx - 1])
             }
           >
             ←
@@ -104,29 +115,19 @@ export function StageStepper({ stage, onChange }: Props) {
             const isNext = idx === currentIdx + 1;
             const isPrev = idx === currentIdx - 1;
             const isFuture = idx > currentIdx;
-
-            const circle = (
-              <button
-                type="button"
-                disabled={!isNext && !isPrev}
-                className={cn(
-                  "relative flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-semibold transition-all",
-                  isCompleted &&
-                    "border-ide-navy bg-ide-navy text-white",
-                  isCurrent &&
-                    "border-ide-navy bg-ide-navy text-white shadow-md ring-4 ring-ide-navy/20",
-                  isFuture &&
-                    "border-border bg-background text-muted-foreground",
-                  (isNext || isPrev) &&
-                    "cursor-pointer hover:border-ide-navy hover:text-ide-navy",
-                )}
-              >
-                {isCompleted ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <span>{idx + 1}</span>
-                )}
-              </button>
+            const circleClassName = cn(
+              "relative flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-semibold transition-all",
+              isCompleted && "border-ide-navy bg-ide-navy text-white",
+              isCurrent &&
+                "border-ide-navy bg-ide-navy text-white shadow-md ring-4 ring-ide-navy/20",
+              isFuture && "border-border bg-background text-muted-foreground",
+              (isNext || isPrev) &&
+                "cursor-pointer hover:border-ide-navy hover:text-ide-navy",
+            );
+            const circleContent = isCompleted ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <span>{idx + 1}</span>
             );
 
             return (
@@ -145,7 +146,11 @@ export function StageStepper({ stage, onChange }: Props) {
                         setConfirmIdx(o ? idx : null)
                       }
                     >
-                      <PopoverTrigger asChild>{circle}</PopoverTrigger>
+                      <PopoverTrigger asChild>
+                        <button type="button" className={circleClassName}>
+                          {circleContent}
+                        </button>
+                      </PopoverTrigger>
                       <PopoverContent className="w-64">
                         <div className="space-y-3">
                           <p className="text-sm">
@@ -180,13 +185,19 @@ export function StageStepper({ stage, onChange }: Props) {
                   ) : isPrev ? (
                     <button
                       type="button"
-                      onClick={() => onChange(s)}
-                      className="contents"
+                      onClick={() => setConfirmBackStage(s)}
+                      className={circleClassName}
                     >
-                      {circle}
+                      {circleContent}
                     </button>
                   ) : (
-                    circle
+                    <button
+                      type="button"
+                      disabled
+                      className={circleClassName}
+                    >
+                      {circleContent}
+                    </button>
                   )}
                   <span
                     className={cn(
@@ -233,6 +244,39 @@ export function StageStepper({ stage, onChange }: Props) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <AlertDialog
+          open={Boolean(confirmBackStage)}
+          onOpenChange={(open) => !open && setConfirmBackStage(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Færa til baka?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {confirmBackStage ? (
+                  <>
+                    Færa í <span className="font-semibold">{t.dealStage[confirmBackStage]}</span>?
+                  </>
+                ) : null}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setConfirmBackStage(null)}>
+                {t.actions.cancel}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (!confirmBackStage) return;
+                  onChange(confirmBackStage);
+                  setConfirmBackStage(null);
+                }}
+                className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+              >
+                {t.actions.confirm}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
