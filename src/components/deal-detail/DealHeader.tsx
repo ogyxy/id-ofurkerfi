@@ -86,6 +86,10 @@ export function DealHeader({
               {contact.phone && <> · {contact.phone}</>}
             </div>
           )}
+          <TrackingNumbersInline
+            dealId={deal.id}
+            initial={deal.tracking_numbers ?? []}
+          />
           {ownerName && (
             <div className="text-xs text-muted-foreground">
               {t.deal.owner_id}: {ownerName}
