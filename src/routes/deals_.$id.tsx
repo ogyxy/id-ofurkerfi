@@ -21,11 +21,12 @@ import {
 import { DealSummary } from "@/components/deal-detail/DealSummary";
 import { PurchaseOrdersSection } from "@/components/deal-detail/PurchaseOrdersSection";
 import { TrackingNumbersField } from "@/components/deal-detail/TrackingNumbersField";
-import { DealActivitiesTab } from "@/components/deal-detail/DealActivitiesTab";
+import { DealLog, type LogEntry } from "@/components/deal-detail/DealLog";
 import { EditDealDrawer } from "@/components/deal-detail/EditDealDrawer";
 import { toast } from "sonner";
 
 type Deal = Database["public"]["Tables"]["deals"]["Row"];
+type DealStage = Database["public"]["Enums"]["deal_stage"];
 type Company = Pick<
   Database["public"]["Tables"]["companies"]["Row"],
   "id" | "name" | "vsk_status" | "payment_terms_days"
@@ -36,10 +37,6 @@ type Contact = Pick<
 >;
 type PurchaseOrder = Database["public"]["Tables"]["purchase_orders"]["Row"];
 type POLine = Database["public"]["Tables"]["po_lines"]["Row"];
-type Activity = Pick<
-  Database["public"]["Tables"]["activities"]["Row"],
-  "id" | "type" | "subject" | "body" | "created_at" | "due_date" | "completed"
->;
 type Profile = { id: string; name: string | null; email: string };
 
 export const Route = createFileRoute("/deals_/$id")({
@@ -76,11 +73,13 @@ function DealDetailContent() {
   const [contact, setContact] = useState<Contact | null>(null);
   const [companyContacts, setCompanyContacts] = useState<Contact[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [currentProfile, setCurrentProfile] =
+    useState<{ id: string; name: string | null } | null>(null);
   const [lines, setLines] = useState<EditableLine[]>([]);
   const [pos, setPos] = useState<
     Array<PurchaseOrder & { po_lines: POLine[] }>
   >([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
   const [defaultMarkupPct, setDefaultMarkupPct] = useState(30);
   const [shippingCost, setShippingCost] = useState(0);
   const [rates, setRates] = useState<Record<string, number>>({});
@@ -94,8 +93,24 @@ function DealDetailContent() {
     name: string;
   } | null>(null);
 
+  // Load current user's profile once
+  useEffect(() => {
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (data) setCurrentProfile({ id: data.id, name: data.name });
+    })();
+  }, []);
+
   const load = useCallback(async () => {
-    const [dealRes, linesRes, posRes, actsRes] = await Promise.all([
+    const [dealRes, linesRes, posRes, logRes] = await Promise.all([
       supabase
         .from("deals")
         .select(
@@ -115,8 +130,11 @@ function DealDetailContent() {
         .order("created_at"),
       supabase
         .from("activities")
-        .select("id, type, subject, body, created_at, due_date, completed")
+        .select(
+          "id, type, body, created_at, profile:profiles!activities_created_by_fkey(id, name)",
+        )
         .eq("deal_id", id)
+        .in("type", ["note", "stage_change", "defect_note"])
         .order("created_at", { ascending: false }),
     ]);
 
@@ -139,7 +157,7 @@ function DealDetailContent() {
     setPos(
       (posRes.data ?? []) as Array<PurchaseOrder & { po_lines: POLine[] }>,
     );
-    setActivities((actsRes.data ?? []) as Activity[]);
+    setLogEntries((logRes.data ?? []) as unknown as LogEntry[]);
 
     // Parent deal lookup
     if (d.parent_deal_id) {
@@ -175,8 +193,7 @@ function DealDetailContent() {
     load();
   }, [load]);
 
-  // Fetch live exchange rates. Frankfurter does not support ISK as a base,
-  // so we fetch with EUR base and derive X→ISK as ISK_per_EUR / X_per_EUR.
+  // Live exchange rates
   useEffect(() => {
     let cancelled = false;
     fetch(
@@ -209,6 +226,21 @@ function DealDetailContent() {
   const ownerProfile = profiles.find((p) => p.id === deal?.owner_id);
   const ownerName = ownerProfile?.name || ownerProfile?.email || null;
 
+  // Insert a stage_change activity. Used by stepper, defect bar, delivered bar.
+  const logStageChange = useCallback(
+    async (newStage: DealStage) => {
+      if (!deal) return;
+      await supabase.from("activities").insert({
+        deal_id: deal.id,
+        company_id: deal.company_id,
+        type: "stage_change",
+        body: newStage,
+        created_by: currentProfile?.id ?? null,
+      });
+    },
+    [deal, currentProfile],
+  );
+
   const updateStage = async (next: Deal["stage"]) => {
     if (!deal) return;
     if (next === "defect_reorder") {
@@ -227,6 +259,7 @@ function DealDetailContent() {
       toast.error(t.status.somethingWentWrong);
       return;
     }
+    await logStageChange(next);
     toast.success(t.status.savedSuccessfully);
     await load();
   };
@@ -251,9 +284,10 @@ function DealDetailContent() {
       deal_id: deal.id,
       company_id: deal.company_id,
       type: "defect_note",
-      subject: "Galli skráður",
       body: description,
+      created_by: currentProfile?.id ?? null,
     });
+    await logStageChange("defect_reorder");
     setDefectBusy(false);
     setDefectModalOpen(false);
     toast.success(t.status.savedSuccessfully);
@@ -301,9 +335,19 @@ function DealDetailContent() {
       {parentDeal && <ParentDealBanner parentDeal={parentDeal} />}
 
       {deal.stage === "delivered" ? (
-        <DeliveredBar deal={deal} onChanged={load} />
+        <DeliveredBar
+          deal={deal}
+          onChanged={load}
+          onStageChanged={logStageChange}
+          currentProfileId={currentProfile?.id ?? null}
+        />
       ) : deal.stage === "defect_reorder" ? (
-        <DefectBar deal={deal} onChanged={load} />
+        <DefectBar
+          deal={deal}
+          onChanged={load}
+          onStageChanged={logStageChange}
+          currentProfileId={currentProfile?.id ?? null}
+        />
       ) : (
         <StageStepper stage={deal.stage} onChange={updateStage} />
       )}
@@ -349,10 +393,11 @@ function DealDetailContent() {
         initial={deal.tracking_numbers ?? []}
       />
 
-      <DealActivitiesTab
+      <DealLog
         dealId={deal.id}
         companyId={company.id}
-        activities={activities}
+        entries={logEntries}
+        currentProfile={currentProfile}
         onChanged={load}
       />
 
