@@ -423,7 +423,12 @@ export function DealsList({ currentUserId }: Props) {
                 </div>
                 <div className="space-y-2">
                   {rows.map((d) => (
-                    <DealCard key={d.id} deal={d} onOpen={() => navigate({ to: "/deals/$id", params: { id: d.id } })} />
+                    <DealCard
+                      key={d.id}
+                      deal={d}
+                      onOpen={() => openDeal(d.id)}
+                      onStageChange={(stage) => handleStageChange(d, stage)}
+                    />
                   ))}
                 </div>
               </section>
@@ -433,7 +438,12 @@ export function DealsList({ currentUserId }: Props) {
       ) : (
         <div className="space-y-2">
           {visibleDeals.map((d) => (
-            <DealCard key={d.id} deal={d} onOpen={() => navigate({ to: "/deals/$id", params: { id: d.id } })} />
+            <DealCard
+              key={d.id}
+              deal={d}
+              onOpen={() => openDeal(d.id)}
+              onStageChange={(stage) => handleStageChange(d, stage)}
+            />
           ))}
         </div>
       )}
