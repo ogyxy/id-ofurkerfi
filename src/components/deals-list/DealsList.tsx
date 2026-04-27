@@ -242,6 +242,39 @@ export function DealsList({ currentUserId }: Props) {
     setSelectedOwners(new Set());
   };
 
+  const openDeal = (id: string) => {
+    rememberDealReturnPath("/deals");
+    navigate({ to: "/deals/$id", params: { id } });
+  };
+
+  const handleStageChange = async (deal: DealRow, newStage: DealStage) => {
+    const patch: Record<string, unknown> = { stage: newStage };
+    if (newStage === "delivered") {
+      patch.delivered_at = new Date().toISOString().split("T")[0];
+    }
+    const { error } = await supabase.from("deals").update(patch).eq("id", deal.id);
+    if (error) {
+      toast.error(t.status.somethingWentWrong);
+      return;
+    }
+    // Optimistic local update
+    setDeals((prev) =>
+      prev.map((d) =>
+        d.id === deal.id
+          ? {
+              ...d,
+              stage: newStage,
+              delivered_at:
+                newStage === "delivered"
+                  ? (patch.delivered_at as string)
+                  : d.delivered_at,
+            }
+          : d,
+      ),
+    );
+    toast.success(t.status.savedSuccessfully);
+  };
+
   const isSearching = debouncedSearch.trim().length > 0;
   const showGrouping = !isSearching && selectedStages.has("all");
 
