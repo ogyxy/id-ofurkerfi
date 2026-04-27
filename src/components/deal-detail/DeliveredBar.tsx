@@ -196,7 +196,7 @@ export function DeliveredBar({ deal, onChanged }: Props) {
       <AlertDialog open={confirmDefect} onOpenChange={setConfirmDefect}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Færa í Galli/endurpöntun?</AlertDialogTitle>
+            <AlertDialogTitle>Færa í Galli / Vesen?</AlertDialogTitle>
             <AlertDialogDescription>
               {t.status.areYouSure}
             </AlertDialogDescription>

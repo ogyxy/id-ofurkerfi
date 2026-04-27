@@ -282,7 +282,7 @@ export function StageStepper({ stage, onChange }: Props) {
               onClick={() => onChange("defect_reorder")}
               className="text-orange-600"
             >
-              Galli / endurpöntun
+              Galli / Vesen
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
