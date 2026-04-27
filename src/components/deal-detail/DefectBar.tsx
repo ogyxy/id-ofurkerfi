@@ -49,9 +49,6 @@ export function DefectBar({ deal, onChanged }: Props) {
   const [busy, setBusy] = useState(false);
   const [reorderOpen, setReorderOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
-  const [reactivateOpen, setReactivateOpen] = useState(false);
-  const [reactivateStage, setReactivateStage] =
-    useState<DealStage>("quote_in_progress");
 
   const handleResolutionChange = async (next: DefectResolution) => {
     const previous = resolution;
