@@ -267,7 +267,7 @@ function DealDetailContent() {
         ratesError={ratesError}
         onSaveDefaultMarkup={saveDefaultMarkup}
         onSaved={load}
-        readOnly={deal.stage === "delivered"}
+        readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
       />
 
       <DealSummary
@@ -276,7 +276,7 @@ function DealDetailContent() {
         shippingCost={shippingCost}
         setShippingCost={setShippingCost}
         vskStatus={company.vsk_status}
-        readOnly={deal.stage === "delivered"}
+        readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
       />
 
       <PurchaseOrdersSection
