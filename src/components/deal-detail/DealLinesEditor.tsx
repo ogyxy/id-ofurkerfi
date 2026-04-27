@@ -195,6 +195,7 @@ export function DealLinesEditor({
 
   // Debounced auto-save whenever lines change
   useEffect(() => {
+    if (readOnly) return;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
       const snapshot = lines;
@@ -207,7 +208,7 @@ export function DealLinesEditor({
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lines]);
+  }, [lines, readOnly]);
 
   const updateLine = (idx: number, patch: Partial<EditableLine>) => {
     const next = [...lines];
