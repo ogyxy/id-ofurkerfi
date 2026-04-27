@@ -168,24 +168,14 @@ export function DefectBar({ deal, onChanged }: Props) {
 
   return (
     <div className="rounded-md border border-orange-300 bg-orange-50 p-4 shadow-sm">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="flex flex-1 items-start gap-3">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start">
+        <div className="flex items-start gap-3 md:w-64 md:flex-shrink-0">
           <AlertTriangle className="mt-0.5 h-9 w-9 flex-shrink-0 text-orange-700" />
           <div className="flex-1 space-y-3">
             <div className="text-lg font-bold text-orange-900">
               {t.dealStage.defect_reorder}
             </div>
-
-            <div>
-              <div className="text-xs font-medium uppercase text-orange-800">
-                {t.deal.defect_description}
-              </div>
-              <p className="whitespace-pre-wrap text-sm text-orange-950">
-                {deal.defect_description?.trim() || "—"}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-1">
               <Label className="text-xs font-medium uppercase text-orange-800">
                 {t.deal.defect_resolution}
               </Label>
@@ -210,7 +200,21 @@ export function DefectBar({ deal, onChanged }: Props) {
           </div>
         </div>
 
-        <div className="flex flex-col flex-wrap gap-2 sm:flex-row md:flex-col md:items-end">
+        <div className="flex flex-1 flex-col items-center px-0 md:px-4">
+          <Label className="mb-1 text-xs font-medium uppercase text-orange-800">
+            {t.deal.defect_description}
+          </Label>
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            onBlur={saveDescription}
+            rows={4}
+            className="w-full max-w-xl bg-white text-sm text-orange-950"
+            placeholder={t.deal.defectModal.placeholder}
+          />
+        </div>
+
+
           <Popover open={reorderOpen} onOpenChange={setReorderOpen}>
             <PopoverTrigger asChild>
               <Button
