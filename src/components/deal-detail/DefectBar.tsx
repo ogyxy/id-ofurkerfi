@@ -109,15 +109,23 @@ export function DefectBar({ deal, onChanged }: Props) {
     void persistResolution(next);
   };
 
-  const markResolved = async () => {
+  const markResolved = async (delivered: boolean) => {
     setBusy(true);
+    const update: {
+      defect_resolution: DefectResolution;
+      stage: Database["public"]["Enums"]["deal_stage"];
+      delivered_at?: string;
+    } = {
+      defect_resolution: "resolved",
+      stage: delivered ? "delivered" : "order_confirmed",
+    };
+    if (delivered) {
+      update.delivered_at =
+        deal.delivered_at ?? new Date().toISOString().slice(0, 10);
+    }
     const { error } = await supabase
       .from("deals")
-      .update({
-        defect_resolution: "resolved",
-        stage: "delivered",
-        delivered_at: deal.delivered_at ?? new Date().toISOString().slice(0, 10),
-      })
+      .update(update)
       .eq("id", deal.id);
     setBusy(false);
     setResolvedOpen(false);
