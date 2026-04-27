@@ -137,11 +137,23 @@ export const t = {
   // Enum: activity_type
   // ---------------------------------------------------------------------------
   activityType: {
-    note:    'Glósa',
-    call:    'Símtal',
-    email:   'Tölvupóstur',
-    meeting: 'Fundur',
-    task:    'Verkefni',
+    note:        'Glósa',
+    call:        'Símtal',
+    email:       'Tölvupóstur',
+    meeting:     'Fundur',
+    task:        'Verkefni',
+    defect_note: 'Gallafærsla',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Enum: defect_resolution
+  // ---------------------------------------------------------------------------
+  defectResolution: {
+    pending:     'Í bið',
+    reorder:     'Endurpöntun',
+    refund:      'Endurgreiðsla',
+    credit_note: 'Kreditnóta',
+    resolved:    'Leyst',
   },
 
   // ---------------------------------------------------------------------------
@@ -306,8 +318,18 @@ export const t = {
     default_markup_pct:      'Sjálfgefið álag (%)',
     shipping_cost_isk:       'Sendingarkostnaður (ISK)',
     total_cost_isk:          'Heildarkostnaður',
-    total_price_isk:         'Heildarverð',
-    total_margin_isk:        'Heildarmunur',
+    total_price_isk:          'Heildarverð',
+    total_margin_isk:         'Heildarmunur',
+    defect_description:       'Lýsing á vanda',
+    defect_resolution:        'Staða máls',
+    parent_deal:              'Tengd upphafleg sala',
+    defectModal: {
+      title:       'Lýstu vandanum',
+      placeholder: 'Lýstu vandanum sem kom upp...',
+      required:    'Nauðsynlegt að fylla út lýsingu',
+      confirm:     'Staðfesta og færa í Galli / Vesen',
+      cancel:      'Hætta við',
+    },
   },
 
   // ---------------------------------------------------------------------------

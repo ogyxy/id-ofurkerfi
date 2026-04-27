@@ -341,6 +341,8 @@ export type Database = {
           contact_id: string | null
           created_at: string
           default_markup_pct: number
+          defect_description: string | null
+          defect_resolution: Database["public"]["Enums"]["defect_resolution"]
           delivered_at: string | null
           estimated_delivery_date: string | null
           id: string
@@ -351,6 +353,7 @@ export type Database = {
           notes: string | null
           owner_id: string | null
           paid_at: string | null
+          parent_deal_id: string | null
           payday_invoice_number: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           promised_delivery_date: string | null
@@ -373,6 +376,8 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           default_markup_pct?: number
+          defect_description?: string | null
+          defect_resolution?: Database["public"]["Enums"]["defect_resolution"]
           delivered_at?: string | null
           estimated_delivery_date?: string | null
           id?: string
@@ -383,6 +388,7 @@ export type Database = {
           notes?: string | null
           owner_id?: string | null
           paid_at?: string | null
+          parent_deal_id?: string | null
           payday_invoice_number?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           promised_delivery_date?: string | null
@@ -405,6 +411,8 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           default_markup_pct?: number
+          defect_description?: string | null
+          defect_resolution?: Database["public"]["Enums"]["defect_resolution"]
           delivered_at?: string | null
           estimated_delivery_date?: string | null
           id?: string
@@ -415,6 +423,7 @@ export type Database = {
           notes?: string | null
           owner_id?: string | null
           paid_at?: string | null
+          parent_deal_id?: string | null
           payday_invoice_number?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           promised_delivery_date?: string | null
@@ -447,6 +456,13 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_parent_deal_id_fkey"
+            columns: ["parent_deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
             referencedColumns: ["id"]
           },
         ]
@@ -952,7 +968,13 @@ export type Database = {
       next_so_number: { Args: never; Returns: string }
     }
     Enums: {
-      activity_type: "note" | "call" | "email" | "meeting" | "task"
+      activity_type:
+        | "note"
+        | "call"
+        | "email"
+        | "meeting"
+        | "task"
+        | "defect_note"
       deal_stage:
         | "inquiry"
         | "quote_in_progress"
@@ -972,6 +994,12 @@ export type Database = {
         | "sublimation"
         | "uv_print"
         | "other"
+      defect_resolution:
+        | "pending"
+        | "reorder"
+        | "refund"
+        | "credit_note"
+        | "resolved"
       invoice_status: "not_invoiced" | "partial" | "full"
       payment_status: "unpaid" | "partial" | "paid"
       po_status:
@@ -1113,7 +1141,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      activity_type: ["note", "call", "email", "meeting", "task"],
+      activity_type: [
+        "note",
+        "call",
+        "email",
+        "meeting",
+        "task",
+        "defect_note",
+      ],
       deal_stage: [
         "inquiry",
         "quote_in_progress",
@@ -1134,6 +1169,13 @@ export const Constants = {
         "sublimation",
         "uv_print",
         "other",
+      ],
+      defect_resolution: [
+        "pending",
+        "reorder",
+        "refund",
+        "credit_note",
+        "resolved",
       ],
       invoice_status: ["not_invoiced", "partial", "full"],
       payment_status: ["unpaid", "partial", "paid"],

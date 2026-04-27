@@ -9,6 +9,9 @@ import { t } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
 import { StageStepper } from "@/components/deal-detail/StageStepper";
 import { DeliveredBar } from "@/components/deal-detail/DeliveredBar";
+import { DefectBar } from "@/components/deal-detail/DefectBar";
+import { DefectDescriptionModal } from "@/components/deal-detail/DefectDescriptionModal";
+import { ParentDealBanner } from "@/components/deal-detail/ParentDealBanner";
 import { DealHeader } from "@/components/deal-detail/DealHeader";
 import {
   DealLinesEditor,
@@ -83,6 +86,13 @@ function DealDetailContent() {
   const [rates, setRates] = useState<Record<string, number>>({});
   const [ratesError, setRatesError] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [defectModalOpen, setDefectModalOpen] = useState(false);
+  const [defectBusy, setDefectBusy] = useState(false);
+  const [parentDeal, setParentDeal] = useState<{
+    id: string;
+    so_number: string;
+    name: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     const [dealRes, linesRes, posRes, actsRes] = await Promise.all([
@@ -130,6 +140,18 @@ function DealDetailContent() {
       (posRes.data ?? []) as Array<PurchaseOrder & { po_lines: POLine[] }>,
     );
     setActivities((actsRes.data ?? []) as Activity[]);
+
+    // Parent deal lookup
+    if (d.parent_deal_id) {
+      const { data: parent } = await supabase
+        .from("deals")
+        .select("id, so_number, name")
+        .eq("id", d.parent_deal_id)
+        .maybeSingle();
+      setParentDeal(parent ?? null);
+    } else {
+      setParentDeal(null);
+    }
 
     // Load company contacts + profiles for edit drawer
     const [cRes, pRes] = await Promise.all([
@@ -189,6 +211,10 @@ function DealDetailContent() {
 
   const updateStage = async (next: Deal["stage"]) => {
     if (!deal) return;
+    if (next === "defect_reorder") {
+      setDefectModalOpen(true);
+      return;
+    }
     const patch: Partial<Deal> =
       next === "delivered"
         ? { stage: next, delivered_at: new Date().toISOString().split("T")[0] }
@@ -201,6 +227,35 @@ function DealDetailContent() {
       toast.error(t.status.somethingWentWrong);
       return;
     }
+    toast.success(t.status.savedSuccessfully);
+    await load();
+  };
+
+  const confirmDefectTransition = async (description: string) => {
+    if (!deal) return;
+    setDefectBusy(true);
+    const { error } = await supabase
+      .from("deals")
+      .update({
+        stage: "defect_reorder",
+        defect_description: description,
+        defect_resolution: "pending",
+      })
+      .eq("id", deal.id);
+    if (error) {
+      setDefectBusy(false);
+      toast.error(t.status.somethingWentWrong);
+      return;
+    }
+    await supabase.from("activities").insert({
+      deal_id: deal.id,
+      company_id: deal.company_id,
+      type: "defect_note",
+      subject: "Galli skráður",
+      body: description,
+    });
+    setDefectBusy(false);
+    setDefectModalOpen(false);
     toast.success(t.status.savedSuccessfully);
     await load();
   };
@@ -243,8 +298,12 @@ function DealDetailContent() {
         {t.actions.back}
       </Link>
 
+      {parentDeal && <ParentDealBanner parentDeal={parentDeal} />}
+
       {deal.stage === "delivered" ? (
         <DeliveredBar deal={deal} onChanged={load} />
+      ) : deal.stage === "defect_reorder" ? (
+        <DefectBar deal={deal} onChanged={load} />
       ) : (
         <StageStepper stage={deal.stage} onChange={updateStage} />
       )}
@@ -304,6 +363,13 @@ function DealDetailContent() {
         contacts={companyContacts}
         profiles={profiles}
         onSaved={load}
+      />
+
+      <DefectDescriptionModal
+        open={defectModalOpen}
+        onOpenChange={setDefectModalOpen}
+        onConfirm={confirmDefectTransition}
+        busy={defectBusy}
       />
     </div>
   );
