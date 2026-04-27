@@ -243,7 +243,11 @@ function DealDetailContent() {
         {t.actions.back}
       </Link>
 
-      <StageStepper stage={deal.stage} onChange={updateStage} />
+      {deal.stage === "delivered" ? (
+        <DeliveredBar deal={deal} onChanged={load} />
+      ) : (
+        <StageStepper stage={deal.stage} onChange={updateStage} />
+      )}
 
       <DealHeader
         deal={deal}
