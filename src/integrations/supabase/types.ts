@@ -341,6 +341,7 @@ export type Database = {
           contact_id: string | null
           created_at: string
           default_markup_pct: number
+          delivered_at: string | null
           estimated_delivery_date: string | null
           id: string
           invoice_date: string | null
@@ -372,6 +373,7 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           default_markup_pct?: number
+          delivered_at?: string | null
           estimated_delivery_date?: string | null
           id?: string
           invoice_date?: string | null
@@ -403,6 +405,7 @@ export type Database = {
           contact_id?: string | null
           created_at?: string
           default_markup_pct?: number
+          delivered_at?: string | null
           estimated_delivery_date?: string | null
           id?: string
           invoice_date?: string | null

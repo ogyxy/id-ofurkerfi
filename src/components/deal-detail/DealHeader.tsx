@@ -35,9 +35,9 @@ const paymentColors: Record<
   Database["public"]["Enums"]["payment_status"],
   string
 > = {
-  unpaid: "bg-red-100 text-red-700",
-  partial: "bg-amber-100 text-amber-800",
-  paid: "bg-green-100 text-green-700",
+  unpaid: "bg-amber-100 text-amber-800",
+  partial: "bg-blue-100 text-blue-800",
+  paid: "bg-green-100 text-green-800",
 };
 
 function isOverdue(date: string | null, stage: Deal["stage"]) {

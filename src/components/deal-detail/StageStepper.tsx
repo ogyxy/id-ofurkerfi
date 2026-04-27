@@ -36,6 +36,9 @@ const HAPPY_PATH: DealStage[] = [
   "delivered",
 ];
 
+const NAVY = "#1a2540";
+const FUTURE_BORDER = "#d1d5db";
+
 interface Props {
   stage: DealStage;
   onChange: (next: DealStage) => void;
@@ -90,7 +93,7 @@ export function StageStepper({ stage, onChange }: Props) {
             <div className="text-xs text-muted-foreground">
               {currentIdx + 1} / {HAPPY_PATH.length}
             </div>
-            <div className="font-semibold text-ide-navy">
+            <div className="font-semibold" style={{ color: NAVY }}>
               {t.dealStage[stage]}
             </div>
           </div>
@@ -115,20 +118,53 @@ export function StageStepper({ stage, onChange }: Props) {
             const isNext = idx === currentIdx + 1;
             const isPrev = idx === currentIdx - 1;
             const isFuture = idx > currentIdx;
-            const circleClassName = cn(
-              "relative flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-semibold transition-all",
-              isCompleted && "border-ide-navy bg-ide-navy text-white",
-              isCurrent &&
-                "border-ide-navy bg-ide-navy text-white shadow-md ring-4 ring-ide-navy/20",
-              isFuture && "border-border bg-background text-muted-foreground",
-              (isNext || isPrev) &&
-                "cursor-pointer hover:border-ide-navy hover:text-ide-navy",
-            );
+
+            // Sizes: current larger (36px) vs others (28px)
+            const sizeClass = isCurrent ? "h-9 w-9 text-sm" : "h-7 w-7 text-xs";
+
+            const baseCircle =
+              "relative flex items-center justify-center rounded-full font-semibold transition-all";
+
+            let circleStyle: React.CSSProperties = {};
+            let circleExtra = "";
+            if (isCompleted) {
+              circleStyle = { backgroundColor: NAVY, color: "white" };
+            } else if (isCurrent) {
+              circleStyle = {
+                backgroundColor: NAVY,
+                color: "white",
+                boxShadow: `0 0 0 2px white, 0 0 0 4px ${NAVY}`,
+              };
+            } else if (isFuture) {
+              circleStyle = {
+                backgroundColor: "white",
+                color: "#9ca3af",
+                border: `1px solid ${FUTURE_BORDER}`,
+              };
+            }
+            if (isNext || isPrev) {
+              circleExtra = "cursor-pointer hover:opacity-80";
+            }
+
+            const circleClassName = cn(baseCircle, sizeClass, circleExtra);
+
             const circleContent = isCompleted ? (
               <Check className="h-4 w-4" />
             ) : (
               <span>{idx + 1}</span>
             );
+
+            // Label styles
+            let labelClass = "max-w-[8rem] text-center text-xs leading-tight";
+            let labelStyle: React.CSSProperties = {};
+            if (isCompleted) {
+              labelClass = cn(labelClass, "text-muted-foreground");
+            } else if (isCurrent) {
+              labelClass = cn(labelClass, "font-bold");
+              labelStyle = { color: NAVY };
+            } else {
+              labelClass = cn(labelClass, "text-muted-foreground");
+            }
 
             return (
               <li
@@ -147,7 +183,11 @@ export function StageStepper({ stage, onChange }: Props) {
                       }
                     >
                       <PopoverTrigger asChild>
-                        <button type="button" className={circleClassName}>
+                        <button
+                          type="button"
+                          className={circleClassName}
+                          style={circleStyle}
+                        >
                           {circleContent}
                         </button>
                       </PopoverTrigger>
@@ -187,6 +227,7 @@ export function StageStepper({ stage, onChange }: Props) {
                       type="button"
                       onClick={() => setConfirmBackStage(s)}
                       className={circleClassName}
+                      style={circleStyle}
                     >
                       {circleContent}
                     </button>
@@ -195,27 +236,28 @@ export function StageStepper({ stage, onChange }: Props) {
                       type="button"
                       disabled
                       className={circleClassName}
+                      style={circleStyle}
                     >
                       {circleContent}
                     </button>
                   )}
-                  <span
-                    className={cn(
-                      "max-w-[8rem] text-center text-xs leading-tight",
-                      (isCompleted || isCurrent) &&
-                        "font-semibold text-ide-navy",
-                      isFuture && "text-muted-foreground",
-                    )}
-                  >
+                  <span className={labelClass} style={labelStyle}>
                     {t.dealStage[s]}
                   </span>
                 </div>
                 {idx < HAPPY_PATH.length - 1 && (
                   <div
                     className={cn(
-                      "mx-2 -mt-6 h-0.5 flex-1 transition-colors",
-                      idx < currentIdx ? "bg-ide-navy" : "bg-border",
+                      "mx-2 -mt-6 h-0.5 flex-1",
+                      idx < currentIdx
+                        ? ""
+                        : "border-t-2 border-dashed bg-transparent",
                     )}
+                    style={
+                      idx < currentIdx
+                        ? { backgroundColor: NAVY }
+                        : { borderColor: FUTURE_BORDER }
+                    }
                   />
                 )}
               </li>
