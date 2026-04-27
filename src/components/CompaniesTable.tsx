@@ -281,7 +281,7 @@ export function CompaniesTable() {
               <TableFooter className="sticky bottom-0 z-10 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/80">
                 <TableRow className="hover:bg-muted/95">
                   <TableCell className="font-semibold">
-                    {t.status.total ?? "Samtals"} ({sorted.length})
+                    {"Samtals"} ({sorted.length})
                   </TableCell>
                   <TableCell className="text-right font-semibold tabular-nums">
                     {totals.dealsInProgress}
@@ -337,7 +337,7 @@ export function CompaniesTable() {
               ))}
             </ul>
             <div className="sticky bottom-0 mt-2 rounded-md border border-border bg-muted/95 px-4 py-3 text-sm font-semibold backdrop-blur">
-              {t.status.total ?? "Samtals"}: {sorted.length}
+              {"Samtals"}: {sorted.length}
             </div>
           </>
         )}
