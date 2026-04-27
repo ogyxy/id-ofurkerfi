@@ -129,7 +129,7 @@ export function DefectBar({ deal, onChanged }: Props) {
       .update(update)
       .eq("id", deal.id);
     setBusy(false);
-    setResolvedOpen(false);
+    setDeliveredAskOpen(false);
     if (error) {
       toast.error(t.status.somethingWentWrong);
       return;
