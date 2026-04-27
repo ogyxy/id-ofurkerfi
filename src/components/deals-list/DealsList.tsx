@@ -248,10 +248,11 @@ export function DealsList({ currentUserId }: Props) {
   };
 
   const handleStageChange = async (deal: DealRow, newStage: DealStage) => {
-    const patch: Record<string, unknown> = { stage: newStage };
-    if (newStage === "delivered") {
-      patch.delivered_at = new Date().toISOString().split("T")[0];
-    }
+    const today = new Date().toISOString().split("T")[0];
+    const patch =
+      newStage === "delivered"
+        ? { stage: newStage, delivered_at: today }
+        : { stage: newStage };
     const { error } = await supabase.from("deals").update(patch).eq("id", deal.id);
     if (error) {
       toast.error(t.status.somethingWentWrong);
@@ -264,10 +265,7 @@ export function DealsList({ currentUserId }: Props) {
           ? {
               ...d,
               stage: newStage,
-              delivered_at:
-                newStage === "delivered"
-                  ? (patch.delivered_at as string)
-                  : d.delivered_at,
+              delivered_at: newStage === "delivered" ? today : d.delivered_at,
             }
           : d,
       ),
