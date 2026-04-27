@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t, formatIsk, formatDate } from "@/lib/sala_translations_is";
@@ -104,6 +104,19 @@ export function DealsTab({ companyId, deals, contacts, onChanged, onOpenDeal }: 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopySo = async (e: React.MouseEvent, id: string, soNumber: string) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(soNumber);
+      setCopiedId(id);
+      toast.success(`${soNumber} afritað`);
+      setTimeout(() => setCopiedId((cur) => (cur === id ? null : cur)), 1500);
+    } catch {
+      toast.error(t.status.somethingWentWrong);
+    }
+  };
 
   const openCreate = () => {
     setForm(emptyForm);
@@ -185,7 +198,24 @@ export function DealsTab({ companyId, deals, contacts, onChanged, onOpenDeal }: 
                   onClick={() => onOpenDeal(d.id)}
                   className="cursor-pointer"
                 >
-                  <TableCell className="font-mono text-xs">{d.so_number}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    <div className="inline-flex items-center gap-1.5">
+                      <span>{d.so_number}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => handleCopySo(e, d.id, d.so_number)}
+                        className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        aria-label={`Afrita ${d.so_number}`}
+                        title="Afrita sölunúmer"
+                      >
+                        {copiedId === d.id ? (
+                          <Check className="h-3.5 w-3.5" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </TableCell>
                   <TableCell className="font-medium">{d.name}</TableCell>
                   <TableCell>
                     <span
