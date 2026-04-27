@@ -18,6 +18,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -28,7 +38,6 @@ const RESOLUTIONS: DefectResolution[] = [
   "pending",
   "reorder",
   "refund",
-  "credit_note",
   "resolved",
 ];
 
@@ -45,6 +54,7 @@ export function DefectBar({ deal, onChanged }: Props) {
   const [busy, setBusy] = useState(false);
   const [reorderOpen, setReorderOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [resolvedOpen, setResolvedOpen] = useState(false);
   const [description, setDescription] = useState(deal.defect_description ?? "");
   const lastSavedRef = useRef(deal.defect_description ?? "");
 
@@ -69,7 +79,7 @@ export function DefectBar({ deal, onChanged }: Props) {
     await onChanged();
   };
 
-  const handleResolutionChange = async (next: DefectResolution) => {
+  const persistResolution = async (next: DefectResolution) => {
     const previous = resolution;
     setResolution(next);
     const { error } = await supabase
@@ -78,6 +88,40 @@ export function DefectBar({ deal, onChanged }: Props) {
       .eq("id", deal.id);
     if (error) {
       setResolution(previous);
+      toast.error(t.status.somethingWentWrong);
+      return false;
+    }
+    toast.success(t.status.savedSuccessfully);
+    await onChanged();
+    return true;
+  };
+
+  const handleResolutionChange = (next: DefectResolution) => {
+    if (next === resolution) return;
+    if (next === "reorder") {
+      setReorderOpen(true);
+      return;
+    }
+    if (next === "resolved") {
+      setResolvedOpen(true);
+      return;
+    }
+    void persistResolution(next);
+  };
+
+  const markResolved = async () => {
+    setBusy(true);
+    const { error } = await supabase
+      .from("deals")
+      .update({
+        defect_resolution: "resolved",
+        stage: "delivered",
+        delivered_at: deal.delivered_at ?? new Date().toISOString().slice(0, 10),
+      })
+      .eq("id", deal.id);
+    setBusy(false);
+    setResolvedOpen(false);
+    if (error) {
       toast.error(t.status.somethingWentWrong);
       return;
     }
@@ -214,41 +258,65 @@ export function DefectBar({ deal, onChanged }: Props) {
           />
         </div>
         <div className="flex flex-col flex-wrap gap-2 sm:flex-row md:flex-col md:items-end md:justify-center md:self-stretch md:flex-shrink-0">
-          <Popover open={reorderOpen} onOpenChange={setReorderOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-                disabled={busy}
-              >
-                Stofna gallapöntun
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-72">
-              <div className="space-y-3">
-                <p className="text-sm">
+          <Button
+            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+            disabled={busy}
+            onClick={() => setReorderOpen(true)}
+          >
+            Stofna gallapöntun
+          </Button>
+
+          <AlertDialog open={reorderOpen} onOpenChange={setReorderOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Stofna gallapöntun</AlertDialogTitle>
+                <AlertDialogDescription>
                   Stofna nýja gallapöntun tengda þessari sölu?
-                </p>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setReorderOpen(false)}
-                    disabled={busy}
-                  >
-                    {t.actions.cancel}
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={createReorder}
-                    disabled={busy}
-                    className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-                  >
-                    {t.actions.confirm}
-                  </Button>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={busy}>
+                  {t.actions.cancel}
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault();
+                    void createReorder();
+                  }}
+                  disabled={busy}
+                  className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+                >
+                  {t.actions.confirm}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog open={resolvedOpen} onOpenChange={setResolvedOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t.defectResolution.resolved}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Var málið leyst án gallapöntunar og/eða endurgreiðslu?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={busy}>
+                  {t.actions.cancel}
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault();
+                    void markResolved();
+                  }}
+                  disabled={busy}
+                  className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+                >
+                  {t.actions.confirm}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <Popover open={cancelOpen} onOpenChange={setCancelOpen}>
             <PopoverTrigger asChild>
