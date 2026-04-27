@@ -484,11 +484,11 @@ export const formatNumber = (n: number | null | undefined, decimals = 2): string
 export const formatDate = (d: Date | string | null | undefined): string => {
   if (!d) return '';
   const date = typeof d === 'string' ? new Date(d) : d;
-  return new Intl.DateTimeFormat('is-IS', {
-    day:   '2-digit',
-    month: '2-digit',
-    year:  'numeric',
-  }).format(date);
+  if (isNaN(date.getTime())) return '';
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const yyyy = date.getFullYear();
+  return `${dd}.${mm}.${yyyy}`;
 };
 
 export const formatDateLong = (d: Date | string | null | undefined): string => {
