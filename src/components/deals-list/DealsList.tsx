@@ -378,9 +378,9 @@ export function DealsList({ currentUserId }: Props) {
             if (rows.length === 0) return null;
             return (
               <section key={s}>
-                <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+                <div className="mb-2 flex items-center gap-2 text-gray-400" style={{ fontSize: "11px" }}>
                   <span className="h-px flex-1 bg-border" />
-                  <span>
+                  <span className="uppercase tracking-wider">
                     {t.dealStage[s]} ({rows.length})
                   </span>
                   <span className="h-px flex-1 bg-border" />
