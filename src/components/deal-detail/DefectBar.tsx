@@ -44,9 +44,11 @@ const RESOLUTIONS: DefectResolution[] = [
 interface Props {
   deal: Deal;
   onChanged: () => void | Promise<void>;
+  onStageChanged?: (next: Database["public"]["Enums"]["deal_stage"]) => Promise<void> | void;
+  currentProfileId?: string | null;
 }
 
-export function DefectBar({ deal, onChanged }: Props) {
+export function DefectBar({ deal, onChanged, onStageChanged, currentProfileId }: Props) {
   const navigate = useNavigate();
   const [resolution, setResolution] = useState<DefectResolution>(
     deal.defect_resolution ?? "pending",
@@ -112,13 +114,16 @@ export function DefectBar({ deal, onChanged }: Props) {
 
   const markResolved = async (delivered: boolean) => {
     setBusy(true);
+    const nextStage: Database["public"]["Enums"]["deal_stage"] = delivered
+      ? "delivered"
+      : "order_confirmed";
     const update: {
       defect_resolution: DefectResolution;
       stage: Database["public"]["Enums"]["deal_stage"];
       delivered_at?: string;
     } = {
       defect_resolution: "resolved",
-      stage: delivered ? "delivered" : "order_confirmed",
+      stage: nextStage,
     };
     if (delivered) {
       update.delivered_at =
@@ -134,6 +139,7 @@ export function DefectBar({ deal, onChanged }: Props) {
       toast.error(t.status.somethingWentWrong);
       return;
     }
+    await onStageChanged?.(nextStage);
     toast.success(t.status.savedSuccessfully);
     await onChanged();
   };
@@ -196,6 +202,15 @@ export function DefectBar({ deal, onChanged }: Props) {
       .update({ defect_resolution: "reorder" })
       .eq("id", deal.id);
 
+    // Note on the original defect deal pointing to the new gallapöntun
+    await supabase.from("activities").insert({
+      deal_id: deal.id,
+      company_id: deal.company_id,
+      type: "note",
+      body: `Gallapöntun stofnuð: ${newDeal.so_number || "ný sala"}`,
+      created_by: currentProfileId ?? null,
+    });
+
     setBusy(false);
     setReorderOpen(false);
     toast.success(t.status.savedSuccessfully);
@@ -214,6 +229,7 @@ export function DefectBar({ deal, onChanged }: Props) {
       toast.error(t.status.somethingWentWrong);
       return;
     }
+    await onStageChanged?.("cancelled");
     toast.success(t.status.savedSuccessfully);
     await onChanged();
   };

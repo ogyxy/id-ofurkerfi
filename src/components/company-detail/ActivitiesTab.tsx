@@ -38,6 +38,7 @@ const typeIcons: Record<ActivityType, string> = {
   meeting: "👥",
   task: "✅",
   defect_note: "⚠️",
+  stage_change: "🔄",
 };
 
 type FormState = {

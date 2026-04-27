@@ -30,13 +30,15 @@ type Deal = Database["public"]["Tables"]["deals"]["Row"];
 interface Props {
   deal: Deal;
   onChanged: () => void | Promise<void>;
+  onStageChanged?: (next: Database["public"]["Enums"]["deal_stage"]) => Promise<void> | void;
+  currentProfileId?: string | null;
 }
 
 function todayIso() {
   return new Date().toISOString().split("T")[0];
 }
 
-export function DeliveredBar({ deal, onChanged }: Props) {
+export function DeliveredBar({ deal, onChanged, onStageChanged, currentProfileId }: Props) {
   const navigate = useNavigate();
   const [savedDate, setSavedDate] = useState<string>(
     deal.delivered_at ?? todayIso(),
@@ -84,6 +86,7 @@ export function DeliveredBar({ deal, onChanged }: Props) {
       toast.error(t.status.somethingWentWrong);
       return;
     }
+    await onStageChanged?.("defect_reorder");
     toast.success(t.status.savedSuccessfully);
     await onChanged();
   };

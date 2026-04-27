@@ -975,6 +975,7 @@ export type Database = {
         | "meeting"
         | "task"
         | "defect_note"
+        | "stage_change"
       deal_stage:
         | "inquiry"
         | "quote_in_progress"
@@ -1148,6 +1149,7 @@ export const Constants = {
         "meeting",
         "task",
         "defect_note",
+        "stage_change",
       ],
       deal_stage: [
         "inquiry",
