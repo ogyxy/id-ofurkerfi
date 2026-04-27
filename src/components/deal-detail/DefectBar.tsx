@@ -281,62 +281,6 @@ export function DefectBar({ deal, onChanged }: Props) {
             </PopoverContent>
           </Popover>
 
-          <Popover open={reactivateOpen} onOpenChange={setReactivateOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" disabled={busy}>
-                Endurvirkja
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-72">
-              <div className="space-y-3">
-                <p className="text-sm font-medium">
-                  Hvaða stig á að færa söluna í?
-                </p>
-                <RadioGroup
-                  value={reactivateStage}
-                  onValueChange={(v) => setReactivateStage(v as DealStage)}
-                  className="gap-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem
-                      value="quote_in_progress"
-                      id="reactivate-quote"
-                    />
-                    <Label htmlFor="reactivate-quote" className="font-normal">
-                      {t.dealStage.quote_in_progress}
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem
-                      value="order_confirmed"
-                      id="reactivate-order"
-                    />
-                    <Label htmlFor="reactivate-order" className="font-normal">
-                      {t.dealStage.order_confirmed}
-                    </Label>
-                  </div>
-                </RadioGroup>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setReactivateOpen(false)}
-                    disabled={busy}
-                  >
-                    {t.actions.cancel}
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={reactivateDeal}
-                    disabled={busy}
-                    className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-                  >
-                    {t.actions.confirm}
-                  </Button>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
         </div>
       </div>
     </div>
