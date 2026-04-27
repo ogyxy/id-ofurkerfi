@@ -197,7 +197,10 @@ function CompanyDetailContent() {
             deals={deals}
             contacts={contacts}
             onChanged={loadAll}
-            onOpenDeal={(dealId) => navigate({ to: "/deals/$id", params: { id: dealId } })}
+            onOpenDeal={(dealId) => {
+              rememberDealReturnPath();
+              navigate({ to: "/deals/$id", params: { id: dealId } });
+            }}
           />
         )}
         {activeTab === "designs" && (
