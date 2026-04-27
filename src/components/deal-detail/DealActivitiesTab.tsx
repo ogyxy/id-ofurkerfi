@@ -36,6 +36,7 @@ const ICONS: Record<ActivityType, string> = {
   email: "📧",
   meeting: "👥",
   task: "✅",
+  defect_note: "⚠️",
 };
 
 export function DealActivitiesTab({
@@ -160,12 +161,16 @@ export function DealActivitiesTab({
         </div>
       ) : (
         <ol className="space-y-3 border-l-2 border-border pl-4">
-          {activities.map((a) => (
+          {activities.map((a) => {
+            const isDefect = a.type === "defect_note";
+            return (
             <li
               key={a.id}
-              className={`rounded-md border border-border bg-card p-4 ${
-                a.completed ? "opacity-60" : ""
-              }`}
+              className={`rounded-md border bg-card p-4 ${
+                isDefect
+                  ? "border-l-4 border-l-orange-500 border-orange-200"
+                  : "border-border"
+              } ${a.completed ? "opacity-60" : ""}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
