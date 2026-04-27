@@ -18,15 +18,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
 type Deal = Database["public"]["Tables"]["deals"]["Row"];
 type DefectResolution = Database["public"]["Enums"]["defect_resolution"];
-type DealStage = Database["public"]["Enums"]["deal_stage"];
 
 const RESOLUTIONS: DefectResolution[] = [
   "pending",
@@ -49,9 +44,6 @@ export function DefectBar({ deal, onChanged }: Props) {
   const [busy, setBusy] = useState(false);
   const [reorderOpen, setReorderOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
-  const [reactivateOpen, setReactivateOpen] = useState(false);
-  const [reactivateStage, setReactivateStage] =
-    useState<DealStage>("quote_in_progress");
 
   const handleResolutionChange = async (next: DefectResolution) => {
     const previous = resolution;
@@ -149,21 +141,6 @@ export function DefectBar({ deal, onChanged }: Props) {
     await onChanged();
   };
 
-  const reactivateDeal = async () => {
-    setBusy(true);
-    const { error } = await supabase
-      .from("deals")
-      .update({ stage: reactivateStage, defect_resolution: "pending" })
-      .eq("id", deal.id);
-    setBusy(false);
-    setReactivateOpen(false);
-    if (error) {
-      toast.error(t.status.somethingWentWrong);
-      return;
-    }
-    toast.success(t.status.savedSuccessfully);
-    await onChanged();
-  };
 
   return (
     <div className="rounded-md border border-orange-300 bg-orange-50 p-4 shadow-sm">
@@ -281,62 +258,6 @@ export function DefectBar({ deal, onChanged }: Props) {
             </PopoverContent>
           </Popover>
 
-          <Popover open={reactivateOpen} onOpenChange={setReactivateOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" disabled={busy}>
-                Endurvirkja
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-72">
-              <div className="space-y-3">
-                <p className="text-sm font-medium">
-                  Hvaða stig á að færa söluna í?
-                </p>
-                <RadioGroup
-                  value={reactivateStage}
-                  onValueChange={(v) => setReactivateStage(v as DealStage)}
-                  className="gap-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem
-                      value="quote_in_progress"
-                      id="reactivate-quote"
-                    />
-                    <Label htmlFor="reactivate-quote" className="font-normal">
-                      {t.dealStage.quote_in_progress}
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem
-                      value="order_confirmed"
-                      id="reactivate-order"
-                    />
-                    <Label htmlFor="reactivate-order" className="font-normal">
-                      {t.dealStage.order_confirmed}
-                    </Label>
-                  </div>
-                </RadioGroup>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setReactivateOpen(false)}
-                    disabled={busy}
-                  >
-                    {t.actions.cancel}
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={reactivateDeal}
-                    disabled={busy}
-                    className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-                  >
-                    {t.actions.confirm}
-                  </Button>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
         </div>
       </div>
     </div>
