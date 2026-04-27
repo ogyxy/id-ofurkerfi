@@ -364,6 +364,13 @@ function DealDetailContent() {
         profiles={profiles}
         onSaved={load}
       />
+
+      <DefectDescriptionModal
+        open={defectModalOpen}
+        onOpenChange={setDefectModalOpen}
+        onConfirm={confirmDefectTransition}
+        busy={defectBusy}
+      />
     </div>
   );
 }
