@@ -37,6 +37,7 @@ const typeIcons: Record<ActivityType, string> = {
   email: "📧",
   meeting: "👥",
   task: "✅",
+  defect_note: "⚠️",
 };
 
 type FormState = {

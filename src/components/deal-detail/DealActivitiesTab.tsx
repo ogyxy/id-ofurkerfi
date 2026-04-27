@@ -202,7 +202,7 @@ export function DealActivitiesTab({
                 )}
               </div>
             </li>
-          ))}
+          );})}
         </ol>
       )}
     </div>
