@@ -460,54 +460,87 @@ function DealCard({ deal, onOpen }: { deal: DealRow; onOpen: () => void }) {
         if (e.key === "Enter") onOpen();
       }}
       className={cn(
-        "flex cursor-pointer items-center gap-4 rounded-md border border-border border-l-4 px-4 py-3 transition hover:bg-muted/50",
+        "grid cursor-pointer items-center gap-4 rounded-md border border-border border-l-4 px-4 py-3 transition hover:bg-muted/50",
+        "grid-cols-[160px_1fr] md:grid-cols-[160px_minmax(0,1.5fr)_minmax(0,1.5fr)_180px_140px_120px]",
         styles.border,
         styles.bg,
         muted && "text-gray-400",
         cancelled && "italic",
       )}
     >
-      {/* SO + Name */}
-      <div className="min-w-0 flex-1">
+      {/* SO number + badges */}
+      <div className="min-w-0">
         <div className="font-mono text-xs text-muted-foreground">{deal.so_number}</div>
+        {(showInvoiceBadge || showPaymentBadge || showDefectBadge) && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {showInvoiceBadge && (
+              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+                {t.invoiceStatus.not_invoiced}
+              </span>
+            )}
+            {showPaymentBadge && (
+              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+                {t.paymentStatus.unpaid}
+              </span>
+            )}
+            {showDefectBadge && (
+              <span className="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-800">
+                {t.defectResolution[deal.defect_resolution]}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Deal name */}
+      <div className="min-w-0">
         <div className={cn("truncate font-medium", muted ? "text-gray-400" : "text-foreground")}>
           {deal.name}
         </div>
       </div>
 
       {/* Company / Contact */}
-      <div className="hidden min-w-0 flex-1 sm:block">
-        {deal.company && (
+      <div className="hidden min-w-0 md:block">
+        {deal.company ? (
           <Link
             to="/companies/$id"
             params={{ id: deal.company.id }}
             onClick={(e) => e.stopPropagation()}
-            className="truncate text-sm text-foreground hover:underline"
+            className="block truncate text-sm text-foreground hover:underline"
           >
             {deal.company.name}
           </Link>
+        ) : (
+          <div className="text-sm text-muted-foreground">—</div>
         )}
-        {deal.contact && (
+        {deal.contact ? (
           <div className="truncate text-xs text-muted-foreground">
-            {[deal.contact.first_name, deal.contact.last_name].filter(Boolean).join(" ")}
+            {[deal.contact.first_name, deal.contact.last_name].filter(Boolean).join(" ") || "—"}
           </div>
+        ) : (
+          <div className="text-xs text-muted-foreground">—</div>
         )}
       </div>
 
-      {/* Owner */}
+      {/* Owner — always reserves space */}
       <div className="hidden items-center gap-2 md:flex">
-        {deal.owner && (
+        {deal.owner ? (
           <>
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-ide-navy text-[10px] font-medium text-white">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ide-navy text-[10px] font-medium text-white">
               {initials(deal.owner.name)}
             </div>
-            <span className="text-xs text-muted-foreground">{deal.owner.name}</span>
+            <span className="truncate text-xs text-muted-foreground">{deal.owner.name}</span>
+          </>
+        ) : (
+          <>
+            <div className="h-6 w-6 shrink-0 rounded-full border border-dashed border-gray-300 bg-gray-50" />
+            <span className="text-xs text-muted-foreground">—</span>
           </>
         )}
       </div>
 
       {/* Date */}
-      <div className="hidden w-32 text-right md:block">
+      <div className="hidden text-right md:block">
         {deal.stage === "delivered" ? (
           <>
             <div className="text-[10px] uppercase tracking-wide text-green-700/70">
@@ -534,27 +567,8 @@ function DealCard({ deal, onOpen }: { deal: DealRow; onOpen: () => void }) {
       </div>
 
       {/* Amount */}
-      <div className="hidden w-32 text-right text-sm font-medium md:block">
+      <div className="hidden text-right text-sm font-medium md:block">
         {formatIsk(deal.amount_isk)}
-      </div>
-
-      {/* Badges */}
-      <div className="hidden flex-col items-end gap-1 lg:flex">
-        {showInvoiceBadge && (
-          <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
-            {t.invoiceStatus.not_invoiced}
-          </span>
-        )}
-        {showPaymentBadge && (
-          <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
-            {t.paymentStatus.unpaid}
-          </span>
-        )}
-        {showDefectBadge && (
-          <span className="rounded bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-800">
-            {t.defectResolution[deal.defect_resolution]}
-          </span>
-        )}
       </div>
     </div>
   );
