@@ -13,8 +13,7 @@ interface SidebarProps {
     | "deals"
     | "designs"
     | "products"
-    | "purchaseOrders"
-    | "activities";
+    | "purchaseOrders";
   userEmail: string;
 }
 
@@ -29,7 +28,6 @@ const navItems: Array<{
   { key: "designs", label: t.nav.designs },
   { key: "products", label: t.nav.products },
   { key: "purchaseOrders", label: t.nav.purchaseOrders },
-  { key: "activities", label: t.nav.activities },
 ];
 
 export function Sidebar({ activeKey, userEmail }: SidebarProps) {
