@@ -19,6 +19,16 @@ type DealLineRow = Database["public"]["Tables"]["deal_lines"]["Row"];
 
 const CURRENCIES = ["EUR", "GBP", "USD", "NOK", "DKK", "SEK", "CHF"] as const;
 
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  EUR: "€",
+  GBP: "£",
+  USD: "$",
+  NOK: "kr.",
+  DKK: "kr.",
+  SEK: "kr.",
+  CHF: "Fr.",
+};
+
 export type EditableLine = {
   id: string; // local id (uuid or temp id)
   isNew: boolean;
@@ -365,7 +375,7 @@ export function DealLinesEditor({
                         className="w-24 pr-10 text-right"
                       />
                       <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
-                        {line.cost_currency}
+                        {CURRENCY_SYMBOLS[line.cost_currency] ?? line.cost_currency}
                       </span>
                     </div>
                   </td>
