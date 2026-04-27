@@ -8,6 +8,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
 import { StageStepper } from "@/components/deal-detail/StageStepper";
+import { DeliveredBar } from "@/components/deal-detail/DeliveredBar";
 import { DealHeader } from "@/components/deal-detail/DealHeader";
 import {
   DealLinesEditor,
@@ -188,9 +189,13 @@ function DealDetailContent() {
 
   const updateStage = async (next: Deal["stage"]) => {
     if (!deal) return;
+    const patch: Partial<Deal> =
+      next === "delivered"
+        ? { stage: next, delivered_at: new Date().toISOString().split("T")[0] }
+        : { stage: next };
     const { error } = await supabase
       .from("deals")
-      .update({ stage: next })
+      .update(patch)
       .eq("id", deal.id);
     if (error) {
       toast.error(t.status.somethingWentWrong);
