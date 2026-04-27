@@ -375,7 +375,7 @@ export function DealLinesEditor({
                         className="w-24 pr-10 text-right"
                       />
                       <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
-                        {line.cost_currency}
+                        {CURRENCY_SYMBOLS[line.cost_currency] ?? line.cost_currency}
                       </span>
                     </div>
                   </td>
