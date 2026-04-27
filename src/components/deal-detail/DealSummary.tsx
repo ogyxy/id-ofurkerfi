@@ -83,6 +83,7 @@ export function DealSummary({
             if (n !== shippingCost) saveShipping(n);
           }}
           className="w-32 text-right"
+          disabled={readOnly}
         />
       </div>
       <Row
