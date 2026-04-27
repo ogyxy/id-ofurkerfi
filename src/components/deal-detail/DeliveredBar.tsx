@@ -181,7 +181,7 @@ export function DeliveredBar({ deal, onChanged }: Props) {
             onClick={() => setConfirmDefect(true)}
             disabled={busy}
           >
-            Galli/vesen
+            Galli / Vesen
           </Button>
           <Button
             className="bg-ide-navy text-white hover:bg-ide-navy-hover"
