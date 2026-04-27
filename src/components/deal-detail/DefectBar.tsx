@@ -149,21 +149,6 @@ export function DefectBar({ deal, onChanged }: Props) {
     await onChanged();
   };
 
-  const reactivateDeal = async () => {
-    setBusy(true);
-    const { error } = await supabase
-      .from("deals")
-      .update({ stage: reactivateStage, defect_resolution: "pending" })
-      .eq("id", deal.id);
-    setBusy(false);
-    setReactivateOpen(false);
-    if (error) {
-      toast.error(t.status.somethingWentWrong);
-      return;
-    }
-    toast.success(t.status.savedSuccessfully);
-    await onChanged();
-  };
 
   return (
     <div className="rounded-md border border-orange-300 bg-orange-50 p-4 shadow-sm">
