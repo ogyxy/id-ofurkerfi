@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 type Deal = Database["public"]["Tables"]["deals"]["Row"];
 type DefectResolution = Database["public"]["Enums"]["defect_resolution"];
