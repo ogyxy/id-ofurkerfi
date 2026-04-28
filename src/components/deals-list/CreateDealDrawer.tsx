@@ -446,9 +446,11 @@ export function CreateDealDrawer({
                       </div>
                       <div>
                         <Label className="text-xs">{t.contact.phone}</Label>
-                        <Input
-                          value={newContactPhone}
-                          onChange={(e) => setNewContactPhone(e.target.value)}
+                        <PhoneInput
+                          countryCode={newContactPhoneCountry}
+                          localNumber={newContactPhoneLocal}
+                          onCountryCodeChange={setNewContactPhoneCountry}
+                          onLocalNumberChange={setNewContactPhoneLocal}
                         />
                       </div>
                     </div>
