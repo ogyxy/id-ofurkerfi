@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { rememberDealReturnPath } from "@/lib/dealReturn";
+import { maskKennitalaInput, stripKennitala, isValidKennitala } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -184,13 +185,19 @@ export function CreateDealDrawer({
       toast.error(t.status.somethingWentWrong);
       return;
     }
+    if (newKennitala.trim() && !isValidKennitala(newKennitala)) {
+      toast.error("Kennitala verður að vera 10 tölustafir");
+      return;
+    }
     setCreatingCompany(true);
     const { data, error } = await supabase
       .from("companies")
       .insert({
         name: newName.trim(),
-        kennitala: newKennitala.trim() || null,
+        kennitala: stripKennitala(newKennitala) || null,
         email: newEmail.trim() || null,
+        country: "Iceland",
+        preferred_currency: "ISK",
       })
       .select("id, name")
       .single();
@@ -375,7 +382,10 @@ export function CreateDealDrawer({
                   <Label className="text-xs">{t.company.kennitala}</Label>
                   <Input
                     value={newKennitala}
-                    onChange={(e) => setNewKennitala(e.target.value)}
+                    onChange={(e) => setNewKennitala(maskKennitalaInput(e.target.value))}
+                    placeholder="XXXXXX-XXXX"
+                    inputMode="numeric"
+                    maxLength={11}
                   />
                 </div>
                 <div>
