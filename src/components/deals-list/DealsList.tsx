@@ -279,7 +279,7 @@ export function DealsList({ currentUserId }: Props) {
   };
 
   const isSearching = debouncedSearch.trim().length > 0;
-  const showGrouping = !isSearching && selectedStages.has("all");
+  const showGrouping = !isSearching && activeStage === null;
 
   // Group deals by stage when default view
   const grouped = useMemo(() => {
