@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { rememberDealReturnPath } from "@/lib/dealReturn";
 import {
   FileText,
   Image as ImageIcon,
@@ -512,7 +513,10 @@ function FileCard({
           <Link
             to="/deals/$id"
             params={{ id: linkedDeal.id }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              rememberDealReturnPath();
+            }}
             className="block text-xs text-ide-navy hover:underline"
           >
             <span className="font-medium">{linkedDeal.so_number}</span>
