@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, Download, MoreHorizontal, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Download, FileText, Image as ImageIcon, File as FileIcon, MoreHorizontal, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -61,7 +61,7 @@ import {
 } from "@/components/ui/command";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
-import { pathSafe } from "@/lib/formatters";
+import { pathSafe, formatFileSize } from "@/lib/formatters";
 import { consumeDealReturnPath } from "@/lib/dealReturn";
 import {
   HAPPY_PATH_PO_STATUSES,
