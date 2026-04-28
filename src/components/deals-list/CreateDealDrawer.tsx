@@ -84,7 +84,8 @@ export function CreateDealDrawer({
   const [newContactLast, setNewContactLast] = useState("");
   const [newContactTitle, setNewContactTitle] = useState("");
   const [newContactEmail, setNewContactEmail] = useState("");
-  const [newContactPhone, setNewContactPhone] = useState("");
+  const [newContactPhoneCountry, setNewContactPhoneCountry] = useState("+354");
+  const [newContactPhoneLocal, setNewContactPhoneLocal] = useState("");
 
   const [contactId, setContactId] = useState("");
   const [name, setName] = useState("");
