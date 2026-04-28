@@ -3,6 +3,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { t, formatDate } from "@/lib/sala_translations_is";
 import { rememberCompanyReturnPath } from "@/lib/dealReturn";
 import { Button } from "@/components/ui/button";
+import { formatPhone } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { TrackingNumbersInline } from "./TrackingNumbersInline";
 
