@@ -256,7 +256,7 @@ export function CreateDealDrawer({
         name: name.trim(),
         stage,
         default_markup_pct: Number(markup) || 30,
-        estimated_delivery_date: estDate || null,
+        promised_delivery_date: promisedDate || null,
       })
       .select("id, company_id")
       .single();
