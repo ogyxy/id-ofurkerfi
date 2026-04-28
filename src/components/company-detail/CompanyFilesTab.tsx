@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatDate } from "@/lib/sala_translations_is";
 import { pathSafe, formatFileSize } from "@/lib/formatters";
+import { openStorageFile, fetchStorageBlobUrl } from "@/lib/openStorageFile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -188,22 +189,32 @@ export function CompanyFilesTab({
     setCompanyFiles(cRows);
     setDealFiles(dFiles);
 
-    // Generate signed URLs for image previews from both lists
+    // Fetch image previews as blob URLs (avoids CORS on signed URLs)
     const allImages = [...cRows, ...dFiles].filter((f) =>
       IMAGE_EXTS.includes(fileExt(f.original_filename)),
     );
     const next: Record<string, string> = {};
     await Promise.all(
       allImages.map(async (f) => {
-        const { data: signed } = await supabase.storage
-          .from("deal_files")
-          .createSignedUrl(f.storage_path, 60 * 60, { download: false });
-        if (signed?.signedUrl) next[f.id] = signed.signedUrl;
+        const url = await fetchStorageBlobUrl("deal_files", f.storage_path);
+        if (url) next[f.id] = url;
       }),
     );
-    setThumbs(next);
+    setThumbs((prev) => {
+      Object.values(prev).forEach((u) => URL.revokeObjectURL(u));
+      return next;
+    });
     onCountChanged?.();
   }, [companyId, onCountChanged]);
+
+  useEffect(() => {
+    return () => {
+      setThumbs((prev) => {
+        Object.values(prev).forEach((u) => URL.revokeObjectURL(u));
+        return {};
+      });
+    };
+  }, []);
 
   useEffect(() => {
     void load();
@@ -212,14 +223,7 @@ export function CompanyFilesTab({
   // ------- Brand file actions -------
 
   const handleDownload = async (path: string) => {
-    const { data, error } = await supabase.storage
-      .from("deal_files")
-      .createSignedUrl(path, 60 * 60, { download: false });
-    if (error || !data?.signedUrl) {
-      toast.error(t.status.somethingWentWrong);
-      return;
-    }
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    await openStorageFile("deal_files", path);
   };
 
   const handleDeleteCompanyFile = async (file: CompanyFileRow) => {
