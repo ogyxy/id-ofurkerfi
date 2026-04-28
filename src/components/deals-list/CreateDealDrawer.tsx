@@ -152,7 +152,7 @@ export function CreateDealDrawer({
     setName("");
     setStage("inquiry");
     setMarkup("30");
-    setEstDate("");
+    setPromisedDate("");
     setFirstNote("");
     setCompanySearch("");
     setCompanyDropdownOpen(false);
@@ -160,6 +160,12 @@ export function CreateDealDrawer({
     setNewName("");
     setNewKennitala("");
     setNewEmail("");
+    setAddContact(false);
+    setNewContactFirst("");
+    setNewContactLast("");
+    setNewContactTitle("");
+    setNewContactEmail("");
+    setNewContactPhone("");
   };
 
   const selectCompany = (c: Company) => {
