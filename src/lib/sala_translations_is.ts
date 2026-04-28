@@ -582,25 +582,49 @@ export const t = {
   // Deal files (Skjöl tengd sölu)
   // ---------------------------------------------------------------------------
   dealFile: {
-    title:         'Skjöl',
-    upload:        'Hlaða upp skjali',
-    noFiles:       'Engin skjöl enn',
-    fileType:      'Tegund',
-    size:          'Stærð',
-    uploadedBy:    'Hlaðið upp af',
-    uploadedAt:    'Dagsetning',
-    download:      'Sækja',
-    delete:        'Eyða',
-    confirmDelete: 'Eyða þessu skjali?',
-    confirmYes:    'Já, eyða',
-    uploading:     'Hleður upp...',
-    uploadFailed:  'Ekki tókst að hlaða upp',
-    pickFile:      'Veldu skrá',
-    dropHere:      'Dragðu skrá hingað eða smelltu',
+    title:             'Skjöl',
+    upload:            'Hlaða upp skjali',
+    noFiles:           'Engin skjöl enn',
+    fileType:          'Tegund',
+    size:              'Stærð',
+    uploadedBy:        'Hlaðið upp af',
+    uploadedAt:        'Dagsetning',
+    download:          'Sækja',
+    delete:            'Eyða',
+    confirmDelete:     'Eyða þessu skjali?',
+    confirmYes:        'Já, eyða',
+    uploading:         'Hleður upp...',
+    uploadFailed:      'Ekki tókst að hlaða upp',
+    pickFile:          'Veldu skrá',
+    dropHere:          'Dragðu skrá hingað eða smelltu',
+    filterAll:         'Allar',
+    noFilesForFilter:  'Engin skjöl af þessari tegund',
+    clearFilter:       'Hreinsa síu',
+    emptyHint:         'Skjöl bætast hér við þegar þeim er hlaðið upp í sölurnar.',
+    linkedDeal:        'Tengd sala',
   },
 
   // ---------------------------------------------------------------------------
-  // Unified file-type labels — used by both deal_files and po_files
+  // Company files (Vörumerki / brand assets)
+  // ---------------------------------------------------------------------------
+  companyFile: {
+    sectionTitle: 'Vörumerki',
+    sectionHint:  'Skjöl sem tilheyra fyrirtækinu sjálfu — merki, vörumerkjastefna, letur o.fl.',
+    upload:       'Hlaða upp brand-skjali',
+    noFiles:      'Engin brand-skjöl enn',
+    emptyHint:    'Hlaðið upp lógói, vörumerkjastefnu eða öðrum brand-skjölum hér.',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Deal files section title (on the company Skjöl tab)
+  // ---------------------------------------------------------------------------
+  dealFilesSection: {
+    sectionTitle: 'Skjöl úr sölum',
+    sectionHint:  'Skjöl sem hafa verið hlaðin upp á sölur þessa viðskiptavinar.',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Unified file-type labels — used by deal_files, po_files and company_files
   // ---------------------------------------------------------------------------
   fileType: {
     mockup:             'Mockup',
@@ -611,6 +635,10 @@ export const t = {
     invoice:            'Reikningur',
     proof:              'Print proof',
     order_confirmation: 'Pöntunarstaðfesting',
+    brand_guidelines:   'Vörumerkjastefna',
+    font:               'Letur',
+    color_scheme:       'Litaskema',
+    master_artwork:     'Aðal hönnun',
     other:              'Annað',
   },
 
