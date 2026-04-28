@@ -292,6 +292,25 @@ export const t = {
   },
 
   // ---------------------------------------------------------------------------
+  // New customer drawer
+  // ---------------------------------------------------------------------------
+  newCompany: {
+    title:               'Nýr viðskiptavinur',
+    companySection:      'Fyrirtæki',
+    contactSection:      'Tengiliður',
+    contactRecommended:  'Mælt er með að skrá tengilið. Það auðveldar samskipti og söluskráningu.',
+    skipContact:         'Sleppa þessu skrefi',
+    contactSkipped:      'Tengilið verður sleppt',
+    contactSkippedHint:  'Þú getur bætt við tengilið síðar á síðu fyrirtækisins.',
+    warnNoContact:       'Þú hefur ekki skráð tengilið. Viltu vista án tengiliðar?',
+    saveAnyway:          'Vista samt',
+    addContactAnyway:    'Bæta við tengilið samt',
+    advancedDetails:     'Ítarlegar upplýsingar',
+    nameRequired:        'Nafn er nauðsynlegt',
+    firstNameRequired:   'Fornafn er nauðsynlegt',
+  },
+
+  // ---------------------------------------------------------------------------
   // Field labels — Deals (Sölur)
   // ---------------------------------------------------------------------------
   deal: {
