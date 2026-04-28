@@ -371,30 +371,36 @@ export function DealsList({ currentUserId }: Props) {
         </div>
       )}
 
-      {/* Stage filter pills */}
+      {/* Stage filter pills — single active filter */}
       {!isSearching && (
         <div className="mb-6 flex flex-wrap items-center gap-2 overflow-x-auto">
-          <StagePill
-            label={t.deal.filterAll}
-            count={stageCounts.all}
-            active={selectedStages.has("all")}
-            onClick={() => toggleStage("all")}
-          />
-          {STAGE_ORDER.map((s) => (
+          {activeStage === null ? (
+            <>
+              {STAGE_ORDER.map((s) => (
+                <StagePill
+                  key={s}
+                  label={t.dealStage[s]}
+                  count={stageCounts[s] ?? 0}
+                  active={false}
+                  onClick={() => toggleStage(s)}
+                />
+              ))}
+              <StagePill
+                label={t.dealStage.cancelled}
+                count={stageCounts.cancelled ?? 0}
+                active={false}
+                onClick={() => toggleStage("cancelled")}
+              />
+            </>
+          ) : (
             <StagePill
-              key={s}
-              label={t.dealStage[s]}
-              count={stageCounts[s] ?? 0}
-              active={selectedStages.has(s)}
-              onClick={() => toggleStage(s)}
+              label={t.dealStage[activeStage]}
+              count={stageCounts[activeStage] ?? 0}
+              active
+              onClick={() => setActiveStage(null)}
+              showClose
             />
-          ))}
-          <StagePill
-            label={t.dealStage.cancelled}
-            count={stageCounts.cancelled ?? 0}
-            active={selectedStages.has("cancelled")}
-            onClick={() => toggleStage("cancelled")}
-          />
+          )}
         </div>
       )}
 
