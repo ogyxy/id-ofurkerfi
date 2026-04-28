@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CountrySelect } from "@/components/ui/CountrySelect";
+import { CurrencySelect } from "@/components/ui/CurrencySelect";
+import { maskKennitalaInput, stripKennitala, isValidKennitala } from "@/lib/formatters";
 import {
   Sheet,
   SheetContent,
@@ -65,7 +68,7 @@ type FormState = {
 function fromCompany(c: Company): FormState {
   return {
     name: c.name,
-    kennitala: c.kennitala ?? "",
+    kennitala: c.kennitala ? maskKennitalaInput(c.kennitala) : "",
     vsk_number: c.vsk_number ?? "",
     vsk_status: c.vsk_status,
     email: c.email ?? "",
@@ -128,18 +131,28 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
     await handleSave();
   };
 
+  const kennitalaError =
+    form.kennitala.trim().length > 0 && !isValidKennitala(form.kennitala)
+      ? "Kennitala verður að vera 10 tölustafir"
+      : null;
+
   const handleSave = async () => {
     if (!form.name.trim()) {
       toast.error(t.status.somethingWentWrong);
       return;
     }
+    if (kennitalaError) {
+      toast.error(kennitalaError);
+      return;
+    }
     setSaving(true);
     const terms = parseInt(form.payment_terms_days, 10);
+    const cleanKennitala = stripKennitala(form.kennitala);
     const { error } = await supabase
       .from("companies")
       .update({
         name: form.name.trim(),
-        kennitala: form.kennitala.trim() || null,
+        kennitala: cleanKennitala || null,
         vsk_number: form.vsk_number.trim() || null,
         vsk_status: form.vsk_status,
         email: form.email.trim() || null,
@@ -186,8 +199,14 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
             <Label>{t.company.kennitala}</Label>
             <Input
               value={form.kennitala}
-              onChange={(e) => update("kennitala", e.target.value)}
+              onChange={(e) => update("kennitala", maskKennitalaInput(e.target.value))}
+              placeholder="XXXXXX-XXXX"
+              inputMode="numeric"
+              maxLength={11}
             />
+            {kennitalaError && (
+              <p className="mt-1 text-xs text-destructive">{kennitalaError}</p>
+            )}
           </div>
           <div>
             <Label>{t.company.vsk_number}</Label>
@@ -260,16 +279,16 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
           </div>
           <div>
             <Label>{t.company.country}</Label>
-            <Input
+            <CountrySelect
               value={form.country}
-              onChange={(e) => update("country", e.target.value)}
+              onValueChange={(v) => update("country", v)}
             />
           </div>
           <div>
             <Label>{t.company.preferred_currency}</Label>
-            <Input
-              value={form.preferred_currency}
-              onChange={(e) => update("preferred_currency", e.target.value)}
+            <CurrencySelect
+              value={form.preferred_currency || "ISK"}
+              onValueChange={(v) => update("preferred_currency", v)}
             />
           </div>
           <div className="md:col-span-2">
