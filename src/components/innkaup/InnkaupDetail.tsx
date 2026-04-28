@@ -820,12 +820,16 @@ function UploadFileDialog({
   open,
   onOpenChange,
   poId,
+  poNumber,
+  supplierName,
   currentProfileId,
   onUploaded,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   poId: string;
+  poNumber: string;
+  supplierName: string;
   currentProfileId: string;
   onUploaded: () => void;
 }) {
@@ -836,19 +840,21 @@ function UploadFileDialog({
   const handleUpload = async () => {
     if (!file) return;
     setUploading(true);
-    const fileName = `${poId}/${Date.now()}-${file.name}`;
+    const supplierSafe = pathSafe(supplierName || "unknown");
+    const ts = Math.floor(Date.now() / 1000);
+    const storagePath = `${supplierSafe}/${poNumber}/${ts}-${file.name}`;
     const { error: upErr } = await supabase.storage
       .from("po_files")
-      .upload(fileName, file);
+      .upload(storagePath, file, { upsert: false });
     if (upErr) {
       toast.error(t.status.somethingWentWrong);
       setUploading(false);
       return;
     }
-    const { data: pub } = supabase.storage.from("po_files").getPublicUrl(fileName);
     await supabase.from("po_files").insert({
       po_id: poId,
-      file_url: pub.publicUrl,
+      storage_path: storagePath,
+      file_url: null,
       file_type: type,
       original_filename: file.name,
       file_size_bytes: file.size,
