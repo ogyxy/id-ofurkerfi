@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatIsk } from "@/lib/sala_translations_is";
+import { rememberCompanyReturnPath } from "@/lib/dealReturn";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
@@ -255,9 +256,10 @@ export function CompaniesTable() {
                 sorted.map((company) => (
                   <TableRow
                     key={company.id}
-                    onClick={() =>
-                      navigate({ to: "/companies/$id", params: { id: company.id } })
-                    }
+                    onClick={() => {
+                      rememberCompanyReturnPath();
+                      navigate({ to: "/companies/$id", params: { id: company.id } });
+                    }}
                     className="cursor-pointer"
                   >
                     <TableCell className="font-medium">{company.name}</TableCell>
@@ -323,9 +325,10 @@ export function CompaniesTable() {
                 <li key={company.id}>
                   <button
                     type="button"
-                    onClick={() =>
-                      navigate({ to: "/companies/$id", params: { id: company.id } })
-                    }
+                    onClick={() => {
+                      rememberCompanyReturnPath();
+                      navigate({ to: "/companies/$id", params: { id: company.id } });
+                    }}
                     className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-muted/50"
                   >
                     <span className="font-medium">{company.name}</span>

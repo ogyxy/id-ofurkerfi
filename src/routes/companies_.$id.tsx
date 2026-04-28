@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
-import { rememberDealReturnPath } from "@/lib/dealReturn";
+import { rememberDealReturnPath, consumeCompanyReturnPath } from "@/lib/dealReturn";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
@@ -154,13 +154,17 @@ function CompanyDetailContent() {
 
   return (
     <div className="space-y-6">
-      <Link
-        to="/companies"
+      <button
+        type="button"
+        onClick={() => {
+          const returnPath = consumeCompanyReturnPath();
+          navigate({ to: returnPath });
+        }}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
         {t.actions.back}
-      </Link>
+      </button>
 
       <CompanyHeader company={company} onEdit={() => setEditOpen(true)} />
 

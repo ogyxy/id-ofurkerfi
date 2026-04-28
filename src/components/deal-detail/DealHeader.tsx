@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
 import { t, formatDate } from "@/lib/sala_translations_is";
+import { rememberCompanyReturnPath } from "@/lib/dealReturn";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TrackingNumbersInline } from "./TrackingNumbersInline";
@@ -75,6 +76,7 @@ export function DealHeader({
           <Link
             to="/companies/$id"
             params={{ id: company.id }}
+            onClick={() => rememberCompanyReturnPath()}
             className="inline-block text-sm font-medium text-ide-navy hover:underline"
           >
             {company.name}
