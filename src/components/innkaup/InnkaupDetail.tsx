@@ -757,7 +757,7 @@ function FileCard({ file, onDeleted }: { file: PoFile; onDeleted: () => void }) 
     if (path) {
       const { data } = await supabase.storage
         .from("po_files")
-        .createSignedUrl(path, 60 * 60);
+        .createSignedUrl(path, 60 * 60, { download: false });
       if (data?.signedUrl) {
         window.open(data.signedUrl, "_blank", "noopener,noreferrer");
         return;

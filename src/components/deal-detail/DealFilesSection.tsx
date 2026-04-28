@@ -116,7 +116,7 @@ export function DealFilesSection({
       imagesToFetch.map(async (f) => {
         const { data: signed } = await supabase.storage
           .from("deal_files")
-          .createSignedUrl(f.storage_path, 60 * 60);
+          .createSignedUrl(f.storage_path, 60 * 60, { download: false });
         if (signed?.signedUrl) next[f.id] = signed.signedUrl;
       }),
     );
@@ -130,7 +130,7 @@ export function DealFilesSection({
   const handleDownload = async (file: DealFileRow) => {
     const { data, error } = await supabase.storage
       .from("deal_files")
-      .createSignedUrl(file.storage_path, 60 * 60);
+      .createSignedUrl(file.storage_path, 60 * 60, { download: false });
     if (error || !data?.signedUrl) {
       toast.error(t.status.somethingWentWrong);
       return;
