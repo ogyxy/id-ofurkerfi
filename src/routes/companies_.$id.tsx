@@ -63,7 +63,7 @@ function CompanyDetailPage() {
   );
 }
 
-function CompanyDetailContent() {
+function CompanyDetailContent({ currentProfileId }: { currentProfileId: string | null }) {
   const { id } = Route.useParams();
   const navigate = useNavigate();
 
@@ -72,41 +72,58 @@ function CompanyDetailContent() {
   const [company, setCompany] = useState<Company | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
-  const [designs, setDesigns] = useState<Design[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [, setActivities] = useState<Activity[]>([]);
+  const [fileCount, setFileCount] = useState(0);
   const [activeTab, setActiveTab] = useState<TabKey>("deals");
   const [editOpen, setEditOpen] = useState(false);
 
+  const refreshFileCount = useCallback(async () => {
+    const { count: cCount } = await supabase
+      .from("company_files")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", id);
+
+    const { data: dealRows } = await supabase
+      .from("deals")
+      .select("id")
+      .eq("company_id", id)
+      .eq("archived", false);
+    const dealIds = (dealRows ?? []).map((d) => d.id);
+
+    let dCount = 0;
+    if (dealIds.length > 0) {
+      const { count } = await supabase
+        .from("deal_files")
+        .select("id", { count: "exact", head: true })
+        .in("deal_id", dealIds);
+      dCount = count ?? 0;
+    }
+    setFileCount((cCount ?? 0) + dCount);
+  }, [id]);
+
   const loadAll = useCallback(async () => {
-    const [companyRes, contactsRes, dealsRes, designsRes, activitiesRes] =
-      await Promise.all([
-        supabase.from("companies").select("*").eq("id", id).maybeSingle(),
-        supabase
-          .from("contacts")
-          .select("*")
-          .eq("company_id", id)
-          .order("is_primary", { ascending: false }),
-        supabase
-          .from("deals")
-          .select(
-            "id, so_number, name, stage, amount_isk, refund_amount_isk, promised_delivery_date, delivered_at, invoice_status, payment_status, defect_resolution, created_at",
-          )
-          .eq("company_id", id)
-          .eq("archived", false)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("designs")
-          .select("id, name, thumbnail_url, tags, notes, created_at")
-          .eq("company_id", id)
-          .eq("archived", false)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("activities")
-          .select("id, type, subject, body, created_at, due_date, completed")
-          .eq("company_id", id)
-          .order("created_at", { ascending: false })
-          .limit(20),
-      ]);
+    const [companyRes, contactsRes, dealsRes, activitiesRes] = await Promise.all([
+      supabase.from("companies").select("*").eq("id", id).maybeSingle(),
+      supabase
+        .from("contacts")
+        .select("*")
+        .eq("company_id", id)
+        .order("is_primary", { ascending: false }),
+      supabase
+        .from("deals")
+        .select(
+          "id, so_number, name, stage, amount_isk, refund_amount_isk, promised_delivery_date, delivered_at, invoice_status, payment_status, defect_resolution, created_at",
+        )
+        .eq("company_id", id)
+        .eq("archived", false)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("activities")
+        .select("id, type, subject, body, created_at, due_date, completed")
+        .eq("company_id", id)
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ]);
 
     if (!companyRes.data) {
       setNotFound(true);
@@ -117,7 +134,6 @@ function CompanyDetailContent() {
     setCompany(companyRes.data);
     setContacts((contactsRes.data ?? []) as Contact[]);
     let dealRows = (dealsRes.data ?? []) as Deal[];
-    // Fetch child deals for defect_reorder rows w/ reorder resolution (for isDefectResolved)
     const defectReorderIds = dealRows
       .filter((d) => d.stage === "defect_reorder" && d.defect_resolution === "reorder")
       .map((d) => d.id);
@@ -137,10 +153,10 @@ function CompanyDetailContent() {
       }
     }
     setDeals(dealRows);
-    setDesigns((designsRes.data ?? []) as Design[]);
     setActivities((activitiesRes.data ?? []) as Activity[]);
     setLoading(false);
-  }, [id]);
+    void refreshFileCount();
+  }, [id, refreshFileCount]);
 
   useEffect(() => {
     setLoading(true);
@@ -169,7 +185,7 @@ function CompanyDetailContent() {
   const tabs: Array<{ key: TabKey; label: string; count: number }> = [
     { key: "deals", label: t.nav.deals, count: deals.length },
     { key: "contacts", label: t.nav.contacts, count: contacts.length },
-    { key: "designs", label: t.nav.designs, count: designs.length },
+    { key: "files", label: t.dealFile.title, count: fileCount },
   ];
 
   return (
@@ -228,10 +244,14 @@ function CompanyDetailContent() {
             }}
           />
         )}
-        {activeTab === "designs" && (
-          <DesignsTab companyId={company.id} designs={designs} onChanged={loadAll} />
+        {activeTab === "files" && (
+          <CompanyFilesTab
+            companyId={company.id}
+            companyName={company.name}
+            currentProfileId={currentProfileId}
+            onCountChanged={refreshFileCount}
+          />
         )}
-      
       </div>
 
       <EditCompanyDrawer
