@@ -226,7 +226,7 @@ export function CreateDealDrawer({
           last_name: newContactLast.trim() || null,
           title: newContactTitle.trim() || null,
           email: newContactEmail.trim() || null,
-          phone: newContactPhone.trim() || null,
+          phone: stripPhone(newContactPhoneCountry, newContactPhoneLocal) || null,
           is_primary: true,
         })
         .select("id, first_name, last_name, company_id")
