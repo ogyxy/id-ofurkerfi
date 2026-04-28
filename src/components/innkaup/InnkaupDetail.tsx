@@ -80,7 +80,10 @@ import {
 
 type PO = Database["public"]["Tables"]["purchase_orders"]["Row"];
 type Supplier = Database["public"]["Tables"]["suppliers"]["Row"];
-type PoFile = Database["public"]["Tables"]["po_files"]["Row"];
+type PoFile = Database["public"]["Tables"]["po_files"]["Row"] & {
+  signedUrl?: string | null;
+  signedUrlDownload?: string | null;
+};
 type Activity = {
   id: string;
   type: string;
