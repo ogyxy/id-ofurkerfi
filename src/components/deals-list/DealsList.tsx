@@ -237,12 +237,17 @@ export function DealsList({ currentUserId }: Props) {
     return profiles.filter((p) => ids.has(p.id));
   }, [deals, profiles]);
 
-  // Counts per stage — always reflect the full unarchived dataset, never affected by active filter
+  // Counts per stage — always reflect the full unarchived dataset, never affected by active filter.
+  // Resolved defect deals are counted under "delivered" and excluded from "defect_reorder".
   const stageCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     STAGE_ORDER.concat(["cancelled"]).forEach((s) => (counts[s] = 0));
     deals.forEach((d) => {
-      counts[d.stage] = (counts[d.stage] ?? 0) + 1;
+      if (d.stage === "defect_reorder" && isDefectResolved(d)) {
+        counts["delivered"] = (counts["delivered"] ?? 0) + 1;
+      } else {
+        counts[d.stage] = (counts[d.stage] ?? 0) + 1;
+      }
     });
     return counts;
   }, [deals]);
