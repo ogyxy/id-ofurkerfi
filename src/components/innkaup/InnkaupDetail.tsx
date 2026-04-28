@@ -771,14 +771,6 @@ function PoStepper({ status, onChange, onCancel, onReactivate }: StepperProps) {
   );
 }
 
-// (image/pdf detection moved into shared FileThumbnail component)
-
-function poFileExt(name: string | null | undefined): string {
-  if (!name) return "";
-  const i = name.lastIndexOf(".");
-  return i >= 0 ? name.slice(i + 1).toLowerCase() : "";
-}
-
 function guessPoFileType(name: string): PoFileType {
   const n = name.toLowerCase();
   if (n.includes("proof")) return "proof";
