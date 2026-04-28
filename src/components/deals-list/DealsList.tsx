@@ -143,15 +143,16 @@ export function DealsList({ currentUserId }: Props) {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      const searchTerm = debouncedSearch.trim();
       let query = supabase
         .from("deals")
         .select(SELECT)
         .eq("archived", false);
 
-      if (debouncedSearch.trim()) {
-        const term = `%${debouncedSearch}%`;
+      if (searchTerm) {
+        const term = `%${searchTerm}%`;
         query = query.or(
-          `name.ilike.${term},so_number.ilike.${term},tracking_numbers.cs.{${debouncedSearch}}`,
+          `name.ilike.${term},so_number.ilike.${term},tracking_numbers.cs.{${searchTerm}}`,
         );
       }
 
@@ -160,12 +161,41 @@ export function DealsList({ currentUserId }: Props) {
         nullsFirst: false,
       });
 
-      const { data, error } = await query;
+      const linesPromise = searchTerm
+        ? supabase
+            .from("deal_lines")
+            .select("deal_id")
+            .or(
+              `product_name.ilike.%${searchTerm}%,product_supplier_sku.ilike.%${searchTerm}%`,
+            )
+        : Promise.resolve({ data: null as { deal_id: string }[] | null });
+
+      const [{ data, error }, { data: matchingLines }] = await Promise.all([
+        query,
+        linesPromise,
+      ]);
       if (cancelled) return;
       if (error) {
         setDeals([]);
       } else {
         let rows = (data ?? []) as unknown as DealRow[];
+
+        if (searchTerm && matchingLines && matchingLines.length) {
+          const existingIds = new Set(rows.map((d) => d.id));
+          const additionalIds = [
+            ...new Set(matchingLines.map((l) => l.deal_id)),
+          ].filter((id) => !existingIds.has(id));
+          if (additionalIds.length) {
+            const { data: additionalDeals } = await supabase
+              .from("deals")
+              .select(SELECT)
+              .in("id", additionalIds)
+              .eq("archived", false);
+            if (additionalDeals) {
+              rows = [...rows, ...(additionalDeals as unknown as DealRow[])];
+            }
+          }
+        }
         // Fetch child deals for defect_reorder rows w/ reorder resolution
         const defectReorderIds = rows
           .filter(
