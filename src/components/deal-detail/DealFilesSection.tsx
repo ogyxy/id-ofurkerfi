@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatDate } from "@/lib/sala_translations_is";
 import { pathSafe, formatFileSize } from "@/lib/formatters";
-import { openStorageFile, fetchStorageBlobUrl } from "@/lib/openStorageFile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,6 +55,8 @@ interface DealFileRow {
   uploaded_at: string;
   uploaded_by: string | null;
   profile?: { id: string; name: string | null } | null;
+  signedUrl?: string | null;
+  signedUrlDownload?: string | null;
 }
 
 interface Props {
@@ -94,7 +95,6 @@ export function DealFilesSection({
   currentProfileId,
 }: Props) {
   const [files, setFiles] = useState<DealFileRow[]>([]);
-  const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [uploadOpen, setUploadOpen] = useState(false);
 
   const load = useCallback(async () => {
@@ -108,39 +108,30 @@ export function DealFilesSection({
       .eq("deal_id", dealId)
       .order("uploaded_at", { ascending: false });
     const rows = (data ?? []) as unknown as DealFileRow[];
-    setFiles(rows);
 
-    // Fetch image previews as blob URLs (avoids CORS on signed URLs)
-    const imagesToFetch = rows.filter((f) => IMAGE_EXTS.includes(fileExt(f.original_filename)));
-    const next: Record<string, string> = {};
-    await Promise.all(
-      imagesToFetch.map(async (f) => {
-        const url = await fetchStorageBlobUrl("deal_files", f.storage_path);
-        if (url) next[f.id] = url;
+    const withUrls = await Promise.all(
+      rows.map(async (f) => {
+        const [view, dl] = await Promise.all([
+          supabase.storage.from("deal_files").createSignedUrl(f.storage_path, 3600),
+          supabase.storage
+            .from("deal_files")
+            .createSignedUrl(f.storage_path, 3600, {
+              download: f.original_filename ?? true,
+            }),
+        ]);
+        return {
+          ...f,
+          signedUrl: view.data?.signedUrl ?? null,
+          signedUrlDownload: dl.data?.signedUrl ?? null,
+        };
       }),
     );
-    setThumbs((prev) => {
-      Object.values(prev).forEach((u) => URL.revokeObjectURL(u));
-      return next;
-    });
+    setFiles(withUrls);
   }, [dealId]);
-
-  useEffect(() => {
-    return () => {
-      setThumbs((prev) => {
-        Object.values(prev).forEach((u) => URL.revokeObjectURL(u));
-        return {};
-      });
-    };
-  }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
-
-  const handleDownload = async (file: DealFileRow) => {
-    await openStorageFile("deal_files", file.storage_path);
-  };
 
   const handleDelete = async (file: DealFileRow) => {
     await supabase.storage.from("deal_files").remove([file.storage_path]);
@@ -199,8 +190,6 @@ export function DealFilesSection({
                     <FileCard
                       key={f.id}
                       file={f}
-                      thumbUrl={thumbs[f.id]}
-                      onDownload={() => void handleDownload(f)}
                       onDelete={() => void handleDelete(f)}
                     />
                   ))}
@@ -228,13 +217,9 @@ export function DealFilesSection({
 
 function FileCard({
   file,
-  thumbUrl,
-  onDownload,
   onDelete,
 }: {
   file: DealFileRow;
-  thumbUrl?: string;
-  onDownload: () => void;
   onDelete: () => void;
 }) {
   const [confirm, setConfirm] = useState(false);
@@ -244,15 +229,16 @@ function FileCard({
 
   return (
     <div className="group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
-      <button
-        type="button"
-        onClick={onDownload}
+      <a
+        href={file.signedUrl ?? "#"}
+        target="_blank"
+        rel="noopener noreferrer"
         className="block w-full text-left"
         title={file.original_filename ?? ""}
       >
         <div className="flex h-28 items-center justify-center bg-muted/30">
-          {isImage && thumbUrl ? (
-            <img src={thumbUrl} alt="" className="h-full w-full object-cover" />
+          {isImage && file.signedUrl ? (
+            <img src={file.signedUrl} alt="" className="h-full w-full object-cover" />
           ) : isPdf ? (
             <FileText className="h-10 w-10 text-red-500" />
           ) : isImage ? (
@@ -272,22 +258,27 @@ function FileCard({
             {file.profile?.name ?? "—"} · {formatDate(file.uploaded_at)}
           </div>
         </div>
-      </button>
+      </a>
 
       <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <button
-          type="button"
-          onClick={onDownload}
+        <a
+          href={file.signedUrlDownload ?? "#"}
+          download={file.original_filename ?? ""}
+          onClick={(e) => e.stopPropagation()}
           className={cn(
             "rounded-md bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-foreground",
           )}
           aria-label={t.dealFile.download}
         >
           <Download className="h-4 w-4" />
-        </button>
+        </a>
         <button
           type="button"
-          onClick={() => setConfirm(true)}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setConfirm(true);
+          }}
           className="rounded-md bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-red-600"
           aria-label={t.dealFile.delete}
         >

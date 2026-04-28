@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatDate } from "@/lib/sala_translations_is";
 import { pathSafe, formatFileSize } from "@/lib/formatters";
-import { openStorageFile, fetchStorageBlobUrl } from "@/lib/openStorageFile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -84,6 +83,8 @@ interface CompanyFileRow {
   uploaded_at: string;
   uploaded_by: string | null;
   profile?: { id: string; name: string | null } | null;
+  signedUrl?: string | null;
+  signedUrlDownload?: string | null;
 }
 
 interface DealFileRow extends CompanyFileRow {
@@ -142,7 +143,6 @@ export function CompanyFilesTab({
   const [companyFiles, setCompanyFiles] = useState<CompanyFileRow[]>([]);
   const [dealFiles, setDealFiles] = useState<DealFileRow[]>([]);
   const [deals, setDeals] = useState<DealLite[]>([]);
-  const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [uploadOpen, setUploadOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<DealFileType | "all">("all");
 
@@ -186,45 +186,41 @@ export function CompanyFilesTab({
     }
 
     const cRows = (cFiles ?? []) as unknown as CompanyFileRow[];
-    setCompanyFiles(cRows);
-    setDealFiles(dFiles);
 
-    // Fetch image previews as blob URLs (avoids CORS on signed URLs)
-    const allImages = [...cRows, ...dFiles].filter((f) =>
-      IMAGE_EXTS.includes(fileExt(f.original_filename)),
-    );
-    const next: Record<string, string> = {};
-    await Promise.all(
-      allImages.map(async (f) => {
-        const url = await fetchStorageBlobUrl("deal_files", f.storage_path);
-        if (url) next[f.id] = url;
-      }),
-    );
-    setThumbs((prev) => {
-      Object.values(prev).forEach((u) => URL.revokeObjectURL(u));
-      return next;
-    });
+    const attachUrls = async <T extends CompanyFileRow>(rows: T[]): Promise<T[]> =>
+      Promise.all(
+        rows.map(async (f) => {
+          const [view, dl] = await Promise.all([
+            supabase.storage.from("deal_files").createSignedUrl(f.storage_path, 3600),
+            supabase.storage
+              .from("deal_files")
+              .createSignedUrl(f.storage_path, 3600, {
+                download: f.original_filename ?? true,
+              }),
+          ]);
+          return {
+            ...f,
+            signedUrl: view.data?.signedUrl ?? null,
+            signedUrlDownload: dl.data?.signedUrl ?? null,
+          };
+        }),
+      );
+
+    const [cWithUrls, dWithUrls] = await Promise.all([
+      attachUrls(cRows),
+      attachUrls(dFiles),
+    ]);
+
+    setCompanyFiles(cWithUrls);
+    setDealFiles(dWithUrls);
     onCountChanged?.();
   }, [companyId, onCountChanged]);
-
-  useEffect(() => {
-    return () => {
-      setThumbs((prev) => {
-        Object.values(prev).forEach((u) => URL.revokeObjectURL(u));
-        return {};
-      });
-    };
-  }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   // ------- Brand file actions -------
-
-  const handleDownload = async (path: string) => {
-    await openStorageFile("deal_files", path);
-  };
 
   const handleDeleteCompanyFile = async (file: CompanyFileRow) => {
     await supabase.storage.from("deal_files").remove([file.storage_path]);
@@ -329,9 +325,7 @@ export function CompanyFilesTab({
               <FileCard
                 key={f.id}
                 file={f}
-                thumbUrl={thumbs[f.id]}
                 typeLabel={fileTypeLabel(f.file_type)}
-                onDownload={() => void handleDownload(f.storage_path)}
                 onDelete={() => void handleDeleteCompanyFile(f)}
               />
             ))}
@@ -402,10 +396,8 @@ export function CompanyFilesTab({
                 <FileCard
                   key={f.id}
                   file={f}
-                  thumbUrl={thumbs[f.id]}
                   typeLabel={fileTypeLabel(f.file_type)}
                   linkedDeal={linkedDeal}
-                  onDownload={() => void handleDownload(f.storage_path)}
                   onDelete={() => void handleDeleteDealFile(f)}
                 />
               );
@@ -457,17 +449,13 @@ function FilterPill({
 
 function FileCard({
   file,
-  thumbUrl,
   typeLabel,
   linkedDeal,
-  onDownload,
   onDelete,
 }: {
   file: CompanyFileRow;
-  thumbUrl?: string;
   typeLabel: string;
   linkedDeal?: DealLite;
-  onDownload: () => void;
   onDelete: () => void;
 }) {
   const [confirm, setConfirm] = useState(false);
@@ -477,15 +465,16 @@ function FileCard({
 
   return (
     <div className="group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
-      <button
-        type="button"
-        onClick={onDownload}
+      <a
+        href={file.signedUrl ?? "#"}
+        target="_blank"
+        rel="noopener noreferrer"
         className="block w-full text-left"
         title={file.original_filename ?? ""}
       >
         <div className="flex h-28 items-center justify-center bg-muted/30">
-          {isImage && thumbUrl ? (
-            <img src={thumbUrl} alt="" className="h-full w-full object-cover" />
+          {isImage && file.signedUrl ? (
+            <img src={file.signedUrl} alt="" className="h-full w-full object-cover" />
           ) : isPdf ? (
             <FileText className="h-10 w-10 text-red-500" />
           ) : isImage ? (
@@ -510,7 +499,7 @@ function FileCard({
             {file.profile?.name ?? "—"} · {formatDate(file.uploaded_at)}
           </div>
         </div>
-      </button>
+      </a>
 
       {linkedDeal && (
         <div className="border-t border-border px-3 py-2">
@@ -530,21 +519,20 @@ function FileCard({
       )}
 
       <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDownload();
-          }}
+        <a
+          href={file.signedUrlDownload ?? "#"}
+          download={file.original_filename ?? ""}
+          onClick={(e) => e.stopPropagation()}
           className="rounded-md bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-foreground"
           aria-label={t.dealFile.download}
         >
           <Download className="h-4 w-4" />
-        </button>
+        </a>
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
+            e.preventDefault();
             setConfirm(true);
           }}
           className="rounded-md bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-red-600"
