@@ -82,7 +82,12 @@ function fromCompany(c: Company): FormState {
     vsk_status: c.vsk_status,
     email: c.email ?? "",
     phoneCountryCode: parsed.countryCode,
-    phoneLocal: parsed.local,
+    phoneLocal:
+      parsed.countryCode === "+354"
+        ? (parsed.local.length > 3
+            ? `${parsed.local.slice(0, 3)}-${parsed.local.slice(3)}`
+            : parsed.local)
+        : parsed.local,
     website: c.website ?? "",
     address_line_1: c.address_line_1 ?? "",
     address_line_2: c.address_line_2 ?? "",
