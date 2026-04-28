@@ -325,9 +325,7 @@ export function CompanyFilesTab({
               <FileCard
                 key={f.id}
                 file={f}
-                thumbUrl={thumbs[f.id]}
                 typeLabel={fileTypeLabel(f.file_type)}
-                onDownload={() => void handleDownload(f.storage_path)}
                 onDelete={() => void handleDeleteCompanyFile(f)}
               />
             ))}
