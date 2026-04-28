@@ -86,7 +86,7 @@ export function DealHeader({
             <div className="text-xs text-muted-foreground">
               {contactName}
               {contact.email && <> · {contact.email}</>}
-              {contact.phone && <> · {contact.phone}</>}
+              {contact.phone && <> · {formatPhone(contact.phone)}</>}
             </div>
           )}
           <TrackingNumbersInline
