@@ -265,7 +265,7 @@ export function ContactsTab({ companyId, contacts, onChanged }: Props) {
                     className="inline-flex items-center justify-end gap-1 text-muted-foreground hover:text-foreground"
                   >
                     <Phone className="h-3.5 w-3.5" />
-                    {c.phone}
+                    {formatPhone(c.phone)}
                   </a>
                 )}
               </div>
