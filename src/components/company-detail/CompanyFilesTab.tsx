@@ -143,7 +143,6 @@ export function CompanyFilesTab({
   const [companyFiles, setCompanyFiles] = useState<CompanyFileRow[]>([]);
   const [dealFiles, setDealFiles] = useState<DealFileRow[]>([]);
   const [deals, setDeals] = useState<DealLite[]>([]);
-  const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [uploadOpen, setUploadOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<DealFileType | "all">("all");
 
@@ -187,45 +186,41 @@ export function CompanyFilesTab({
     }
 
     const cRows = (cFiles ?? []) as unknown as CompanyFileRow[];
-    setCompanyFiles(cRows);
-    setDealFiles(dFiles);
 
-    // Fetch image previews as blob URLs (avoids CORS on signed URLs)
-    const allImages = [...cRows, ...dFiles].filter((f) =>
-      IMAGE_EXTS.includes(fileExt(f.original_filename)),
-    );
-    const next: Record<string, string> = {};
-    await Promise.all(
-      allImages.map(async (f) => {
-        const url = await fetchStorageBlobUrl("deal_files", f.storage_path);
-        if (url) next[f.id] = url;
-      }),
-    );
-    setThumbs((prev) => {
-      Object.values(prev).forEach((u) => URL.revokeObjectURL(u));
-      return next;
-    });
+    const attachUrls = async <T extends CompanyFileRow>(rows: T[]): Promise<T[]> =>
+      Promise.all(
+        rows.map(async (f) => {
+          const [view, dl] = await Promise.all([
+            supabase.storage.from("deal_files").createSignedUrl(f.storage_path, 3600),
+            supabase.storage
+              .from("deal_files")
+              .createSignedUrl(f.storage_path, 3600, {
+                download: f.original_filename ?? true,
+              }),
+          ]);
+          return {
+            ...f,
+            signedUrl: view.data?.signedUrl ?? null,
+            signedUrlDownload: dl.data?.signedUrl ?? null,
+          };
+        }),
+      );
+
+    const [cWithUrls, dWithUrls] = await Promise.all([
+      attachUrls(cRows),
+      attachUrls(dFiles),
+    ]);
+
+    setCompanyFiles(cWithUrls);
+    setDealFiles(dWithUrls);
     onCountChanged?.();
   }, [companyId, onCountChanged]);
-
-  useEffect(() => {
-    return () => {
-      setThumbs((prev) => {
-        Object.values(prev).forEach((u) => URL.revokeObjectURL(u));
-        return {};
-      });
-    };
-  }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   // ------- Brand file actions -------
-
-  const handleDownload = async (path: string) => {
-    await openStorageFile("deal_files", path);
-  };
 
   const handleDeleteCompanyFile = async (file: CompanyFileRow) => {
     await supabase.storage.from("deal_files").remove([file.storage_path]);
