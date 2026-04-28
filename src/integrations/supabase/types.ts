@@ -652,7 +652,7 @@ export type Database = {
         Row: {
           file_size_bytes: number | null
           file_type: string
-          file_url: string
+          file_url: string | null
           id: string
           original_filename: string | null
           po_id: string
@@ -663,7 +663,7 @@ export type Database = {
         Insert: {
           file_size_bytes?: number | null
           file_type?: string
-          file_url: string
+          file_url?: string | null
           id?: string
           original_filename?: string | null
           po_id: string
@@ -674,7 +674,7 @@ export type Database = {
         Update: {
           file_size_bytes?: number | null
           file_type?: string
-          file_url?: string
+          file_url?: string | null
           id?: string
           original_filename?: string | null
           po_id?: string

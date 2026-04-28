@@ -1,0 +1,1 @@
+ALTER TABLE public.po_files ALTER COLUMN file_url DROP NOT NULL;
