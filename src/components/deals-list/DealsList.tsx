@@ -470,24 +470,29 @@ function StagePill({
   count,
   active,
   onClick,
+  showClose = false,
 }: {
   label: string;
   count: number;
   active: boolean;
   onClick: () => void;
+  showClose?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "whitespace-nowrap rounded-full border px-3 py-1 text-xs transition",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs transition",
         active
           ? "border-ide-navy bg-ide-navy text-white"
           : "border-border bg-white text-muted-foreground hover:text-foreground",
       )}
     >
-      {label} ({count})
+      <span>
+        {label} ({count})
+      </span>
+      {showClose && <X className="h-3 w-3" aria-hidden="true" />}
     </button>
   );
 }
