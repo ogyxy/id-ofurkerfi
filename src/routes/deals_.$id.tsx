@@ -53,7 +53,7 @@ function DealDetailPage() {
     <ProtectedRoute>
       {(session) => (
         <div className="min-h-screen bg-background">
-          <Sidebar activeKey="companies" userEmail={session.user.email ?? ""} />
+          <Sidebar activeKey="deals" userEmail={session.user.email ?? ""} />
           <main className="px-4 pb-8 pt-20 md:ml-60 md:px-8 md:pt-8">
             <DealDetailContent />
           </main>
