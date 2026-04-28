@@ -58,7 +58,7 @@ export function PurchaseOrdersSection({
               <Link
                 key={po.id}
                 to="/innkaup/$id"
-                params={{ id: po.id } as never}
+                params={{ id: po.id }}
                 onClick={() => rememberDealReturnPath()}
                 className={cn(
                   "block rounded-md border border-border p-3 text-sm transition-colors hover:brightness-95",

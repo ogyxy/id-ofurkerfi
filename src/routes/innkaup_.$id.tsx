@@ -4,7 +4,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { InnkaupDetail } from "@/components/innkaup/InnkaupDetail";
 import { t } from "@/lib/sala_translations_is";
 
-export const Route = createFileRoute("/innkaup/$id")({
+export const Route = createFileRoute("/innkaup_/$id")({
   ssr: false,
   head: () => ({
     meta: [{ title: `${t.nav.purchaseOrders} — ${t.brand.name}` }],
