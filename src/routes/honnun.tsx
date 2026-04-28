@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  FileText,
-  Image as ImageIcon,
-  File as FileIconLucide,
   Download,
   Search,
   X,
 } from "lucide-react";
+import { FileThumbnail } from "@/components/FileThumbnail";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
 import { supabase } from "@/integrations/supabase/client";
@@ -511,10 +509,6 @@ function EmptyState({ hasFilter, onClear }: { hasFilter: boolean; onClear: () =>
 }
 
 function FileCard({ file }: { file: MergedFile }) {
-  const ext = fileExt(file.original_filename);
-  const img = isImage(file.original_filename);
-  const isPdf = ext === "PDF";
-
   const company = file.source === "deal" ? file.deal?.company : file.company;
   const dealLink =
     file.source === "deal" && file.deal
@@ -530,29 +524,11 @@ function FileCard({ file }: { file: MergedFile }) {
         className="block"
         title={file.original_filename ?? ""}
       >
-        <div className="flex h-32 items-center justify-center bg-muted/30">
-          {img && file.signedUrl ? (
-            <img
-              src={file.signedUrl}
-              alt={file.original_filename ?? ""}
-              className="h-full w-full object-cover"
-              loading="lazy"
-            />
-          ) : isPdf ? (
-            <FileText className="h-12 w-12 text-red-500" />
-          ) : img ? (
-            <ImageIcon className="h-12 w-12 text-muted-foreground" />
-          ) : (
-            <div className="flex flex-col items-center gap-1">
-              <FileIconLucide className="h-10 w-10 text-muted-foreground" />
-              {ext && (
-                <span className="text-[10px] font-medium uppercase text-muted-foreground">
-                  .{ext}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+        <FileThumbnail
+          filename={file.original_filename}
+          signedUrl={file.signedUrl}
+          className="h-32"
+        />
 
         <div className="space-y-1 p-3">
           <div
