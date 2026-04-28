@@ -604,6 +604,8 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         open={uploadOpen}
         onOpenChange={setUploadOpen}
         poId={po.id}
+        poNumber={po.po_number}
+        supplierName={supplierName}
         currentProfileId={currentProfileId}
         onUploaded={() => void load()}
       />
