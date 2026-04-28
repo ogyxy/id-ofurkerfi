@@ -220,8 +220,8 @@ export function DealLinesEditor({
   const updateLine = (idx: number, patch: Partial<EditableLine>) => {
     const next = [...lines];
     let line = { ...next[idx], ...patch };
-    if (patch.quantity !== undefined) line.emptyQty = false;
-    if (patch.unit_cost !== undefined) line.emptyCost = false;
+    if (patch.quantity !== undefined && patch.emptyQty !== true) line.emptyQty = false;
+    if (patch.unit_cost !== undefined && patch.emptyCost !== true) line.emptyCost = false;
 
     // Auto-fill exchange rate when currency changes (before unit_cost_isk recalc)
     if (patch.cost_currency !== undefined) {
