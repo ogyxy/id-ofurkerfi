@@ -180,9 +180,11 @@ export function ContactsTab({ companyId, contacts, onChanged }: Props) {
             </div>
             <div>
               <Label>{t.contact.phone}</Label>
-              <Input
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              <PhoneInput
+                countryCode={form.phoneCountryCode}
+                localNumber={form.phoneLocal}
+                onCountryCodeChange={(v) => setForm({ ...form, phoneCountryCode: v })}
+                onLocalNumberChange={(v) => setForm({ ...form, phoneLocal: v })}
               />
             </div>
             <div className="flex items-center gap-2 pt-6">
