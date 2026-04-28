@@ -12,7 +12,7 @@ import { CompanyHeader } from "@/components/company-detail/CompanyHeader";
 import { ContactsTab } from "@/components/company-detail/ContactsTab";
 import { DealsTab } from "@/components/company-detail/DealsTab";
 import { DesignsTab } from "@/components/company-detail/DesignsTab";
-import { ActivitiesTab } from "@/components/company-detail/ActivitiesTab";
+
 import { EditCompanyDrawer } from "@/components/company-detail/EditCompanyDrawer";
 import { cn } from "@/lib/utils";
 
@@ -24,9 +24,14 @@ type Deal = {
   name: string;
   stage: Database["public"]["Enums"]["deal_stage"];
   amount_isk: number | null;
+  refund_amount_isk: number | null;
   promised_delivery_date: string | null;
+  delivered_at: string | null;
   invoice_status: Database["public"]["Enums"]["invoice_status"];
   payment_status: Database["public"]["Enums"]["payment_status"];
+  defect_resolution: Database["public"]["Enums"]["defect_resolution"];
+  created_at: string;
+  childDeals?: { stage: Database["public"]["Enums"]["deal_stage"] }[];
 };
 type Design = Pick<
   Database["public"]["Tables"]["designs"]["Row"],
@@ -45,7 +50,7 @@ export const Route = createFileRoute("/companies_/$id")({
   component: CompanyDetailPage,
 });
 
-type TabKey = "contacts" | "deals" | "designs" | "activities";
+type TabKey = "contacts" | "deals" | "designs";
 
 function CompanyDetailPage() {
   return (
@@ -88,7 +93,7 @@ function CompanyDetailContent() {
         supabase
           .from("deals")
           .select(
-            "id, so_number, name, stage, amount_isk, promised_delivery_date, invoice_status, payment_status",
+            "id, so_number, name, stage, amount_isk, refund_amount_isk, promised_delivery_date, delivered_at, invoice_status, payment_status, defect_resolution, created_at",
           )
           .eq("company_id", id)
           .eq("archived", false)
@@ -115,7 +120,27 @@ function CompanyDetailContent() {
     setNotFound(false);
     setCompany(companyRes.data);
     setContacts((contactsRes.data ?? []) as Contact[]);
-    setDeals((dealsRes.data ?? []) as Deal[]);
+    let dealRows = (dealsRes.data ?? []) as Deal[];
+    // Fetch child deals for defect_reorder rows w/ reorder resolution (for isDefectResolved)
+    const defectReorderIds = dealRows
+      .filter((d) => d.stage === "defect_reorder" && d.defect_resolution === "reorder")
+      .map((d) => d.id);
+    if (defectReorderIds.length) {
+      const { data: children } = await supabase
+        .from("deals")
+        .select("parent_deal_id, stage")
+        .in("parent_deal_id", defectReorderIds);
+      if (children) {
+        const byParent = new Map<string, { stage: Deal["stage"] }[]>();
+        (children as { parent_deal_id: string; stage: Deal["stage"] }[]).forEach((c) => {
+          const arr = byParent.get(c.parent_deal_id) ?? [];
+          arr.push({ stage: c.stage });
+          byParent.set(c.parent_deal_id, arr);
+        });
+        dealRows = dealRows.map((d) => ({ ...d, childDeals: byParent.get(d.id) ?? [] }));
+      }
+    }
+    setDeals(dealRows);
     setDesigns((designsRes.data ?? []) as Design[]);
     setActivities((activitiesRes.data ?? []) as Activity[]);
     setLoading(false);
@@ -149,7 +174,6 @@ function CompanyDetailContent() {
     { key: "deals", label: t.nav.deals, count: deals.length },
     { key: "contacts", label: t.nav.contacts, count: contacts.length },
     { key: "designs", label: t.nav.designs, count: designs.length },
-    { key: "activities", label: t.nav.activities, count: activities.length },
   ];
 
   return (
@@ -211,13 +235,7 @@ function CompanyDetailContent() {
         {activeTab === "designs" && (
           <DesignsTab companyId={company.id} designs={designs} onChanged={loadAll} />
         )}
-        {activeTab === "activities" && (
-          <ActivitiesTab
-            companyId={company.id}
-            activities={activities}
-            onChanged={loadAll}
-          />
-        )}
+      
       </div>
 
       <EditCompanyDrawer
