@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Pencil, Trash2, Plus, GripVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,7 +46,11 @@ export type EditableLine = {
   unit_price_isk: number;
   manualPrice: boolean;
   notes: string;
+  emptyQty?: boolean;
+  emptyCost?: boolean;
 };
+
+const NO_SPINNER = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 
 export function fromDbLine(row: DealLineRow): EditableLine {
   return {
@@ -140,6 +145,7 @@ export function DealLinesEditor({
 
   const saveLine = async (line: EditableLine, orderIdx: number) => {
     if (!line.product_name.trim()) return; // don't save until name exists
+    if (line.emptyQty || line.emptyCost) return; // don't save until numeric fields filled
     const payload = {
       deal_id: dealId,
       line_order: orderIdx + 1,
@@ -214,6 +220,8 @@ export function DealLinesEditor({
   const updateLine = (idx: number, patch: Partial<EditableLine>) => {
     const next = [...lines];
     let line = { ...next[idx], ...patch };
+    if (patch.quantity !== undefined) line.emptyQty = false;
+    if (patch.unit_cost !== undefined) line.emptyCost = false;
 
     // Auto-fill exchange rate when currency changes (before unit_cost_isk recalc)
     if (patch.cost_currency !== undefined) {
@@ -266,7 +274,7 @@ export function DealLinesEditor({
       line_order: lines.length + 1,
       product_name: "",
       product_supplier_sku: "",
-      quantity: 1,
+      quantity: 0,
       unit_cost: 0,
       cost_currency: "EUR",
       exchange_rate: eurRate ? Math.round(eurRate * 100) / 100 : 0,
@@ -275,8 +283,24 @@ export function DealLinesEditor({
       unit_price_isk: 0,
       manualPrice: false,
       notes: "",
+      emptyQty: true,
+      emptyCost: true,
     };
     setLines([...lines, newLine]);
+    // Focus the product_name input on the new line
+    setTimeout(() => {
+      const el = document.querySelector<HTMLInputElement>(
+        `input[data-line-id="${newLine.id}"][data-field="product_name"]`,
+      );
+      el?.focus();
+    }, 0);
+  };
+
+  const handleEnterAddLine = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      addLine();
+    }
   };
 
   const removeLine = async (idx: number) => {
@@ -359,6 +383,9 @@ export function DealLinesEditor({
                       onChange={(e) =>
                         updateLine(idx, { product_name: e.target.value })
                       }
+                      onKeyDown={handleEnterAddLine}
+                      data-line-id={line.id}
+                      data-field="product_name"
                       className="min-w-[140px]"
                       disabled={readOnly}
                     />
@@ -366,11 +393,15 @@ export function DealLinesEditor({
                   <td className="px-2 py-2">
                     <Input
                       type="number"
-                      value={line.quantity}
+                      value={line.emptyQty ? "" : line.quantity}
                       onChange={(e) =>
-                        updateLine(idx, { quantity: Number(e.target.value) })
+                        updateLine(idx, {
+                          quantity: e.target.value === "" ? 0 : Number(e.target.value),
+                          ...(e.target.value === "" ? { emptyQty: true } : {}),
+                        })
                       }
-                      className="w-20 mx-auto text-center"
+                      onKeyDown={handleEnterAddLine}
+                      className={cn("w-20 mx-auto text-center", NO_SPINNER)}
                       disabled={readOnly}
                     />
                   </td>
@@ -379,11 +410,15 @@ export function DealLinesEditor({
                       <Input
                         type="number"
                         step="0.01"
-                        value={line.unit_cost}
+                        value={line.emptyCost ? "" : line.unit_cost}
                         onChange={(e) =>
-                          updateLine(idx, { unit_cost: Number(e.target.value) })
+                          updateLine(idx, {
+                            unit_cost: e.target.value === "" ? 0 : Number(e.target.value),
+                            ...(e.target.value === "" ? { emptyCost: true } : {}),
+                          })
                         }
-                        className="w-24 pr-10 text-right"
+                        onKeyDown={handleEnterAddLine}
+                        className={cn("w-24 pr-10 text-right", NO_SPINNER)}
                         disabled={readOnly}
                       />
                       <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
@@ -420,8 +455,9 @@ export function DealLinesEditor({
                             exchange_rate: Number(e.target.value),
                           })
                         }
+                        onKeyDown={handleEnterAddLine}
                         placeholder={ratesError ? "Sláðu inn gengi" : ""}
-                        className="w-24 pr-8 text-right"
+                        className={cn("w-24 pr-8 text-right", NO_SPINNER)}
                         disabled={readOnly || line.cost_currency === "ISK"}
                       />
                       <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
@@ -440,6 +476,7 @@ export function DealLinesEditor({
                             markup_pct: Number(e.target.value),
                           })
                         }
+                        onKeyDown={handleEnterAddLine}
                         onBlur={() => {
                           const updated = {
                             ...line,
@@ -453,7 +490,7 @@ export function DealLinesEditor({
                           next[idx] = updated;
                           setLines(next);
                         }}
-                        className="w-24 pr-6 text-right"
+                        className={cn("w-24 pr-6 text-right", NO_SPINNER)}
                         disabled={readOnly}
                       />
                       <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
@@ -475,7 +512,8 @@ export function DealLinesEditor({
                               unit_price_isk: Number(e.target.value),
                             })
                           }
-                          className="w-28 pr-8 text-right"
+                          onKeyDown={handleEnterAddLine}
+                          className={cn("w-28 pr-8 text-right", NO_SPINNER)}
                           disabled={readOnly}
                         />
                         <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
