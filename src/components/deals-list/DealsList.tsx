@@ -438,27 +438,21 @@ export function DealsList({ currentUserId }: Props) {
         <div className="space-y-6">
           {STAGE_ORDER.map((s) => {
             const rows = grouped.get(s) ?? [];
-            if (rows.length === 0) return null;
             return (
-              <section key={s}>
-                <div className="mb-2 flex items-center gap-2 text-gray-400" style={{ fontSize: "11px" }}>
-                  <span className="h-px flex-1 bg-border" />
-                  <span className="uppercase tracking-wider">
-                    {t.dealStage[s]} ({rows.length})
-                  </span>
-                  <span className="h-px flex-1 bg-border" />
-                </div>
+              <StageGroup key={s} stage={s} count={rows.length}>
                 <div className="space-y-2">
                   {rows.map((d) => (
                     <DealCard
                       key={d.id}
                       deal={d}
+                      profiles={profiles}
                       onOpen={() => openDeal(d.id)}
                       onStageChange={(stage) => handleStageChange(d, stage)}
+                      onOwnerChange={(ownerId) => handleOwnerChange(d, ownerId)}
                     />
                   ))}
                 </div>
-              </section>
+              </StageGroup>
             );
           })}
         </div>
@@ -468,8 +462,10 @@ export function DealsList({ currentUserId }: Props) {
             <DealCard
               key={d.id}
               deal={d}
+              profiles={profiles}
               onOpen={() => openDeal(d.id)}
               onStageChange={(stage) => handleStageChange(d, stage)}
+              onOwnerChange={(ownerId) => handleOwnerChange(d, ownerId)}
             />
           ))}
         </div>
