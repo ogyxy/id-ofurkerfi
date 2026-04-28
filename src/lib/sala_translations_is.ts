@@ -330,7 +330,7 @@ export const t = {
     defectLinked:             'Tengd gallapöntun',
     defectReorderDelivered:   'Gallapöntun afhent',
     parent_deal:              'Tengd upphafleg sala',
-    searchPlaceholder:        'Leita að sölu, fyrirtæki, sendingarnúmer, PO...',
+    searchPlaceholder:        'Leita að sölu, vöru, fyrirtæki, tracking númeri, PO...',
     filterAll:                'Virkar',
     noDeals:                  'Engar sölur fundust',
     estimatedDelivery:        'Áætluð afhending',
