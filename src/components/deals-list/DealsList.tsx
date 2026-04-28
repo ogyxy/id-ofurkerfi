@@ -120,7 +120,7 @@ export function DealsList({ currentUserId }: Props) {
     })();
   }, []);
 
-  // Fetch deals
+  // Fetch all non-archived deals (filtering happens client-side so counts are always accurate)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -135,14 +135,6 @@ export function DealsList({ currentUserId }: Props) {
         query = query.or(
           `name.ilike.${term},so_number.ilike.${term},tracking_numbers.cs.{${debouncedSearch}}`,
         );
-      } else {
-        // Apply stage filter server-side
-        if (selectedStages.has("all")) {
-          // active = exclude cancelled
-          query = query.neq("stage", "cancelled");
-        } else {
-          query = query.in("stage", Array.from(selectedStages) as DealStage[]);
-        }
       }
 
       query = query.order("promised_delivery_date", {
@@ -162,7 +154,7 @@ export function DealsList({ currentUserId }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch, selectedStages]);
+  }, [debouncedSearch]);
 
   // Client-side filtering: owner + company/contact name on search
   const visibleDeals = useMemo(() => {
