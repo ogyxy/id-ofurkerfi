@@ -21,6 +21,7 @@ import {
 } from "@/components/deal-detail/DealLinesEditor";
 import { DealSummary } from "@/components/deal-detail/DealSummary";
 import { PurchaseOrdersSection } from "@/components/deal-detail/PurchaseOrdersSection";
+import { DealFilesSection } from "@/components/deal-detail/DealFilesSection";
 
 import { DealLog, type LogEntry } from "@/components/deal-detail/DealLog";
 import { EditDealDrawer } from "@/components/deal-detail/EditDealDrawer";
@@ -393,6 +394,14 @@ function DealDetailContent() {
         pos={pos}
         currentProfileId={currentProfile?.id ?? null}
         onChanged={load}
+      />
+
+      <DealFilesSection
+        dealId={deal.id}
+        companyId={company.id}
+        companyName={company.name}
+        soNumber={deal.so_number}
+        currentProfileId={currentProfile?.id ?? null}
       />
 
 

@@ -72,3 +72,32 @@ export function maskIcelandicLocal(value: string): string {
   if (digits.length <= 3) return digits;
   return `${digits.slice(0, 3)}-${digits.slice(3)}`;
 }
+
+// ===== Storage path helpers =====
+
+/**
+ * Make a string safe for use as a storage folder name.
+ * Preserves Icelandic characters (UTF-8 paths are bucket-safe).
+ * Replaces only path-breaking characters: / \ : * ? " < > |
+ */
+export function pathSafe(value: string | null | undefined): string {
+  if (!value) return "unknown";
+  const cleaned = value
+    .replace(/[\/\\:*?"<>|]/g, "-")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/\.+$/, "");
+  return cleaned || "unknown";
+}
+
+/** Format byte count to human-readable size with 1 decimal place. */
+export function formatFileSize(bytes: number | null | undefined): string {
+  if (bytes === null || bytes === undefined || isNaN(bytes)) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toFixed(1)} MB`;
+  const gb = mb / 1024;
+  return `${gb.toFixed(1)} GB`;
+}
