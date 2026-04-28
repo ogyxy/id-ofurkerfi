@@ -206,7 +206,17 @@ export function DealsList({ currentUserId }: Props) {
   // Apply stage filter (default: hide cancelled), then owner + search
   const visibleDeals = useMemo(() => {
     let list = deals;
-    if (activeStage) {
+    if (activeStage === "defect_reorder") {
+      list = list.filter(
+        (d) => d.stage === "defect_reorder" && !isDefectResolved(d),
+      );
+    } else if (activeStage === "delivered") {
+      list = list.filter(
+        (d) =>
+          d.stage === "delivered" ||
+          (d.stage === "defect_reorder" && isDefectResolved(d)),
+      );
+    } else if (activeStage) {
       list = list.filter((d) => d.stage === activeStage);
     } else {
       list = list.filter((d) => d.stage !== "cancelled");
