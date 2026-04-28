@@ -99,7 +99,7 @@ export function ContactsTab({ companyId, contacts, onChanged }: Props) {
       last_name: form.last_name.trim() || null,
       title: form.title.trim() || null,
       email: form.email.trim() || null,
-      phone: form.phone.trim() || null,
+      phone: stripPhone(form.phoneCountryCode, form.phoneLocal) || null,
       is_primary: form.is_primary,
       notes: form.notes.trim() || null,
     };
