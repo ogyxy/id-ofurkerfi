@@ -705,8 +705,12 @@ function DealCard({
   onStageChange: (s: DealStage) => void | Promise<void>;
   onOwnerChange: (ownerId: string | null) => void | Promise<void>;
 }) {
-  const styles = STAGE_STYLES[deal.stage];
-  const muted = deal.stage === "delivered";
+  const resolvedDefect = deal.stage === "defect_reorder" && isDefectResolved(deal);
+  // Resolved defect deals are shown inside the delivered group with green tint + orange left border
+  const styles = resolvedDefect
+    ? { border: "border-l-orange-500", bg: "bg-green-50" }
+    : STAGE_STYLES[deal.stage];
+  const muted = deal.stage === "delivered" || resolvedDefect;
   const cancelled = deal.stage === "cancelled";
   const overdue = isOverdue(deal.promised_delivery_date, deal.stage);
 
@@ -728,6 +732,7 @@ function DealCard({
         muted && "text-gray-400",
         cancelled && "italic",
       )}
+      style={resolvedDefect ? { borderLeftWidth: "3px" } : undefined}
     >
       {/* SO number + stage + defect badge */}
       <div className="min-w-0 space-y-1">
