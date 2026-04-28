@@ -144,7 +144,7 @@ export function CompanyFilesTab({
   const [dealFiles, setDealFiles] = useState<DealFileRow[]>([]);
   const [deals, setDeals] = useState<DealLite[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<DealFileType | "all">("all");
+  const [activeFilter, setActiveFilter] = useState<DealFileType | null>(null);
 
   const load = useCallback(async () => {
     // Brand files
@@ -265,7 +265,7 @@ export function CompanyFilesTab({
   }, [dealFiles]);
 
   const filteredDealFiles = useMemo(() => {
-    if (activeFilter === "all") return dealFiles;
+    if (activeFilter === null) return dealFiles;
     return dealFiles.filter((f) => {
       const ft = (DEAL_FILE_TYPES as string[]).includes(f.file_type)
         ? (f.file_type as DealFileType)
@@ -344,25 +344,21 @@ export function CompanyFilesTab({
           </p>
         </div>
 
-        {/* Filter pills */}
+        {/* Filter pills — single-active behaviour, no "Allar" pill */}
         <div className="flex flex-wrap gap-2 overflow-x-auto pb-1 sm:flex-nowrap">
-          <FilterPill
-            label={t.dealFile.filterAll}
-            count={dealFiles.length}
-            active={activeFilter === "all"}
-            onClick={() => setActiveFilter("all")}
-          />
           {DEAL_FILE_TYPES.map((ft) => {
             const count = dealFileCounts[ft];
             const isActive = activeFilter === ft;
+            // Hide pills with no files unless active; hide non-active pills when one is active
             if (count === 0 && !isActive) return null;
+            if (activeFilter !== null && !isActive) return null;
             return (
               <FilterPill
                 key={ft}
                 label={fileTypeLabel(ft)}
                 count={count}
                 active={isActive}
-                onClick={() => setActiveFilter(ft)}
+                onClick={() => setActiveFilter(isActive ? null : ft)}
               />
             );
           })}
@@ -382,7 +378,7 @@ export function CompanyFilesTab({
             </p>
             <button
               type="button"
-              onClick={() => setActiveFilter("all")}
+              onClick={() => setActiveFilter(null)}
               className="text-sm text-ide-navy hover:underline"
             >
               {t.dealFile.clearFilter}
