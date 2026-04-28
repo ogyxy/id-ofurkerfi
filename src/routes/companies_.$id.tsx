@@ -12,7 +12,7 @@ import { CompanyHeader } from "@/components/company-detail/CompanyHeader";
 import { ContactsTab } from "@/components/company-detail/ContactsTab";
 import { DealsTab } from "@/components/company-detail/DealsTab";
 import { DesignsTab } from "@/components/company-detail/DesignsTab";
-import { ActivitiesTab } from "@/components/company-detail/ActivitiesTab";
+
 import { EditCompanyDrawer } from "@/components/company-detail/EditCompanyDrawer";
 import { cn } from "@/lib/utils";
 
