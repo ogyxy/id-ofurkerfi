@@ -1,7 +1,8 @@
-import { Mail, Phone, Globe, MapPin, CreditCard, Coins } from "lucide-react";
+import { Mail, Phone, Globe, MapPin } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
+import { formatKennitala } from "@/lib/formatters";
 
 type Company = Database["public"]["Tables"]["companies"]["Row"];
 
@@ -26,7 +27,7 @@ export function CompanyHeader({ company, onEdit }: Props) {
           <div className="flex flex-wrap gap-2">
             {company.kennitala && (
               <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
-                {t.company.kennitala}: {company.kennitala}
+                {t.company.kennitala}: {formatKennitala(company.kennitala)}
               </span>
             )}
             {company.vsk_number && (
@@ -79,14 +80,6 @@ export function CompanyHeader({ company, onEdit }: Props) {
             {addressParts}
           </span>
         )}
-        <span className="inline-flex items-center gap-1.5">
-          <CreditCard className="h-4 w-4" />
-          {t.company.payment_terms_days}: {company.payment_terms_days} dagar
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <Coins className="h-4 w-4" />
-          {t.company.preferred_currency}: {company.preferred_currency}
-        </span>
       </div>
 
       {/* Notes sticky */}
