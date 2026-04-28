@@ -157,14 +157,19 @@ export function DealsList({ currentUserId }: Props) {
   }, [debouncedSearch]);
 
   // Client-side filtering: owner + company/contact name on search
+  // Apply stage filter (default: hide cancelled), then owner + search
   const visibleDeals = useMemo(() => {
     let list = deals;
+    if (activeStage) {
+      list = list.filter((d) => d.stage === activeStage);
+    } else {
+      list = list.filter((d) => d.stage !== "cancelled");
+    }
     if (selectedOwners.size > 0 && !debouncedSearch.trim()) {
       list = list.filter((d) => d.owner && selectedOwners.has(d.owner.id));
     }
     if (debouncedSearch.trim()) {
       const s = debouncedSearch.toLowerCase();
-      // Server already matched name/so_number/tracking. Add company/contact match.
       list = list.filter(
         (d) =>
           d.name.toLowerCase().includes(s) ||
@@ -176,7 +181,7 @@ export function DealsList({ currentUserId }: Props) {
       );
     }
     return list;
-  }, [deals, selectedOwners, debouncedSearch]);
+  }, [deals, activeStage, selectedOwners, debouncedSearch]);
 
   const ownersWithDeals = useMemo(() => {
     const ids = new Set<string>();
@@ -186,35 +191,18 @@ export function DealsList({ currentUserId }: Props) {
     return profiles.filter((p) => ids.has(p.id));
   }, [deals, profiles]);
 
-  // Counts per stage (respecting owner filter, ignoring stage selection)
+  // Counts per stage — always reflect the full unarchived dataset, never affected by active filter
   const stageCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: 0 };
+    const counts: Record<string, number> = {};
     STAGE_ORDER.concat(["cancelled"]).forEach((s) => (counts[s] = 0));
-    // For counts we need a base set; reuse deals (which are pre-filtered by stage selection).
-    // To get accurate counts across all stages, we'd need a separate query. For v1, count from current dataset.
     deals.forEach((d) => {
-      if (selectedOwners.size > 0 && (!d.owner || !selectedOwners.has(d.owner.id))) return;
       counts[d.stage] = (counts[d.stage] ?? 0) + 1;
-      if (d.stage !== "cancelled") counts.all += 1;
     });
     return counts;
-  }, [deals, selectedOwners]);
+  }, [deals]);
 
-  const toggleStage = (stage: DealStage | "all") => {
-    setSelectedStages((prev) => {
-      const next = new Set(prev);
-      if (stage === "all") {
-        return new Set(["all"]);
-      }
-      next.delete("all");
-      if (next.has(stage)) {
-        next.delete(stage);
-        if (next.size === 0) next.add("all");
-      } else {
-        next.add(stage);
-      }
-      return next;
-    });
+  const toggleStage = (stage: DealStage) => {
+    setActiveStage((prev) => (prev === stage ? null : stage));
   };
 
   const toggleOwner = (id: string) => {
@@ -228,7 +216,7 @@ export function DealsList({ currentUserId }: Props) {
 
   const clearAll = () => {
     setSearch("");
-    setSelectedStages(new Set(["all"]));
+    setActiveStage(null);
     setSelectedOwners(new Set());
   };
 
