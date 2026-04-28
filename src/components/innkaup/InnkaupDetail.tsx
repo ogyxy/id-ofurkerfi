@@ -147,7 +147,28 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
     setPo(data);
     setSupplier(data.supplier_record);
     setLinkedDeal(data.deal ?? null);
-    setFiles((filesRes.data ?? []) as PoFile[]);
+    const rawFiles = (filesRes.data ?? []) as PoFile[];
+    const filesWithUrls = await Promise.all(
+      rawFiles.map(async (f) => {
+        if (!f.storage_path) {
+          return { ...f, signedUrl: f.file_url ?? null, signedUrlDownload: f.file_url ?? null };
+        }
+        const [view, dl] = await Promise.all([
+          supabase.storage.from("po_files").createSignedUrl(f.storage_path, 3600),
+          supabase.storage
+            .from("po_files")
+            .createSignedUrl(f.storage_path, 3600, {
+              download: f.original_filename ?? true,
+            }),
+        ]);
+        return {
+          ...f,
+          signedUrl: view.data?.signedUrl ?? null,
+          signedUrlDownload: dl.data?.signedUrl ?? null,
+        };
+      }),
+    );
+    setFiles(filesWithUrls);
 
     if (data.deal_id) {
       const { data: acts } = await supabase
