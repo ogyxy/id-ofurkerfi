@@ -190,8 +190,6 @@ export function DealFilesSection({
                     <FileCard
                       key={f.id}
                       file={f}
-                      thumbUrl={thumbs[f.id]}
-                      onDownload={() => void handleDownload(f)}
                       onDelete={() => void handleDelete(f)}
                     />
                   ))}
