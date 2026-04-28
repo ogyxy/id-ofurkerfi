@@ -76,12 +76,20 @@ export function CreateDealDrawer({
   const [newEmail, setNewEmail] = useState("");
   const [creatingCompany, setCreatingCompany] = useState(false);
 
+  // Optional new contact for new company
+  const [addContact, setAddContact] = useState(false);
+  const [newContactFirst, setNewContactFirst] = useState("");
+  const [newContactLast, setNewContactLast] = useState("");
+  const [newContactTitle, setNewContactTitle] = useState("");
+  const [newContactEmail, setNewContactEmail] = useState("");
+  const [newContactPhone, setNewContactPhone] = useState("");
+
   const [contactId, setContactId] = useState("");
   const [name, setName] = useState("");
   const [ownerId, setOwnerId] = useState(currentUserId);
   const [stage, setStage] = useState<DealStage>("inquiry");
   const [markup, setMarkup] = useState("30");
-  const [estDate, setEstDate] = useState("");
+  const [promisedDate, setPromisedDate] = useState("");
   const [firstNote, setFirstNote] = useState("");
   const [saving, setSaving] = useState(false);
 
