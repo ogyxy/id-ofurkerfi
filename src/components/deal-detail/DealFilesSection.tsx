@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatDate } from "@/lib/sala_translations_is";
 import { pathSafe, formatFileSize } from "@/lib/formatters";
+import { openStorageFile, fetchStorageBlobUrl } from "@/lib/openStorageFile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -109,33 +110,36 @@ export function DealFilesSection({
     const rows = (data ?? []) as unknown as DealFileRow[];
     setFiles(rows);
 
-    // Generate signed URLs for image previews
+    // Fetch image previews as blob URLs (avoids CORS on signed URLs)
     const imagesToFetch = rows.filter((f) => IMAGE_EXTS.includes(fileExt(f.original_filename)));
     const next: Record<string, string> = {};
     await Promise.all(
       imagesToFetch.map(async (f) => {
-        const { data: signed } = await supabase.storage
-          .from("deal_files")
-          .createSignedUrl(f.storage_path, 60 * 60, { download: false });
-        if (signed?.signedUrl) next[f.id] = signed.signedUrl;
+        const url = await fetchStorageBlobUrl("deal_files", f.storage_path);
+        if (url) next[f.id] = url;
       }),
     );
-    setThumbs(next);
+    setThumbs((prev) => {
+      Object.values(prev).forEach((u) => URL.revokeObjectURL(u));
+      return next;
+    });
   }, [dealId]);
+
+  useEffect(() => {
+    return () => {
+      setThumbs((prev) => {
+        Object.values(prev).forEach((u) => URL.revokeObjectURL(u));
+        return {};
+      });
+    };
+  }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   const handleDownload = async (file: DealFileRow) => {
-    const { data, error } = await supabase.storage
-      .from("deal_files")
-      .createSignedUrl(file.storage_path, 60 * 60, { download: false });
-    if (error || !data?.signedUrl) {
-      toast.error(t.status.somethingWentWrong);
-      return;
-    }
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    await openStorageFile("deal_files", file.storage_path);
   };
 
   const handleDelete = async (file: DealFileRow) => {
