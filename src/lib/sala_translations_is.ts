@@ -626,6 +626,33 @@ export const t = {
   // ---------------------------------------------------------------------------
   // Unified file-type labels — used by deal_files, po_files and company_files
   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // Hönnun — global file discovery screen
+  // ---------------------------------------------------------------------------
+  hönnunScreen: {
+    pageTitle:           'Hönnun',
+    searchPlaceholder:   'Leita að nafni, viðskiptavini, vörulínu...',
+    filterAll:           'Allar',
+    filterCompany:       'Viðskiptavinir',
+    filterType:          'Tegund',
+    filterDateRange:     'Dagsetning',
+    filterFrom:          'Frá',
+    filterTo:            'Til',
+    allCompanies:        'Allir viðskiptavinir',
+    noFiles:             'Engin skjöl fundust',
+    emptyHint:           'Hönnunarskjöl birtast hér þegar þeim er hlaðið upp á sölur eða í vörumerki viðskiptavina.',
+    resultsCount:        '{count} skjöl',
+    source:              'Heimild',
+    sourceCompanyBrand:  'Vörumerki',
+    sourceDeal:          'Sala',
+    clearFilters:        'Hreinsa síur',
+    typeMockup:          'Mockup',
+    typeArtwork:         'Hönnun',
+    typeLogo:            'Logo',
+    typePresentation:    'Kynning',
+    typeBrand:           'Vörumerki',
+  },
+
   fileType: {
     mockup:             'Mockup',
     artwork:            'Hönnun',
