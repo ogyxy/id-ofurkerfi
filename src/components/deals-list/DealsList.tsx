@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { rememberDealReturnPath } from "@/lib/dealReturn";
+import { rememberDealReturnPath, rememberCompanyReturnPath } from "@/lib/dealReturn";
 import { toast } from "sonner";
 import { CreateDealDrawer } from "./CreateDealDrawer";
 
@@ -686,7 +686,10 @@ function DealCard({
           <Link
             to="/companies/$id"
             params={{ id: deal.company.id }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              rememberCompanyReturnPath();
+            }}
             className="block truncate text-sm text-foreground hover:underline"
           >
             {deal.company.name}
