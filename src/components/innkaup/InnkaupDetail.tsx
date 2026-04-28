@@ -770,7 +770,34 @@ function PoStepper({ status, onChange, onCancel, onReactivate }: StepperProps) {
   );
 }
 
-function FileCard({ file, onDeleted }: { file: PoFile; onDeleted: () => void }) {
+const PO_IMAGE_EXTS = ["png", "jpg", "jpeg", "gif", "webp", "svg"];
+
+function poFileExt(name: string | null | undefined): string {
+  if (!name) return "";
+  const i = name.lastIndexOf(".");
+  return i >= 0 ? name.slice(i + 1).toLowerCase() : "";
+}
+
+function guessPoFileType(name: string): PoFileType {
+  const n = name.toLowerCase();
+  if (n.includes("proof")) return "proof";
+  if (n.includes("confirmation") || n.includes("staðfesting") || n.includes("stadfesting"))
+    return "order_confirmation";
+  if (n.includes("invoice") || n.includes("reikningur")) return "invoice";
+  if (n.includes("artwork") || n.includes("design") || n.includes("hönnun") || n.includes("honnun"))
+    return "artwork";
+  return "other";
+}
+
+function FileCard({
+  file,
+  typeLabel,
+  onDeleted,
+}: {
+  file: PoFile;
+  typeLabel: string;
+  onDeleted: () => void;
+}) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const resolvePath = (): string | null => {
@@ -795,42 +822,87 @@ function FileCard({ file, onDeleted }: { file: PoFile; onDeleted: () => void }) 
 
   const viewHref = file.signedUrl ?? file.file_url ?? "#";
   const downloadHref = file.signedUrlDownload ?? file.file_url ?? "#";
+  const ext = poFileExt(file.original_filename);
+  const isImage = PO_IMAGE_EXTS.includes(ext);
+  const isPdf = ext === "pdf";
 
   return (
-    <div className="flex items-center gap-2 rounded-md border border-border bg-card p-3">
+    <div className="group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
       <a
         href={viewHref}
         target="_blank"
         rel="noopener noreferrer"
-        className="min-w-0 flex-1 text-left"
+        className="block w-full text-left"
+        title={file.original_filename ?? ""}
       >
-        <div className="truncate text-sm font-medium">{file.original_filename ?? "file"}</div>
-        <div className="text-xs text-muted-foreground">
-          {file.file_size_bytes ? `${Math.round(file.file_size_bytes / 1024)} KB` : ""}{" "}
-          · {formatDate(file.uploaded_at)}
+        <div className="flex h-28 items-center justify-center bg-muted/30">
+          {isImage && file.signedUrl ? (
+            <img
+              src={file.signedUrl}
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
+          ) : isPdf ? (
+            <FileText className="h-10 w-10 text-red-500" />
+          ) : isImage ? (
+            <ImageIcon className="h-10 w-10 text-muted-foreground" />
+          ) : (
+            <div className="flex flex-col items-center gap-1">
+              <FileIcon className="h-10 w-10 text-muted-foreground" />
+              {ext && (
+                <span className="text-[10px] font-medium uppercase text-muted-foreground">
+                  .{ext}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="space-y-1 p-3">
+          <div
+            className="truncate text-sm font-medium"
+            title={file.original_filename ?? ""}
+          >
+            {file.original_filename ?? "—"}
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+              {typeLabel}
+            </span>
+            <span className="text-muted-foreground">
+              {formatFileSize(file.file_size_bytes)}
+            </span>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {formatDate(file.uploaded_at)}
+          </div>
         </div>
       </a>
-      <a
-        href={downloadHref}
-        download={file.original_filename ?? ""}
-        onClick={(e) => e.stopPropagation()}
-        className="text-muted-foreground hover:text-foreground"
-        aria-label={t.purchaseOrder.uploadFile}
-      >
-        <Download className="h-4 w-4" />
-      </a>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          setConfirmDelete(true);
-        }}
-        className="text-muted-foreground hover:text-red-600"
-        aria-label={t.actions.delete}
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
+
+      <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <a
+          href={downloadHref}
+          download={file.original_filename ?? ""}
+          onClick={(e) => e.stopPropagation()}
+          className="rounded-md bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-foreground"
+          aria-label={t.actions.download}
+        >
+          <Download className="h-4 w-4" />
+        </a>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setConfirmDelete(true);
+          }}
+          className="rounded-md bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-red-600"
+          aria-label={t.actions.delete}
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -869,6 +941,21 @@ function UploadFileDialog({
   const [file, setFile] = useState<File | null>(null);
   const [type, setType] = useState<PoFileType>("other");
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setFile(null);
+      setType("other");
+      setUploading(false);
+      setDragOver(false);
+    }
+  }, [open]);
+
+  const handleFile = (f: File | null) => {
+    setFile(f);
+    if (f) setType(guessPoFileType(f.name));
+  };
 
   const handleUpload = async () => {
     if (!file) return;
@@ -894,8 +981,6 @@ function UploadFileDialog({
       uploaded_by: currentProfileId,
     });
     setUploading(false);
-    setFile(null);
-    setType("other");
     onOpenChange(false);
     onUploaded();
   };
@@ -907,18 +992,57 @@ function UploadFileDialog({
           <DialogTitle>{t.purchaseOrder.uploadFile}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <Input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-          <div>
-            <Label className="mb-2 block">{t.purchaseOrder.fileType}</Label>
-            <RadioGroup value={type} onValueChange={(v) => setType(v as PoFileType)}>
-              {PO_FILE_TYPES.map((ft) => (
-                <label key={ft} className="flex items-center gap-2 text-sm">
-                  <RadioGroupItem value={ft} />
-                  {poFileTypeLabel(t, ft)}
-                </label>
-              ))}
-            </RadioGroup>
-          </div>
+          <label
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              const f = e.dataTransfer.files?.[0] ?? null;
+              handleFile(f);
+            }}
+            className={cn(
+              "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-6 text-center text-sm transition-colors",
+              dragOver ? "border-ide-navy bg-muted/40" : "border-border",
+            )}
+          >
+            <Upload className="h-6 w-6 text-muted-foreground" />
+            <div className="text-muted-foreground">{t.purchaseOrder.dropHere}</div>
+            {file && (
+              <div className="font-medium text-foreground">
+                {file.name}{" "}
+                <span className="text-xs text-muted-foreground">
+                  ({formatFileSize(file.size)})
+                </span>
+              </div>
+            )}
+            <Input
+              type="file"
+              className="hidden"
+              onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+            />
+          </label>
+
+          {file && (
+            <div>
+              <Label className="mb-2 block">{t.purchaseOrder.fileType}</Label>
+              <RadioGroup
+                value={type}
+                onValueChange={(v) => setType(v as PoFileType)}
+                className="grid grid-cols-2 gap-2"
+              >
+                {PO_FILE_TYPES.map((ft) => (
+                  <label key={ft} className="flex items-center gap-2 text-sm">
+                    <RadioGroupItem value={ft} />
+                    {poFileTypeLabel(t, ft)}
+                  </label>
+                ))}
+              </RadioGroup>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>{t.actions.cancel}</Button>
