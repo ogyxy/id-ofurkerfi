@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { CompanyHeader } from "@/components/company-detail/CompanyHeader";
 import { ContactsTab } from "@/components/company-detail/ContactsTab";
 import { DealsTab } from "@/components/company-detail/DealsTab";
-import { DesignsTab } from "@/components/company-detail/DesignsTab";
+import { CompanyFilesTab } from "@/components/company-detail/CompanyFilesTab";
 
 import { EditCompanyDrawer } from "@/components/company-detail/EditCompanyDrawer";
 import { cn } from "@/lib/utils";
@@ -33,10 +33,6 @@ type Deal = {
   created_at: string;
   childDeals?: { stage: Database["public"]["Enums"]["deal_stage"] }[];
 };
-type Design = Pick<
-  Database["public"]["Tables"]["designs"]["Row"],
-  "id" | "name" | "thumbnail_url" | "tags" | "notes" | "created_at"
->;
 type Activity = Pick<
   Database["public"]["Tables"]["activities"]["Row"],
   "id" | "type" | "subject" | "body" | "created_at" | "due_date" | "completed"
@@ -50,7 +46,7 @@ export const Route = createFileRoute("/companies_/$id")({
   component: CompanyDetailPage,
 });
 
-type TabKey = "contacts" | "deals" | "designs";
+type TabKey = "contacts" | "deals" | "files";
 
 function CompanyDetailPage() {
   return (
@@ -59,7 +55,7 @@ function CompanyDetailPage() {
         <div className="min-h-screen bg-background">
           <Sidebar activeKey="companies" userEmail={session.user.email ?? ""} />
           <main className="px-4 pb-8 pt-20 md:ml-60 md:px-8 md:pt-8">
-            <CompanyDetailContent />
+            <CompanyDetailContent currentProfileId={session.user.id ?? null} />
           </main>
         </div>
       )}
