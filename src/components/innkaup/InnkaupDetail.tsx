@@ -770,7 +770,7 @@ function PoStepper({ status, onChange, onCancel, onReactivate }: StepperProps) {
   );
 }
 
-const PO_IMAGE_EXTS = ["png", "jpg", "jpeg", "gif", "webp", "svg"];
+// (image/pdf detection moved into shared FileThumbnail component)
 
 function poFileExt(name: string | null | undefined): string {
   if (!name) return "";
@@ -822,9 +822,7 @@ function FileCard({
 
   const viewHref = file.signedUrl ?? file.file_url ?? "#";
   const downloadHref = file.signedUrlDownload ?? file.file_url ?? "#";
-  const ext = poFileExt(file.original_filename);
-  const isImage = PO_IMAGE_EXTS.includes(ext);
-  const isPdf = ext === "pdf";
+  const signedUrlForThumb = file.signedUrl ?? file.file_url ?? null;
 
   return (
     <div className="group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
@@ -835,29 +833,11 @@ function FileCard({
         className="block w-full text-left"
         title={file.original_filename ?? ""}
       >
-        <div className="flex h-28 items-center justify-center bg-muted/30">
-          {isImage && file.signedUrl ? (
-            <img
-              src={file.signedUrl}
-              alt=""
-              loading="lazy"
-              className="h-full w-full object-cover"
-            />
-          ) : isPdf ? (
-            <FileText className="h-10 w-10 text-red-500" />
-          ) : isImage ? (
-            <ImageIcon className="h-10 w-10 text-muted-foreground" />
-          ) : (
-            <div className="flex flex-col items-center gap-1">
-              <FileIcon className="h-10 w-10 text-muted-foreground" />
-              {ext && (
-                <span className="text-[10px] font-medium uppercase text-muted-foreground">
-                  .{ext}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+        <FileThumbnail
+          filename={file.original_filename}
+          signedUrl={signedUrlForThumb}
+          className="h-28"
+        />
         <div className="space-y-1 p-3">
           <div
             className="truncate text-sm font-medium"
