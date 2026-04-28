@@ -21,6 +21,7 @@ import {
 } from "@/components/deal-detail/DealLinesEditor";
 import { DealSummary } from "@/components/deal-detail/DealSummary";
 import { PurchaseOrdersSection } from "@/components/deal-detail/PurchaseOrdersSection";
+import { DealFilesSection } from "@/components/deal-detail/DealFilesSection";
 
 import { DealLog, type LogEntry } from "@/components/deal-detail/DealLog";
 import { EditDealDrawer } from "@/components/deal-detail/EditDealDrawer";
