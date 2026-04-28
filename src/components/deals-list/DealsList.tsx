@@ -119,6 +119,7 @@ export function DealsList({ currentUserId }: Props) {
   const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set());
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
+  const [lineMatchedDealIds, setLineMatchedDealIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
   // Debounce search
@@ -180,11 +181,16 @@ export function DealsList({ currentUserId }: Props) {
       } else {
         let rows = (data ?? []) as unknown as DealRow[];
 
+        const matchedIds = new Set<string>(
+          (matchingLines ?? []).map((l) => l.deal_id),
+        );
+        if (!cancelled) setLineMatchedDealIds(matchedIds);
+
         if (searchTerm && matchingLines && matchingLines.length) {
           const existingIds = new Set(rows.map((d) => d.id));
-          const additionalIds = [
-            ...new Set(matchingLines.map((l) => l.deal_id)),
-          ].filter((id) => !existingIds.has(id));
+          const additionalIds = [...matchedIds].filter(
+            (id) => !existingIds.has(id),
+          );
           if (additionalIds.length) {
             const { data: additionalDeals } = await supabase
               .from("deals")
@@ -258,6 +264,7 @@ export function DealsList({ currentUserId }: Props) {
       const s = debouncedSearch.toLowerCase();
       list = list.filter(
         (d) =>
+          lineMatchedDealIds.has(d.id) ||
           d.name.toLowerCase().includes(s) ||
           d.so_number.toLowerCase().includes(s) ||
           (d.tracking_numbers ?? []).some((tn) => tn.toLowerCase().includes(s)) ||
@@ -267,7 +274,7 @@ export function DealsList({ currentUserId }: Props) {
       );
     }
     return list;
-  }, [deals, activeStage, selectedOwners, debouncedSearch]);
+  }, [deals, activeStage, selectedOwners, debouncedSearch, lineMatchedDealIds]);
 
   const ownersWithDeals = useMemo(() => {
     const ids = new Set<string>();
