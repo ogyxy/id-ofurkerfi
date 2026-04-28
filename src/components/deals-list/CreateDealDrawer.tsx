@@ -168,7 +168,8 @@ export function CreateDealDrawer({
     setNewContactLast("");
     setNewContactTitle("");
     setNewContactEmail("");
-    setNewContactPhone("");
+    setNewContactPhoneCountry("+354");
+    setNewContactPhoneLocal("");
   };
 
   const selectCompany = (c: Company) => {
