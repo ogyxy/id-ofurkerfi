@@ -337,11 +337,21 @@ export function DealsList({ currentUserId }: Props) {
     if (!showGrouping) return null;
     const map = new Map<DealStage, DealRow[]>();
     STAGE_ORDER.forEach((s) => map.set(s, []));
+    const resolvedDefects: DealRow[] = [];
     visibleDeals.forEach((d) => {
       if (d.stage === "cancelled") return;
+      if (d.stage === "defect_reorder" && isDefectResolved(d)) {
+        resolvedDefects.push(d);
+        return;
+      }
       const arr = map.get(d.stage);
       if (arr) arr.push(d);
     });
+    // Append resolved defect deals to the end of "delivered" group
+    if (resolvedDefects.length) {
+      const delivered = map.get("delivered") ?? [];
+      map.set("delivered", [...delivered, ...resolvedDefects]);
+    }
     return map;
   }, [visibleDeals, showGrouping]);
 
