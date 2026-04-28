@@ -194,8 +194,8 @@ export function CreateDealDrawer({
       })
       .select("id, name")
       .single();
-    setCreatingCompany(false);
     if (error || !data) {
+      setCreatingCompany(false);
       toast.error(t.status.somethingWentWrong);
       return;
     }
@@ -205,11 +205,40 @@ export function CreateDealDrawer({
         a.name.localeCompare(b.name),
       ),
     );
+
+    // Optional contact creation
+    if (addContact && newContactFirst.trim()) {
+      const { data: newContact } = await supabase
+        .from("contacts")
+        .insert({
+          company_id: newCompany.id,
+          first_name: newContactFirst.trim(),
+          last_name: newContactLast.trim() || null,
+          title: newContactTitle.trim() || null,
+          email: newContactEmail.trim() || null,
+          phone: newContactPhone.trim() || null,
+          is_primary: true,
+        })
+        .select("id, first_name, last_name, company_id")
+        .single();
+      if (newContact) {
+        setContacts([newContact as Contact]);
+        setContactId(newContact.id);
+      }
+    }
+
     selectCompany(newCompany);
+    setCreatingCompany(false);
     setNewOpen(false);
     setNewName("");
     setNewKennitala("");
     setNewEmail("");
+    setAddContact(false);
+    setNewContactFirst("");
+    setNewContactLast("");
+    setNewContactTitle("");
+    setNewContactEmail("");
+    setNewContactPhone("");
   };
 
   const handleSave = async () => {
