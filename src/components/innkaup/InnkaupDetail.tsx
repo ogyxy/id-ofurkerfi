@@ -737,33 +737,44 @@ function PoStepper({ status, onChange, onCancel, onReactivate }: StepperProps) {
 
 function FileCard({ file, onDeleted }: { file: PoFile; onDeleted: () => void }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const handleDownload = async () => {
-    // Extract path from public URL pattern
+
+  const resolvePath = (): string | null => {
+    if (file.storage_path) return file.storage_path;
+    // Legacy rows: try to extract from public file_url
     const url = file.file_url;
+    if (!url) return null;
     const marker = "/po_files/";
     const idx = url.indexOf(marker);
-    let signedUrl: string | null = null;
-    if (idx >= 0) {
-      const path = url.slice(idx + marker.length).split("?")[0];
+    if (idx < 0) return null;
+    return url.slice(idx + marker.length).split("?")[0];
+  };
+
+  const handleDownload = async () => {
+    const path = resolvePath();
+    if (path) {
       const { data } = await supabase.storage
         .from("po_files")
         .createSignedUrl(path, 60 * 60);
-      signedUrl = data?.signedUrl ?? null;
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+        return;
+      }
     }
-    window.open(signedUrl ?? url, "_blank", "noopener,noreferrer");
+    if (file.file_url) {
+      window.open(file.file_url, "_blank", "noopener,noreferrer");
+    }
   };
+
   const handleDelete = async () => {
-    const url = file.file_url;
-    const marker = "/po_files/";
-    const idx = url.indexOf(marker);
-    if (idx >= 0) {
-      const path = url.slice(idx + marker.length).split("?")[0];
+    const path = resolvePath();
+    if (path) {
       await supabase.storage.from("po_files").remove([path]);
     }
     await supabase.from("po_files").delete().eq("id", file.id);
     setConfirmDelete(false);
     onDeleted();
   };
+
   return (
     <div className="flex items-center gap-2 rounded-md border border-border bg-card p-3">
       <button
