@@ -97,9 +97,7 @@ export function DealsList({ currentUserId }: Props) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedStages, setSelectedStages] = useState<Set<DealStage | "all">>(
-    new Set(["all"]),
-  );
+  const [activeStage, setActiveStage] = useState<DealStage | null>(null);
   const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set());
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
