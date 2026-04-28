@@ -264,6 +264,7 @@ export function DealsList({ currentUserId }: Props) {
       const s = debouncedSearch.toLowerCase();
       list = list.filter(
         (d) =>
+          lineMatchedDealIds.has(d.id) ||
           d.name.toLowerCase().includes(s) ||
           d.so_number.toLowerCase().includes(s) ||
           (d.tracking_numbers ?? []).some((tn) => tn.toLowerCase().includes(s)) ||
@@ -273,7 +274,7 @@ export function DealsList({ currentUserId }: Props) {
       );
     }
     return list;
-  }, [deals, activeStage, selectedOwners, debouncedSearch]);
+  }, [deals, activeStage, selectedOwners, debouncedSearch, lineMatchedDealIds]);
 
   const ownersWithDeals = useMemo(() => {
     const ids = new Set<string>();
