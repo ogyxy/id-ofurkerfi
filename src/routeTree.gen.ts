@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InnkaupRouteImport } from './routes/innkaup'
+import { Route as HonnunRouteImport } from './routes/honnun'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as IndexRouteImport } from './routes/index'
@@ -26,6 +27,11 @@ const LoginRoute = LoginRouteImport.update({
 const InnkaupRoute = InnkaupRouteImport.update({
   id: '/innkaup',
   path: '/innkaup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HonnunRoute = HonnunRouteImport.update({
+  id: '/honnun',
+  path: '/honnun',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DealsRoute = DealsRouteImport.update({
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/companies': typeof CompaniesRoute
   '/deals': typeof DealsRoute
+  '/honnun': typeof HonnunRoute
   '/innkaup': typeof InnkaupRoute
   '/login': typeof LoginRoute
   '/companies/$id': typeof CompaniesIdRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/companies': typeof CompaniesRoute
   '/deals': typeof DealsRoute
+  '/honnun': typeof HonnunRoute
   '/innkaup': typeof InnkaupRoute
   '/login': typeof LoginRoute
   '/companies/$id': typeof CompaniesIdRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/companies': typeof CompaniesRoute
   '/deals': typeof DealsRoute
+  '/honnun': typeof HonnunRoute
   '/innkaup': typeof InnkaupRoute
   '/login': typeof LoginRoute
   '/companies_/$id': typeof CompaniesIdRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/companies'
     | '/deals'
+    | '/honnun'
     | '/innkaup'
     | '/login'
     | '/companies/$id'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/companies'
     | '/deals'
+    | '/honnun'
     | '/innkaup'
     | '/login'
     | '/companies/$id'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/companies'
     | '/deals'
+    | '/honnun'
     | '/innkaup'
     | '/login'
     | '/companies_/$id'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CompaniesRoute: typeof CompaniesRoute
   DealsRoute: typeof DealsRoute
+  HonnunRoute: typeof HonnunRoute
   InnkaupRoute: typeof InnkaupRoute
   LoginRoute: typeof LoginRoute
   CompaniesIdRoute: typeof CompaniesIdRoute
@@ -148,6 +161,13 @@ declare module '@tanstack/react-router' {
       path: '/innkaup'
       fullPath: '/innkaup'
       preLoaderRoute: typeof InnkaupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/honnun': {
+      id: '/honnun'
+      path: '/honnun'
+      fullPath: '/honnun'
+      preLoaderRoute: typeof HonnunRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/deals': {
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CompaniesRoute: CompaniesRoute,
   DealsRoute: DealsRoute,
+  HonnunRoute: HonnunRoute,
   InnkaupRoute: InnkaupRoute,
   LoginRoute: LoginRoute,
   CompaniesIdRoute: CompaniesIdRoute,
