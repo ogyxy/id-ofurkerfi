@@ -256,6 +256,54 @@ export type Database = {
           },
         ]
       }
+      deal_files: {
+        Row: {
+          deal_id: string
+          file_size_bytes: number | null
+          file_type: string
+          id: string
+          original_filename: string | null
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          deal_id: string
+          file_size_bytes?: number | null
+          file_type?: string
+          id?: string
+          original_filename?: string | null
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          deal_id?: string
+          file_size_bytes?: number | null
+          file_type?: string
+          id?: string
+          original_filename?: string | null
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_files_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_files_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_lines: {
         Row: {
           cost_currency: string
@@ -608,6 +656,7 @@ export type Database = {
           id: string
           original_filename: string | null
           po_id: string
+          storage_path: string | null
           uploaded_at: string
           uploaded_by: string | null
         }
@@ -618,6 +667,7 @@ export type Database = {
           id?: string
           original_filename?: string | null
           po_id: string
+          storage_path?: string | null
           uploaded_at?: string
           uploaded_by?: string | null
         }
@@ -628,6 +678,7 @@ export type Database = {
           id?: string
           original_filename?: string | null
           po_id?: string
+          storage_path?: string | null
           uploaded_at?: string
           uploaded_by?: string | null
         }
