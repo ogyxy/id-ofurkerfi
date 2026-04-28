@@ -383,6 +383,9 @@ export function DealLinesEditor({
                       onChange={(e) =>
                         updateLine(idx, { product_name: e.target.value })
                       }
+                      onKeyDown={handleEnterAddLine}
+                      data-line-id={line.id}
+                      data-field="product_name"
                       className="min-w-[140px]"
                       disabled={readOnly}
                     />
@@ -390,11 +393,15 @@ export function DealLinesEditor({
                   <td className="px-2 py-2">
                     <Input
                       type="number"
-                      value={line.quantity}
+                      value={line.emptyQty ? "" : line.quantity}
                       onChange={(e) =>
-                        updateLine(idx, { quantity: Number(e.target.value) })
+                        updateLine(idx, {
+                          quantity: e.target.value === "" ? 0 : Number(e.target.value),
+                          ...(e.target.value === "" ? { emptyQty: true } : {}),
+                        })
                       }
-                      className="w-20 mx-auto text-center"
+                      onKeyDown={handleEnterAddLine}
+                      className={cn("w-20 mx-auto text-center", NO_SPINNER)}
                       disabled={readOnly}
                     />
                   </td>
@@ -403,11 +410,15 @@ export function DealLinesEditor({
                       <Input
                         type="number"
                         step="0.01"
-                        value={line.unit_cost}
+                        value={line.emptyCost ? "" : line.unit_cost}
                         onChange={(e) =>
-                          updateLine(idx, { unit_cost: Number(e.target.value) })
+                          updateLine(idx, {
+                            unit_cost: e.target.value === "" ? 0 : Number(e.target.value),
+                            ...(e.target.value === "" ? { emptyCost: true } : {}),
+                          })
                         }
-                        className="w-24 pr-10 text-right"
+                        onKeyDown={handleEnterAddLine}
+                        className={cn("w-24 pr-10 text-right", NO_SPINNER)}
                         disabled={readOnly}
                       />
                       <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
@@ -444,8 +455,9 @@ export function DealLinesEditor({
                             exchange_rate: Number(e.target.value),
                           })
                         }
+                        onKeyDown={handleEnterAddLine}
                         placeholder={ratesError ? "Sláðu inn gengi" : ""}
-                        className="w-24 pr-8 text-right"
+                        className={cn("w-24 pr-8 text-right", NO_SPINNER)}
                         disabled={readOnly || line.cost_currency === "ISK"}
                       />
                       <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
@@ -464,6 +476,7 @@ export function DealLinesEditor({
                             markup_pct: Number(e.target.value),
                           })
                         }
+                        onKeyDown={handleEnterAddLine}
                         onBlur={() => {
                           const updated = {
                             ...line,
@@ -477,7 +490,7 @@ export function DealLinesEditor({
                           next[idx] = updated;
                           setLines(next);
                         }}
-                        className="w-24 pr-6 text-right"
+                        className={cn("w-24 pr-6 text-right", NO_SPINNER)}
                         disabled={readOnly}
                       />
                       <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
@@ -499,7 +512,8 @@ export function DealLinesEditor({
                               unit_price_isk: Number(e.target.value),
                             })
                           }
-                          className="w-28 pr-8 text-right"
+                          onKeyDown={handleEnterAddLine}
+                          className={cn("w-28 pr-8 text-right", NO_SPINNER)}
                           disabled={readOnly}
                         />
                         <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground">
