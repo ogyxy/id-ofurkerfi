@@ -9,7 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CountrySelect } from "@/components/ui/CountrySelect";
 import { CurrencySelect } from "@/components/ui/CurrencySelect";
-import { maskKennitalaInput, stripKennitala, isValidKennitala } from "@/lib/formatters";
+import { PhoneInput } from "@/components/PhoneInput";
+import {
+  maskKennitalaInput,
+  stripKennitala,
+  isValidKennitala,
+  stripPhone,
+} from "@/lib/formatters";
+import { parsePhone } from "@/lib/phoneCountries";
 import {
   Sheet,
   SheetContent,
