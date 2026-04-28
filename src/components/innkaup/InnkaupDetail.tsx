@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, MoreHorizontal, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Download, MoreHorizontal, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
