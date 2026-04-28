@@ -850,7 +850,13 @@ function AmountCell({ deal }: { deal: DealRow }) {
       {!isAmber && isBlue && (
         <Clock size={14} className="shrink-0 text-blue-600" aria-hidden="true" />
       )}
-      <span>{formatIsk(deal.amount_isk)}</span>
+      <span>
+        {formatIsk(
+          deal.defect_resolution === "refund" && deal.refund_amount_isk != null
+            ? (deal.amount_isk ?? 0) - (deal.refund_amount_isk ?? 0)
+            : deal.amount_isk,
+        )}
+      </span>
     </span>
   );
 }
