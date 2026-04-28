@@ -258,7 +258,12 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
           </div>
           <div>
             <Label>{t.company.phone}</Label>
-            <Input value={form.phone} onChange={(e) => update("phone", e.target.value)} />
+            <PhoneInput
+              countryCode={form.phoneCountryCode}
+              localNumber={form.phoneLocal}
+              onCountryCodeChange={(v) => update("phoneCountryCode", v)}
+              onLocalNumberChange={(v) => update("phoneLocal", v)}
+            />
           </div>
           <div className="md:col-span-2">
             <Label>{t.company.website}</Label>
