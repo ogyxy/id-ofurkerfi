@@ -796,7 +796,7 @@ function DealCard({
 
       {/* Date */}
       <div className="hidden text-right md:block">
-        {deal.stage === "delivered" ? (
+        {deal.stage === "delivered" || resolvedDefect ? (
           <>
             <div className="text-[10px] uppercase tracking-wide text-green-700/70">
               {t.deal.deliveredOn}
