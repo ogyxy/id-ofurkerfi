@@ -206,6 +206,54 @@ export type Database = {
           },
         ]
       }
+      company_files: {
+        Row: {
+          company_id: string
+          file_size_bytes: number | null
+          file_type: string
+          id: string
+          original_filename: string | null
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          company_id: string
+          file_size_bytes?: number | null
+          file_type?: string
+          id?: string
+          original_filename?: string | null
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          company_id?: string
+          file_size_bytes?: number | null
+          file_type?: string
+          id?: string
+          original_filename?: string | null
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_files_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_files_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           company_id: string
