@@ -396,6 +396,14 @@ function DealDetailContent() {
         onChanged={load}
       />
 
+      <DealFilesSection
+        dealId={deal.id}
+        companyId={company.id}
+        companyName={company.name}
+        soNumber={deal.so_number}
+        currentProfileId={currentProfile?.id ?? null}
+      />
+
 
       <DealLog
         dealId={deal.id}
