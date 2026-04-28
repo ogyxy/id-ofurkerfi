@@ -634,22 +634,22 @@ function StagePopover({
 
 function DealCard({
   deal,
+  profiles,
   onOpen,
   onStageChange,
+  onOwnerChange,
 }: {
   deal: DealRow;
+  profiles: Profile[];
   onOpen: () => void;
   onStageChange: (s: DealStage) => void | Promise<void>;
+  onOwnerChange: (ownerId: string | null) => void | Promise<void>;
 }) {
   const styles = STAGE_STYLES[deal.stage];
   const muted = deal.stage === "delivered";
   const cancelled = deal.stage === "cancelled";
   const overdue = isOverdue(deal.promised_delivery_date, deal.stage);
 
-  const showInvoiceBadge =
-    deal.invoice_status === "not_invoiced" && deal.stage === "delivered";
-  const showPaymentBadge =
-    deal.payment_status === "unpaid" && deal.invoice_status !== "not_invoiced";
   const showDefectBadge = deal.stage === "defect_reorder";
 
   return (
@@ -669,29 +669,17 @@ function DealCard({
         cancelled && "italic",
       )}
     >
-      {/* SO number + stage + badges */}
+      {/* SO number + stage + defect badge */}
       <div className="min-w-0 space-y-1">
         <div className="font-mono text-xs text-muted-foreground">{deal.so_number}</div>
         <div onClick={(e) => e.stopPropagation()}>
           <StagePopover current={deal.stage} onChange={onStageChange} />
         </div>
-        {(showInvoiceBadge || showPaymentBadge || showDefectBadge) && (
+        {showDefectBadge && (
           <div className="flex flex-wrap gap-1">
-            {showInvoiceBadge && (
-              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
-                {t.invoiceStatus.not_invoiced}
-              </span>
-            )}
-            {showPaymentBadge && (
-              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
-                {t.paymentStatus.unpaid}
-              </span>
-            )}
-            {showDefectBadge && (
-              <span className="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-800">
-                {t.defectResolution[deal.defect_resolution]}
-              </span>
-            )}
+            <span className="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-800">
+              {t.defectResolution[deal.defect_resolution]}
+            </span>
           </div>
         )}
       </div>
@@ -730,20 +718,15 @@ function DealCard({
       </div>
 
       {/* Owner — always reserves space */}
-      <div className="hidden items-center gap-2 md:flex">
-        {deal.owner ? (
-          <>
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ide-navy text-[10px] font-medium text-white">
-              {initials(deal.owner.name)}
-            </div>
-            <span className="truncate text-xs text-muted-foreground">{deal.owner.name}</span>
-          </>
-        ) : (
-          <>
-            <div className="h-6 w-6 shrink-0 rounded-full border border-dashed border-gray-300 bg-gray-50" />
-            <span className="text-xs text-muted-foreground">—</span>
-          </>
-        )}
+      <div className="hidden items-center gap-2 md:flex" onClick={(e) => e.stopPropagation()}>
+        <OwnerPopover
+          owner={deal.owner}
+          profiles={profiles}
+          onChange={onOwnerChange}
+        />
+        <span className="truncate text-xs text-muted-foreground">
+          {deal.owner?.name ?? "—"}
+        </span>
       </div>
 
       {/* Date */}
@@ -774,9 +757,241 @@ function DealCard({
       </div>
 
       {/* Amount */}
-      <div className="hidden text-right text-sm font-medium md:block">
-        {formatIsk(deal.amount_isk)}
+      <div className="hidden text-right md:block" onClick={(e) => e.stopPropagation()}>
+        <AmountCell deal={deal} />
       </div>
     </div>
+  );
+}
+
+function AmountCell({ deal }: { deal: DealRow }) {
+  const isAmber =
+    deal.stage === "delivered" && deal.invoice_status === "not_invoiced";
+  const isBlue =
+    (deal.invoice_status === "partial" || deal.invoice_status === "full") &&
+    (deal.payment_status === "unpaid" || deal.payment_status === "partial");
+
+  const tooltip = isAmber
+    ? t.deal.amountTooltipNotInvoiced
+    : isBlue
+    ? t.deal.amountTooltipUnpaid
+    : null;
+
+  const colorClass = isAmber
+    ? "text-amber-600"
+    : isBlue
+    ? "text-blue-600"
+    : "text-foreground";
+
+  const [open, setOpen] = useState(false);
+  const isTouchRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia) {
+      isTouchRef.current = window.matchMedia("(hover: none)").matches;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!open || !isTouchRef.current) return;
+    const dismiss = () => setOpen(false);
+    timerRef.current = setTimeout(() => setOpen(false), 3000);
+    const onDocTap = () => setOpen(false);
+    // delay so the originating tap doesn't immediately close
+    const id = setTimeout(() => {
+      document.addEventListener("click", onDocTap, { once: true });
+    }, 50);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      clearTimeout(id);
+      document.removeEventListener("click", onDocTap);
+      void dismiss;
+    };
+  }, [open]);
+
+  if (!tooltip) {
+    return (
+      <span className={cn("text-sm font-medium", colorClass)}>
+        {formatIsk(deal.amount_isk)}
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className="relative inline-block"
+      onMouseEnter={() => {
+        if (!isTouchRef.current) setOpen(true);
+      }}
+      onMouseLeave={() => {
+        if (!isTouchRef.current) setOpen(false);
+      }}
+      onClick={(e) => {
+        if (isTouchRef.current) {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }
+      }}
+    >
+      <span className={cn("text-sm font-medium cursor-help", colorClass)}>
+        {formatIsk(deal.amount_isk)}
+      </span>
+      {open && (
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 w-64 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-center text-[12px] font-normal text-white shadow-lg"
+        >
+          {tooltip}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function OwnerPopover({
+  owner,
+  profiles,
+  onChange,
+}: {
+  owner: { id: string; name: string | null } | null;
+  profiles: Profile[];
+  onChange: (ownerId: string | null) => void | Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const trigger = owner ? (
+    <button
+      type="button"
+      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ide-navy text-[10px] font-medium text-white transition hover:opacity-80"
+      aria-label={owner.name ?? ""}
+    >
+      {initials(owner.name)}
+    </button>
+  ) : (
+    <button
+      type="button"
+      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed border-gray-300 bg-gray-50 text-gray-400 transition hover:border-ide-navy hover:text-ide-navy"
+      aria-label="assign owner"
+    >
+      <Plus className="h-3 w-3" />
+    </button>
+  );
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="w-56 p-1"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <ul className="max-h-64 space-y-0.5 overflow-y-auto">
+          {profiles.map((p) => {
+            const active = owner?.id === p.id;
+            return (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!active) await onChange(p.id);
+                    setOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ide-navy text-[10px] font-medium text-white">
+                    {initials(p.name ?? p.email)}
+                  </span>
+                  <span className="flex-1 truncate">{p.name || p.email}</span>
+                  {active && <Check className="h-4 w-4 text-ide-navy" />}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        {owner && (
+          <>
+            <div className="my-1 h-px bg-border" />
+            <button
+              type="button"
+              onClick={async () => {
+                await onChange(null);
+                setOpen(false);
+              }}
+              className="block w-full rounded px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-muted"
+            >
+              {t.deal.unassignOwner}
+            </button>
+          </>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function StageGroup({
+  stage,
+  count,
+  children,
+}: {
+  stage: DealStage;
+  count: number;
+  children: React.ReactNode;
+}) {
+  const storageKey = `deals_stage_collapsed_${stage}`;
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    if (count === 0) return true;
+    try {
+      return JSON.parse(window.sessionStorage.getItem(storageKey) || "false");
+    } catch {
+      return false;
+    }
+  });
+
+  // Auto-collapse if empty (even if storage says expanded)
+  useEffect(() => {
+    if (count === 0 && !collapsed) setCollapsed(true);
+  }, [count, collapsed]);
+
+  const toggle = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      window.sessionStorage.setItem(storageKey, JSON.stringify(next));
+    } catch {
+      // ignore
+    }
+  };
+
+  return (
+    <section>
+      <button
+        type="button"
+        onClick={toggle}
+        className="mb-2 flex w-full items-center gap-2 text-gray-400 transition hover:text-gray-600"
+        style={{ fontSize: "11px" }}
+      >
+        <span className="h-px flex-1 bg-border" />
+        <span className="uppercase tracking-wider">
+          {t.dealStage[stage]} ({count})
+        </span>
+        <span className="h-px flex-1 bg-border" />
+        <ChevronDown
+          className={cn(
+            "h-3 w-3 shrink-0 transition-transform",
+            collapsed && "-rotate-90",
+          )}
+        />
+      </button>
+      <div
+        className={cn(
+          "grid transition-all duration-200 ease-in-out",
+          collapsed ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100",
+        )}
+      >
+        <div className="overflow-hidden">{children}</div>
+      </div>
+    </section>
   );
 }
