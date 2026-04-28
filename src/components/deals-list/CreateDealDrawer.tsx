@@ -386,6 +386,61 @@ export function CreateDealDrawer({
                     onChange={(e) => setNewEmail(e.target.value)}
                   />
                 </div>
+
+                <div className="border-t border-border pt-2">
+                  <label className="flex items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={addContact}
+                      onChange={(e) => setAddContact(e.target.checked)}
+                      className="h-3.5 w-3.5"
+                    />
+                    {t.deal.addContact}
+                  </label>
+                  {addContact && (
+                    <div className="mt-2 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">{t.contact.first_name}</Label>
+                          <Input
+                            value={newContactFirst}
+                            onChange={(e) => setNewContactFirst(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">{t.contact.last_name}</Label>
+                          <Input
+                            value={newContactLast}
+                            onChange={(e) => setNewContactLast(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs">{t.contact.title}</Label>
+                        <Input
+                          value={newContactTitle}
+                          onChange={(e) => setNewContactTitle(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">{t.contact.email}</Label>
+                        <Input
+                          type="email"
+                          value={newContactEmail}
+                          onChange={(e) => setNewContactEmail(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">{t.contact.phone}</Label>
+                        <Input
+                          value={newContactPhone}
+                          onChange={(e) => setNewContactPhone(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-end gap-2 pt-1">
                   <Button
                     size="sm"
