@@ -481,11 +481,11 @@ export function CreateDealDrawer({
           </div>
 
           <div>
-            <Label>{t.deal.estimated_delivery_date}</Label>
+            <Label>{t.deal.promised_delivery_date}</Label>
             <Input
               type="date"
-              value={estDate}
-              onChange={(e) => setEstDate(e.target.value)}
+              value={promisedDate}
+              onChange={(e) => setPromisedDate(e.target.value)}
             />
           </div>
 
