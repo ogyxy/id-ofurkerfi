@@ -27,7 +27,7 @@ const navItems: Array<{
   { key: "deals", label: t.nav.deals, to: "/deals" },
   { key: "designs", label: t.nav.designs },
   { key: "products", label: t.nav.products },
-  { key: "purchaseOrders", label: t.nav.purchaseOrders },
+  { key: "purchaseOrders", label: t.nav.purchaseOrders, to: "/innkaup" },
 ];
 
 export function Sidebar({ activeKey, userEmail }: SidebarProps) {

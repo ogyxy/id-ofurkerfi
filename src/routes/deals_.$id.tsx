@@ -391,6 +391,7 @@ function DealDetailContent() {
       <PurchaseOrdersSection
         dealId={deal.id}
         pos={pos}
+        currentProfileId={currentProfile?.id ?? null}
         onChanged={load}
       />
 

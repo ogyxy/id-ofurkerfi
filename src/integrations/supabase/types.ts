@@ -600,6 +600,54 @@ export type Database = {
           },
         ]
       }
+      po_files: {
+        Row: {
+          file_size_bytes: number | null
+          file_type: string
+          file_url: string
+          id: string
+          original_filename: string | null
+          po_id: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          file_size_bytes?: number | null
+          file_type?: string
+          file_url: string
+          id?: string
+          original_filename?: string | null
+          po_id: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          file_size_bytes?: number | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          original_filename?: string | null
+          po_id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "po_files_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "po_files_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       po_lines: {
         Row: {
           decoration_spec_id: string | null
@@ -675,6 +723,7 @@ export type Database = {
           min_quantity: number
           name: string
           supplier: string
+          supplier_id: string | null
           supplier_sku: string
           tags: string[]
           unit_cost: number | null
@@ -694,6 +743,7 @@ export type Database = {
           min_quantity?: number
           name: string
           supplier?: string
+          supplier_id?: string | null
           supplier_sku: string
           tags?: string[]
           unit_cost?: number | null
@@ -713,6 +763,7 @@ export type Database = {
           min_quantity?: number
           name?: string
           supplier?: string
+          supplier_id?: string | null
           supplier_sku?: string
           tags?: string[]
           unit_cost?: number | null
@@ -725,6 +776,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -766,13 +824,23 @@ export type Database = {
           created_at: string
           currency: string
           deal_id: string | null
+          exchange_rate: number | null
           expected_delivery_date: string | null
           id: string
+          invoice_received_date: string | null
           notes: string | null
+          order_date: string | null
+          paid_date: string | null
           po_number: string
+          proof_received_date: string | null
+          proof_url: string | null
+          received_date: string | null
           shipping_cost: number | null
           status: Database["public"]["Enums"]["po_status"]
           supplier: string
+          supplier_id: string | null
+          supplier_invoice_amount: number | null
+          supplier_invoice_number: string | null
           supplier_reference: string | null
           updated_at: string
         }
@@ -782,13 +850,23 @@ export type Database = {
           created_at?: string
           currency?: string
           deal_id?: string | null
+          exchange_rate?: number | null
           expected_delivery_date?: string | null
           id?: string
+          invoice_received_date?: string | null
           notes?: string | null
+          order_date?: string | null
+          paid_date?: string | null
           po_number?: string
+          proof_received_date?: string | null
+          proof_url?: string | null
+          received_date?: string | null
           shipping_cost?: number | null
           status?: Database["public"]["Enums"]["po_status"]
           supplier: string
+          supplier_id?: string | null
+          supplier_invoice_amount?: number | null
+          supplier_invoice_number?: string | null
           supplier_reference?: string | null
           updated_at?: string
         }
@@ -798,13 +876,23 @@ export type Database = {
           created_at?: string
           currency?: string
           deal_id?: string | null
+          exchange_rate?: number | null
           expected_delivery_date?: string | null
           id?: string
+          invoice_received_date?: string | null
           notes?: string | null
+          order_date?: string | null
+          paid_date?: string | null
           po_number?: string
+          proof_received_date?: string | null
+          proof_url?: string | null
+          received_date?: string | null
           shipping_cost?: number | null
           status?: Database["public"]["Enums"]["po_status"]
           supplier?: string
+          supplier_id?: string | null
+          supplier_invoice_amount?: number | null
+          supplier_invoice_number?: string | null
           supplier_reference?: string | null
           updated_at?: string
         }
@@ -814,6 +902,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
         ]
@@ -960,6 +1055,45 @@ export type Database = {
           },
         ]
       }
+      suppliers: {
+        Row: {
+          active: boolean
+          archived: boolean
+          contact_email: string | null
+          created_at: string
+          default_currency: string
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          active?: boolean
+          archived?: boolean
+          contact_email?: string | null
+          created_at?: string
+          default_currency?: string
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          active?: boolean
+          archived?: boolean
+          contact_email?: string | null
+          created_at?: string
+          default_currency?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1006,15 +1140,7 @@ export type Database = {
         | "resolved"
       invoice_status: "not_invoiced" | "partial" | "full"
       payment_status: "unpaid" | "partial" | "paid"
-      po_status:
-        | "draft"
-        | "sent"
-        | "confirmed"
-        | "in_production"
-        | "shipped"
-        | "received"
-        | "invoiced"
-        | "cancelled"
+      po_status: "ordered" | "received" | "invoiced" | "paid" | "cancelled"
       quote_status: "draft" | "sent" | "accepted" | "rejected" | "expired"
       user_role: "admin" | "sales" | "designer" | "viewer"
       vsk_status: "standard" | "reduced" | "export_exempt" | "none"
@@ -1184,16 +1310,7 @@ export const Constants = {
       ],
       invoice_status: ["not_invoiced", "partial", "full"],
       payment_status: ["unpaid", "partial", "paid"],
-      po_status: [
-        "draft",
-        "sent",
-        "confirmed",
-        "in_production",
-        "shipped",
-        "received",
-        "invoiced",
-        "cancelled",
-      ],
+      po_status: ["ordered", "received", "invoiced", "paid", "cancelled"],
       quote_status: ["draft", "sent", "accepted", "rejected", "expired"],
       user_role: ["admin", "sales", "designer", "viewer"],
       vsk_status: ["standard", "reduced", "export_exempt", "none"],

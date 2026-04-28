@@ -10,15 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as InnkaupRouteImport } from './routes/innkaup'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InnkaupIdRouteImport } from './routes/innkaup_.$id'
 import { Route as DealsIdRouteImport } from './routes/deals_.$id'
 import { Route as CompaniesIdRouteImport } from './routes/companies_.$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InnkaupRoute = InnkaupRouteImport.update({
+  id: '/innkaup',
+  path: '/innkaup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DealsRoute = DealsRouteImport.update({
@@ -36,6 +43,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InnkaupIdRoute = InnkaupIdRouteImport.update({
+  id: '/innkaup_/$id',
+  path: '/innkaup/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DealsIdRoute = DealsIdRouteImport.update({
   id: '/deals_/$id',
   path: '/deals/$id',
@@ -51,26 +63,32 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/companies': typeof CompaniesRoute
   '/deals': typeof DealsRoute
+  '/innkaup': typeof InnkaupRoute
   '/login': typeof LoginRoute
   '/companies/$id': typeof CompaniesIdRoute
   '/deals/$id': typeof DealsIdRoute
+  '/innkaup/$id': typeof InnkaupIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/companies': typeof CompaniesRoute
   '/deals': typeof DealsRoute
+  '/innkaup': typeof InnkaupRoute
   '/login': typeof LoginRoute
   '/companies/$id': typeof CompaniesIdRoute
   '/deals/$id': typeof DealsIdRoute
+  '/innkaup/$id': typeof InnkaupIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/companies': typeof CompaniesRoute
   '/deals': typeof DealsRoute
+  '/innkaup': typeof InnkaupRoute
   '/login': typeof LoginRoute
   '/companies_/$id': typeof CompaniesIdRoute
   '/deals_/$id': typeof DealsIdRoute
+  '/innkaup_/$id': typeof InnkaupIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -78,28 +96,42 @@ export interface FileRouteTypes {
     | '/'
     | '/companies'
     | '/deals'
+    | '/innkaup'
     | '/login'
     | '/companies/$id'
     | '/deals/$id'
+    | '/innkaup/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/companies' | '/deals' | '/login' | '/companies/$id' | '/deals/$id'
+  to:
+    | '/'
+    | '/companies'
+    | '/deals'
+    | '/innkaup'
+    | '/login'
+    | '/companies/$id'
+    | '/deals/$id'
+    | '/innkaup/$id'
   id:
     | '__root__'
     | '/'
     | '/companies'
     | '/deals'
+    | '/innkaup'
     | '/login'
     | '/companies_/$id'
     | '/deals_/$id'
+    | '/innkaup_/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CompaniesRoute: typeof CompaniesRoute
   DealsRoute: typeof DealsRoute
+  InnkaupRoute: typeof InnkaupRoute
   LoginRoute: typeof LoginRoute
   CompaniesIdRoute: typeof CompaniesIdRoute
   DealsIdRoute: typeof DealsIdRoute
+  InnkaupIdRoute: typeof InnkaupIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -109,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/innkaup': {
+      id: '/innkaup'
+      path: '/innkaup'
+      fullPath: '/innkaup'
+      preLoaderRoute: typeof InnkaupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/deals': {
@@ -132,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/innkaup_/$id': {
+      id: '/innkaup_/$id'
+      path: '/innkaup/$id'
+      fullPath: '/innkaup/$id'
+      preLoaderRoute: typeof InnkaupIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/deals_/$id': {
       id: '/deals_/$id'
       path: '/deals/$id'
@@ -153,9 +199,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CompaniesRoute: CompaniesRoute,
   DealsRoute: DealsRoute,
+  InnkaupRoute: InnkaupRoute,
   LoginRoute: LoginRoute,
   CompaniesIdRoute: CompaniesIdRoute,
   DealsIdRoute: DealsIdRoute,
+  InnkaupIdRoute: InnkaupIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
