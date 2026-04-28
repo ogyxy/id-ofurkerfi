@@ -171,7 +171,7 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
         vsk_number: form.vsk_number.trim() || null,
         vsk_status: form.vsk_status,
         email: form.email.trim() || null,
-        phone: form.phone.trim() || null,
+        phone: stripPhone(form.phoneCountryCode, form.phoneLocal) || null,
         website: form.website.trim() || null,
         address_line_1: form.address_line_1.trim() || null,
         address_line_2: form.address_line_2.trim() || null,
