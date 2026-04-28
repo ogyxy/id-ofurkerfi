@@ -95,7 +95,6 @@ export function DealFilesSection({
   currentProfileId,
 }: Props) {
   const [files, setFiles] = useState<DealFileRow[]>([]);
-  const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [uploadOpen, setUploadOpen] = useState(false);
 
   const load = useCallback(async () => {
@@ -109,39 +108,30 @@ export function DealFilesSection({
       .eq("deal_id", dealId)
       .order("uploaded_at", { ascending: false });
     const rows = (data ?? []) as unknown as DealFileRow[];
-    setFiles(rows);
 
-    // Fetch image previews as blob URLs (avoids CORS on signed URLs)
-    const imagesToFetch = rows.filter((f) => IMAGE_EXTS.includes(fileExt(f.original_filename)));
-    const next: Record<string, string> = {};
-    await Promise.all(
-      imagesToFetch.map(async (f) => {
-        const url = await fetchStorageBlobUrl("deal_files", f.storage_path);
-        if (url) next[f.id] = url;
+    const withUrls = await Promise.all(
+      rows.map(async (f) => {
+        const [view, dl] = await Promise.all([
+          supabase.storage.from("deal_files").createSignedUrl(f.storage_path, 3600),
+          supabase.storage
+            .from("deal_files")
+            .createSignedUrl(f.storage_path, 3600, {
+              download: f.original_filename ?? true,
+            }),
+        ]);
+        return {
+          ...f,
+          signedUrl: view.data?.signedUrl ?? null,
+          signedUrlDownload: dl.data?.signedUrl ?? null,
+        };
       }),
     );
-    setThumbs((prev) => {
-      Object.values(prev).forEach((u) => URL.revokeObjectURL(u));
-      return next;
-    });
+    setFiles(withUrls);
   }, [dealId]);
-
-  useEffect(() => {
-    return () => {
-      setThumbs((prev) => {
-        Object.values(prev).forEach((u) => URL.revokeObjectURL(u));
-        return {};
-      });
-    };
-  }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
-
-  const handleDownload = async (file: DealFileRow) => {
-    await openStorageFile("deal_files", file.storage_path);
-  };
 
   const handleDelete = async (file: DealFileRow) => {
     await supabase.storage.from("deal_files").remove([file.storage_path]);
