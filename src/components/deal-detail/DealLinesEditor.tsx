@@ -272,7 +272,7 @@ export function DealLinesEditor({
       line_order: lines.length + 1,
       product_name: "",
       product_supplier_sku: "",
-      quantity: 1,
+      quantity: 0,
       unit_cost: 0,
       cost_currency: "EUR",
       exchange_rate: eurRate ? Math.round(eurRate * 100) / 100 : 0,
@@ -281,8 +281,24 @@ export function DealLinesEditor({
       unit_price_isk: 0,
       manualPrice: false,
       notes: "",
+      emptyQty: true,
+      emptyCost: true,
     };
     setLines([...lines, newLine]);
+    // Focus the product_name input on the new line
+    setTimeout(() => {
+      const el = document.querySelector<HTMLInputElement>(
+        `input[data-line-id="${newLine.id}"][data-field="product_name"]`,
+      );
+      el?.focus();
+    }, 0);
+  };
+
+  const handleEnterAddLine = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      addLine();
+    }
   };
 
   const removeLine = async (idx: number) => {
