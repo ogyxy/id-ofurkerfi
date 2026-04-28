@@ -518,35 +518,43 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
       {/* Files */}
       <div className="rounded-md border border-border bg-card p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{t.purchaseOrder.filesSection}</h2>
+          <h2 className="text-lg font-semibold">
+            {t.purchaseOrder.filesSection} ({files.length})
+          </h2>
           <Button onClick={() => setUploadOpen(true)} className="bg-ide-navy text-white hover:bg-ide-navy-hover">
             <Upload className="mr-1 h-4 w-4" />
             {t.purchaseOrder.uploadFile}
           </Button>
         </div>
-        <div className="space-y-4">
-          {PO_FILE_TYPES.map((ft) => {
-            const arr = filesByType.get(ft) ?? [];
-            if (arr.length === 0) return null;
-            return (
-              <div key={ft}>
-                <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
-                  {poFileTypeLabel(t, ft)}
+        {files.length === 0 ? (
+          <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+            {t.purchaseOrder.noFiles}
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {PO_FILE_TYPES.map((ft) => {
+              const arr = filesByType.get(ft) ?? [];
+              if (arr.length === 0) return null;
+              return (
+                <div key={ft}>
+                  <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+                    {poFileTypeLabel(t, ft)}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {arr.map((f) => (
+                      <FileCard
+                        key={f.id}
+                        file={f}
+                        typeLabel={poFileTypeLabel(t, ft)}
+                        onDeleted={() => void load()}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {arr.map((f) => (
-                    <FileCard key={f.id} file={f} onDeleted={() => void load()} />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-          {files.length === 0 && (
-            <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-              {t.status.noDataYet}
-            </div>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Log */}
