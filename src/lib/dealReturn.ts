@@ -9,8 +9,6 @@ export function rememberDealReturnPath(path?: string) {
     path ??
     (typeof window.location !== "undefined" ? window.location.pathname : "");
   if (!p) return;
-  // Don't store the deal detail page itself as a return path.
-  if (p.startsWith("/deals/")) return;
   try {
     window.sessionStorage.setItem(KEY, p);
   } catch {

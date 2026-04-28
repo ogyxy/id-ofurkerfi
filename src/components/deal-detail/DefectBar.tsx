@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
+import { rememberDealReturnPath } from "@/lib/dealReturn";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -214,6 +215,7 @@ export function DefectBar({ deal, onChanged, onStageChanged, currentProfileId }:
     setBusy(false);
     setReorderOpen(false);
     toast.success(t.status.savedSuccessfully);
+    rememberDealReturnPath(`/deals/${deal.id}`);
     navigate({ to: "/deals/$id", params: { id: newDeal.id } });
   };
 

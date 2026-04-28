@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t, formatDate } from "@/lib/sala_translations_is";
+import { rememberDealReturnPath } from "@/lib/dealReturn";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -140,6 +141,7 @@ export function DeliveredBar({ deal, onChanged, onStageChanged, currentProfileId
     setBusy(false);
     setConfirmReorder(false);
     toast.success(t.status.savedSuccessfully);
+    rememberDealReturnPath(`/deals/${deal.id}`);
     navigate({ to: "/deals/$id", params: { id: newDeal.id } });
   };
 
