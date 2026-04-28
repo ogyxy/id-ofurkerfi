@@ -60,7 +60,8 @@ type FormState = {
   vsk_number: string;
   vsk_status: VskStatus;
   email: string;
-  phone: string;
+  phoneCountryCode: string;
+  phoneLocal: string;
   website: string;
   address_line_1: string;
   address_line_2: string;
@@ -73,13 +74,15 @@ type FormState = {
 };
 
 function fromCompany(c: Company): FormState {
+  const parsed = parsePhone(c.phone);
   return {
     name: c.name,
     kennitala: c.kennitala ? maskKennitalaInput(c.kennitala) : "",
     vsk_number: c.vsk_number ?? "",
     vsk_status: c.vsk_status,
     email: c.email ?? "",
-    phone: c.phone ?? "",
+    phoneCountryCode: parsed.countryCode,
+    phoneLocal: parsed.local,
     website: c.website ?? "",
     address_line_1: c.address_line_1 ?? "",
     address_line_2: c.address_line_2 ?? "",
