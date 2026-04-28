@@ -2,7 +2,7 @@ import { Mail, Phone, Globe, MapPin } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
-import { formatKennitala } from "@/lib/formatters";
+import { formatKennitala, formatPhone } from "@/lib/formatters";
 
 type Company = Database["public"]["Tables"]["companies"]["Row"];
 
