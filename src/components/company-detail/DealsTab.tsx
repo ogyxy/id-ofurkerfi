@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Copy, Check } from "lucide-react";
+import { Plus, Copy, Check, X, ArrowUp, ArrowDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t, formatIsk, formatDate } from "@/lib/sala_translations_is";
@@ -30,18 +30,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 import { EmptyState } from "./EmptyState";
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
+type DefectResolution = Database["public"]["Enums"]["defect_resolution"];
 type Deal = {
   id: string;
   so_number: string;
   name: string;
   stage: DealStage;
   amount_isk: number | null;
+  refund_amount_isk: number | null;
   promised_delivery_date: string | null;
+  delivered_at: string | null;
   invoice_status: Database["public"]["Enums"]["invoice_status"];
   payment_status: Database["public"]["Enums"]["payment_status"];
+  defect_resolution: DefectResolution;
+  created_at: string;
+  childDeals?: { stage: DealStage }[];
 };
 type Contact = Database["public"]["Tables"]["contacts"]["Row"];
 
@@ -73,9 +80,31 @@ const stageColors: Record<DealStage, string> = {
   defect_reorder: "bg-orange-100 text-orange-700",
 };
 
-function isOverdue(date: string | null, stage: DealStage): boolean {
+const OPEN_STAGES: DealStage[] = [
+  "inquiry",
+  "quote_in_progress",
+  "quote_sent",
+  "order_confirmed",
+];
+
+function isDefectResolved(deal: Deal): boolean {
+  if (deal.stage !== "defect_reorder") return false;
+  if (deal.defect_resolution === "refund" && deal.refund_amount_isk != null) return true;
+  if (deal.defect_resolution === "credit_note") return true;
+  if (deal.defect_resolution === "resolved") return true;
+  if (
+    deal.defect_resolution === "reorder" &&
+    (deal.childDeals?.length ?? 0) > 0 &&
+    deal.childDeals!.every((c) => c.stage === "delivered")
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function isOverdue(date: string | null, stage: DealStage, resolved: boolean): boolean {
   if (!date) return false;
-  if (stage === "delivered" || stage === "cancelled") return false;
+  if (stage === "delivered" || stage === "cancelled" || resolved) return false;
   const d = new Date(date);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -100,11 +129,18 @@ const emptyForm: FormState = {
   notes: "",
 };
 
+type FilterKey = "open" | "delivered" | "defect" | "cancelled";
+type SortKey = "created_at" | "amount_isk";
+type SortDir = "asc" | "desc";
+
 export function DealsTab({ companyId, deals, contacts, onChanged, onOpenDeal }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<FilterKey | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const handleCopySo = async (e: React.MouseEvent, id: string, soNumber: string) => {
     e.stopPropagation();
@@ -148,6 +184,78 @@ export function DealsTab({ companyId, deals, contacts, onChanged, onOpenDeal }: 
     onChanged();
   };
 
+  // Counts — always reflect full unarchived dataset
+  const counts = useMemo(() => {
+    let open = 0,
+      delivered = 0,
+      defect = 0,
+      cancelled = 0;
+    deals.forEach((d) => {
+      if (d.stage === "cancelled") cancelled++;
+      else if (d.stage === "defect_reorder") {
+        if (isDefectResolved(d)) delivered++;
+        else defect++;
+      } else if (d.stage === "delivered") delivered++;
+      else if (OPEN_STAGES.includes(d.stage)) open++;
+    });
+    return { open, delivered, defect, cancelled };
+  }, [deals]);
+
+  const filteredDeals = useMemo(() => {
+    let list: Deal[];
+    if (activeFilter === "open") {
+      list = deals.filter((d) => OPEN_STAGES.includes(d.stage));
+    } else if (activeFilter === "delivered") {
+      list = deals.filter(
+        (d) =>
+          d.stage === "delivered" ||
+          (d.stage === "defect_reorder" && isDefectResolved(d)),
+      );
+    } else if (activeFilter === "defect") {
+      list = deals.filter(
+        (d) => d.stage === "defect_reorder" && !isDefectResolved(d),
+      );
+    } else if (activeFilter === "cancelled") {
+      list = deals.filter((d) => d.stage === "cancelled");
+    } else {
+      list = deals.filter((d) => d.stage !== "cancelled");
+    }
+    const sorted = [...list].sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "amount_isk") {
+        cmp = Number(a.amount_isk ?? 0) - Number(b.amount_isk ?? 0);
+      } else {
+        cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [deals, activeFilter, sortKey, sortDir]);
+
+  const totalAmount = useMemo(() => {
+    return filteredDeals.reduce((sum, d) => {
+      const base = Number(d.amount_isk ?? 0);
+      if (
+        d.stage === "defect_reorder" &&
+        isDefectResolved(d) &&
+        d.defect_resolution === "refund" &&
+        d.refund_amount_isk != null
+      ) {
+        return sum + (base - Number(d.refund_amount_isk));
+      }
+      return sum + base;
+    }, 0);
+  }, [filteredDeals]);
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  };
+
   if (deals.length === 0) {
     return (
       <>
@@ -165,9 +273,45 @@ export function DealsTab({ companyId, deals, contacts, onChanged, onOpenDeal }: 
     );
   }
 
+  const pills: Array<{ key: FilterKey; label: string; count: number }> = [
+    { key: "open", label: t.deal.filterOpen, count: counts.open },
+    { key: "delivered", label: t.deal.filterDelivered, count: counts.delivered },
+    { key: "defect", label: t.deal.filterDefect, count: counts.defect },
+    { key: "cancelled", label: t.deal.filterCancelled, count: counts.cancelled },
+  ];
+
+  const visiblePills = activeFilter
+    ? pills.filter((p) => p.key === activeFilter)
+    : pills;
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {visiblePills.map((p) => {
+            const isActive = activeFilter === p.key;
+            return (
+              <button
+                key={p.key}
+                type="button"
+                onClick={() =>
+                  setActiveFilter(isActive ? null : p.key)
+                }
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-all",
+                  isActive
+                    ? "border-ide-navy bg-ide-navy text-white"
+                    : "border-border bg-card text-foreground hover:bg-muted",
+                )}
+              >
+                <span>
+                  {p.label} ({p.count})
+                </span>
+                {isActive && <X className="h-3 w-3" />}
+              </button>
+            );
+          })}
+        </div>
         <Button
           onClick={openCreate}
           className="bg-ide-navy text-white hover:bg-ide-navy-hover"
@@ -181,17 +325,56 @@ export function DealsTab({ companyId, deals, contacts, onChanged, onOpenDeal }: 
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t.deal.so_number}</TableHead>
+              <TableHead>
+                <button
+                  type="button"
+                  onClick={() => toggleSort("created_at")}
+                  className={cn(
+                    "inline-flex items-center gap-1 hover:text-foreground transition-colors",
+                    sortKey === "created_at" ? "text-ide-navy font-semibold" : "text-muted-foreground",
+                  )}
+                >
+                  {t.deal.so_number}
+                  {sortKey === "created_at" &&
+                    (sortDir === "desc" ? (
+                      <ArrowDown className="h-3 w-3" />
+                    ) : (
+                      <ArrowUp className="h-3 w-3" />
+                    ))}
+                </button>
+              </TableHead>
               <TableHead>{t.deal.name}</TableHead>
               <TableHead>{t.deal.stage}</TableHead>
-              <TableHead className="text-right">{t.deal.amount_isk}</TableHead>
+              <TableHead className="text-right">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("amount_isk")}
+                  className={cn(
+                    "inline-flex items-center gap-1 hover:text-foreground transition-colors",
+                    sortKey === "amount_isk" ? "text-ide-navy font-semibold" : "text-muted-foreground",
+                  )}
+                >
+                  {t.deal.amount_isk}
+                  {sortKey === "amount_isk" &&
+                    (sortDir === "desc" ? (
+                      <ArrowDown className="h-3 w-3" />
+                    ) : (
+                      <ArrowUp className="h-3 w-3" />
+                    ))}
+                </button>
+              </TableHead>
               <TableHead>{t.deal.invoice_status}</TableHead>
               <TableHead>{t.deal.promised_delivery_date}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {deals.map((d) => {
-              const overdue = isOverdue(d.promised_delivery_date, d.stage);
+            {filteredDeals.map((d) => {
+              const resolved = isDefectResolved(d);
+              const showDelivered = d.stage === "delivered" || resolved;
+              const dateValue = showDelivered ? d.delivered_at : d.promised_delivery_date;
+              const dateLabel = showDelivered ? t.deal.deliveredOn : t.deal.estimatedDelivery;
+              const dateLabelClass = showDelivered ? "text-green-700" : "text-muted-foreground";
+              const overdue = !showDelivered && isOverdue(d.promised_delivery_date, d.stage, resolved);
               return (
                 <TableRow
                   key={d.id}
@@ -232,14 +415,23 @@ export function DealsTab({ companyId, deals, contacts, onChanged, onOpenDeal }: 
                       {t.invoiceStatus[d.invoice_status]}
                     </span>
                   </TableCell>
-                  <TableCell className={overdue ? "text-destructive font-medium" : ""}>
-                    {formatDate(d.promised_delivery_date)}
+                  <TableCell>
+                    <div className={cn("text-[10px]", dateLabelClass)}>{dateLabel}</div>
+                    <div className={cn("text-sm", overdue && "text-destructive font-medium")}>
+                      {dateValue ? formatDate(dateValue) : "—"}
+                    </div>
                   </TableCell>
                 </TableRow>
               );
             })}
           </TableBody>
         </Table>
+        <div className="flex justify-end border-t border-border px-4 py-2 text-sm text-muted-foreground tabular-nums">
+          <span>
+            {t.deal.total} ({filteredDeals.length}):{" "}
+            <span className="ml-2 font-medium">{formatIsk(totalAmount)}</span>
+          </span>
+        </div>
       </div>
 
       <DealDrawer
