@@ -33,7 +33,8 @@ type FormState = {
   last_name: string;
   title: string;
   email: string;
-  phone: string;
+  phoneCountryCode: string;
+  phoneLocal: string;
   is_primary: boolean;
   notes: string;
 };
@@ -43,7 +44,8 @@ const emptyForm: FormState = {
   last_name: "",
   title: "",
   email: "",
-  phone: "",
+  phoneCountryCode: "+354",
+  phoneLocal: "",
   is_primary: false,
   notes: "",
 };
