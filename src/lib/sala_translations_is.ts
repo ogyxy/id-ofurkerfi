@@ -578,6 +578,42 @@ export const t = {
     defectEntry:     'Gallafærsla',
   },
 
+  // ---------------------------------------------------------------------------
+  // Deal files (Skjöl tengd sölu)
+  // ---------------------------------------------------------------------------
+  dealFile: {
+    title:         'Skjöl',
+    upload:        'Hlaða upp skjali',
+    noFiles:       'Engin skjöl enn',
+    fileType:      'Tegund',
+    size:          'Stærð',
+    uploadedBy:    'Hlaðið upp af',
+    uploadedAt:    'Dagsetning',
+    download:      'Sækja',
+    delete:        'Eyða',
+    confirmDelete: 'Eyða þessu skjali?',
+    confirmYes:    'Já, eyða',
+    uploading:     'Hleður upp...',
+    uploadFailed:  'Ekki tókst að hlaða upp',
+    pickFile:      'Veldu skrá',
+    dropHere:      'Dragðu skrá hingað eða smelltu',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Unified file-type labels — used by both deal_files and po_files
+  // ---------------------------------------------------------------------------
+  fileType: {
+    mockup:             'Mockup',
+    artwork:            'Hönnun',
+    logo:               'Logo',
+    presentation:       'Kynning',
+    quote:              'Tilboð',
+    invoice:            'Reikningur',
+    proof:              'Print proof',
+    order_confirmation: 'Pöntunarstaðfesting',
+    other:              'Annað',
+  },
+
 } as const;
 
 
