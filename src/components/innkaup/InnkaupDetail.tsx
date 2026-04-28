@@ -767,24 +767,12 @@ function FileCard({ file, onDeleted }: { file: PoFile; onDeleted: () => void }) 
 
   const resolvePath = (): string | null => {
     if (file.storage_path) return file.storage_path;
-    // Legacy rows: try to extract from public file_url
     const url = file.file_url;
     if (!url) return null;
     const marker = "/po_files/";
     const idx = url.indexOf(marker);
     if (idx < 0) return null;
     return url.slice(idx + marker.length).split("?")[0];
-  };
-
-  const handleDownload = async () => {
-    const path = resolvePath();
-    if (path) {
-      await openStorageFile("po_files", path);
-      return;
-    }
-    if (file.file_url) {
-      window.open(file.file_url, "_blank", "noopener,noreferrer");
-    }
   };
 
   const handleDelete = async () => {
@@ -797,11 +785,15 @@ function FileCard({ file, onDeleted }: { file: PoFile; onDeleted: () => void }) 
     onDeleted();
   };
 
+  const viewHref = file.signedUrl ?? file.file_url ?? "#";
+  const downloadHref = file.signedUrlDownload ?? file.file_url ?? "#";
+
   return (
     <div className="flex items-center gap-2 rounded-md border border-border bg-card p-3">
-      <button
-        type="button"
-        onClick={() => void handleDownload()}
+      <a
+        href={viewHref}
+        target="_blank"
+        rel="noopener noreferrer"
         className="min-w-0 flex-1 text-left"
       >
         <div className="truncate text-sm font-medium">{file.original_filename ?? "file"}</div>
@@ -809,10 +801,23 @@ function FileCard({ file, onDeleted }: { file: PoFile; onDeleted: () => void }) 
           {file.file_size_bytes ? `${Math.round(file.file_size_bytes / 1024)} KB` : ""}{" "}
           · {formatDate(file.uploaded_at)}
         </div>
-      </button>
+      </a>
+      <a
+        href={downloadHref}
+        download={file.original_filename ?? ""}
+        onClick={(e) => e.stopPropagation()}
+        className="text-muted-foreground hover:text-foreground"
+        aria-label={t.purchaseOrder.uploadFile}
+      >
+        <Download className="h-4 w-4" />
+      </a>
       <button
         type="button"
-        onClick={() => setConfirmDelete(true)}
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          setConfirmDelete(true);
+        }}
         className="text-muted-foreground hover:text-red-600"
         aria-label={t.actions.delete}
       >
