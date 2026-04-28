@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, X, AlertTriangle, Check, Plus, ChevronDown } from "lucide-react";
+import { Search, X, AlertTriangle, Check, Plus, ChevronDown, Clock, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t, formatIsk, formatDate } from "@/lib/sala_translations_is";
@@ -771,80 +771,21 @@ function AmountCell({ deal }: { deal: DealRow }) {
     (deal.invoice_status === "partial" || deal.invoice_status === "full") &&
     (deal.payment_status === "unpaid" || deal.payment_status === "partial");
 
-  const tooltip = isAmber
-    ? t.deal.amountTooltipNotInvoiced
-    : isBlue
-    ? t.deal.amountTooltipUnpaid
-    : null;
-
   const colorClass = isAmber
     ? "text-amber-600"
     : isBlue
     ? "text-blue-600"
     : "text-foreground";
 
-  const [open, setOpen] = useState(false);
-  const isTouchRef = useRef(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.matchMedia) {
-      isTouchRef.current = window.matchMedia("(hover: none)").matches;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!open || !isTouchRef.current) return;
-    const dismiss = () => setOpen(false);
-    timerRef.current = setTimeout(() => setOpen(false), 3000);
-    const onDocTap = () => setOpen(false);
-    // delay so the originating tap doesn't immediately close
-    const id = setTimeout(() => {
-      document.addEventListener("click", onDocTap, { once: true });
-    }, 50);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      clearTimeout(id);
-      document.removeEventListener("click", onDocTap);
-      void dismiss;
-    };
-  }, [open]);
-
-  if (!tooltip) {
-    return (
-      <span className={cn("text-sm font-medium", colorClass)}>
-        {formatIsk(deal.amount_isk)}
-      </span>
-    );
-  }
-
   return (
-    <span
-      className="relative inline-block"
-      onMouseEnter={() => {
-        if (!isTouchRef.current) setOpen(true);
-      }}
-      onMouseLeave={() => {
-        if (!isTouchRef.current) setOpen(false);
-      }}
-      onClick={(e) => {
-        if (isTouchRef.current) {
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }
-      }}
-    >
-      <span className={cn("text-sm font-medium cursor-help", colorClass)}>
-        {formatIsk(deal.amount_isk)}
-      </span>
-      {open && (
-        <span
-          role="tooltip"
-          className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 w-64 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-center text-[12px] font-normal text-white shadow-lg"
-        >
-          {tooltip}
-        </span>
+    <span className={cn("inline-flex items-center justify-end gap-1 text-sm font-medium leading-none", colorClass)}>
+      {isAmber && (
+        <AlertCircle size={14} className="shrink-0 text-amber-600" aria-hidden="true" />
       )}
+      {!isAmber && isBlue && (
+        <Clock size={14} className="shrink-0 text-blue-600" aria-hidden="true" />
+      )}
+      <span>{formatIsk(deal.amount_isk)}</span>
     </span>
   );
 }
