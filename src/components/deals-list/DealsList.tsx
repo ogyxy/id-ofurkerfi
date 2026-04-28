@@ -165,7 +165,35 @@ export function DealsList({ currentUserId }: Props) {
       if (error) {
         setDeals([]);
       } else {
-        setDeals((data ?? []) as unknown as DealRow[]);
+        let rows = (data ?? []) as unknown as DealRow[];
+        // Fetch child deals for defect_reorder rows w/ reorder resolution
+        const defectReorderIds = rows
+          .filter(
+            (d) =>
+              d.stage === "defect_reorder" && d.defect_resolution === "reorder",
+          )
+          .map((d) => d.id);
+        if (defectReorderIds.length) {
+          const { data: children } = await supabase
+            .from("deals")
+            .select("parent_deal_id, stage")
+            .in("parent_deal_id", defectReorderIds);
+          if (!cancelled && children) {
+            const byParent = new Map<string, { stage: DealStage }[]>();
+            (children as { parent_deal_id: string; stage: DealStage }[]).forEach(
+              (c) => {
+                const arr = byParent.get(c.parent_deal_id) ?? [];
+                arr.push({ stage: c.stage });
+                byParent.set(c.parent_deal_id, arr);
+              },
+            );
+            rows = rows.map((d) => ({
+              ...d,
+              childDeals: byParent.get(d.id) ?? [],
+            }));
+          }
+        }
+        if (!cancelled) setDeals(rows);
       }
       setLoading(false);
     })();
