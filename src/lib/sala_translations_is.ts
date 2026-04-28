@@ -510,6 +510,8 @@ export const t = {
     fileTypeInvoice:         'Reikningur',
     fileTypeArtwork:         'Hönnun',
     fileTypeOther:           'Annað',
+    noFiles:                 'Engin skjöl enn',
+    dropHere:                'Dragðu skrá hingað eða smelltu',
 
     notes:                   'Athugasemdir',
     cancelPO:                'Hætta við PO',
