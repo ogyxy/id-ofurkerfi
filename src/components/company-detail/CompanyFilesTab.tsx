@@ -197,7 +197,7 @@ export function CompanyFilesTab({
       allImages.map(async (f) => {
         const { data: signed } = await supabase.storage
           .from("deal_files")
-          .createSignedUrl(f.storage_path, 60 * 60);
+          .createSignedUrl(f.storage_path, 60 * 60, { download: false });
         if (signed?.signedUrl) next[f.id] = signed.signedUrl;
       }),
     );
@@ -214,7 +214,7 @@ export function CompanyFilesTab({
   const handleDownload = async (path: string) => {
     const { data, error } = await supabase.storage
       .from("deal_files")
-      .createSignedUrl(path, 60 * 60);
+      .createSignedUrl(path, 60 * 60, { download: false });
     if (error || !data?.signedUrl) {
       toast.error(t.status.somethingWentWrong);
       return;
