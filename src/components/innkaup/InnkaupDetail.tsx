@@ -62,6 +62,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { pathSafe } from "@/lib/formatters";
+import { openStorageFile } from "@/lib/openStorageFile";
 import { consumeDealReturnPath } from "@/lib/dealReturn";
 import {
   HAPPY_PATH_PO_STATUSES,
@@ -755,13 +756,8 @@ function FileCard({ file, onDeleted }: { file: PoFile; onDeleted: () => void }) 
   const handleDownload = async () => {
     const path = resolvePath();
     if (path) {
-      const { data } = await supabase.storage
-        .from("po_files")
-        .createSignedUrl(path, 60 * 60, { download: false });
-      if (data?.signedUrl) {
-        window.open(data.signedUrl, "_blank", "noopener,noreferrer");
-        return;
-      }
+      await openStorageFile("po_files", path);
+      return;
     }
     if (file.file_url) {
       window.open(file.file_url, "_blank", "noopener,noreferrer");
