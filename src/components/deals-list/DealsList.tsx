@@ -23,6 +23,7 @@ type DealRow = {
   name: string;
   stage: DealStage;
   amount_isk: number | null;
+  refund_amount_isk: number | null;
   promised_delivery_date: string | null;
   estimated_delivery_date: string | null;
   delivered_at: string | null;
@@ -34,6 +35,7 @@ type DealRow = {
   company: { id: string; name: string } | null;
   contact: { id: string; first_name: string | null; last_name: string | null } | null;
   owner: { id: string; name: string | null } | null;
+  childDeals?: { stage: DealStage }[];
 };
 
 type Profile = { id: string; name: string | null; email: string };
@@ -67,6 +69,7 @@ const SELECT = `
   name,
   stage,
   amount_isk,
+  refund_amount_isk,
   promised_delivery_date,
   estimated_delivery_date,
   delivered_at,
@@ -79,6 +82,21 @@ const SELECT = `
   contact:contacts(id, first_name, last_name),
   owner:profiles(id, name)
 `;
+
+function isDefectResolved(deal: DealRow): boolean {
+  if (deal.stage !== "defect_reorder") return false;
+  if (deal.defect_resolution === "refund" && deal.refund_amount_isk != null) return true;
+  if (deal.defect_resolution === "credit_note") return true;
+  if (deal.defect_resolution === "resolved") return true;
+  if (
+    deal.defect_resolution === "reorder" &&
+    (deal.childDeals?.length ?? 0) > 0 &&
+    deal.childDeals!.every((c) => c.stage === "delivered")
+  ) {
+    return true;
+  }
+  return false;
+}
 
 function initials(name: string | null | undefined): string {
   if (!name) return "?";
@@ -147,7 +165,35 @@ export function DealsList({ currentUserId }: Props) {
       if (error) {
         setDeals([]);
       } else {
-        setDeals((data ?? []) as unknown as DealRow[]);
+        let rows = (data ?? []) as unknown as DealRow[];
+        // Fetch child deals for defect_reorder rows w/ reorder resolution
+        const defectReorderIds = rows
+          .filter(
+            (d) =>
+              d.stage === "defect_reorder" && d.defect_resolution === "reorder",
+          )
+          .map((d) => d.id);
+        if (defectReorderIds.length) {
+          const { data: children } = await supabase
+            .from("deals")
+            .select("parent_deal_id, stage")
+            .in("parent_deal_id", defectReorderIds);
+          if (!cancelled && children) {
+            const byParent = new Map<string, { stage: DealStage }[]>();
+            (children as { parent_deal_id: string; stage: DealStage }[]).forEach(
+              (c) => {
+                const arr = byParent.get(c.parent_deal_id) ?? [];
+                arr.push({ stage: c.stage });
+                byParent.set(c.parent_deal_id, arr);
+              },
+            );
+            rows = rows.map((d) => ({
+              ...d,
+              childDeals: byParent.get(d.id) ?? [],
+            }));
+          }
+        }
+        if (!cancelled) setDeals(rows);
       }
       setLoading(false);
     })();
@@ -160,7 +206,17 @@ export function DealsList({ currentUserId }: Props) {
   // Apply stage filter (default: hide cancelled), then owner + search
   const visibleDeals = useMemo(() => {
     let list = deals;
-    if (activeStage) {
+    if (activeStage === "defect_reorder") {
+      list = list.filter(
+        (d) => d.stage === "defect_reorder" && !isDefectResolved(d),
+      );
+    } else if (activeStage === "delivered") {
+      list = list.filter(
+        (d) =>
+          d.stage === "delivered" ||
+          (d.stage === "defect_reorder" && isDefectResolved(d)),
+      );
+    } else if (activeStage) {
       list = list.filter((d) => d.stage === activeStage);
     } else {
       list = list.filter((d) => d.stage !== "cancelled");
@@ -191,12 +247,17 @@ export function DealsList({ currentUserId }: Props) {
     return profiles.filter((p) => ids.has(p.id));
   }, [deals, profiles]);
 
-  // Counts per stage — always reflect the full unarchived dataset, never affected by active filter
+  // Counts per stage — always reflect the full unarchived dataset, never affected by active filter.
+  // Resolved defect deals are counted under "delivered" and excluded from "defect_reorder".
   const stageCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     STAGE_ORDER.concat(["cancelled"]).forEach((s) => (counts[s] = 0));
     deals.forEach((d) => {
-      counts[d.stage] = (counts[d.stage] ?? 0) + 1;
+      if (d.stage === "defect_reorder" && isDefectResolved(d)) {
+        counts["delivered"] = (counts["delivered"] ?? 0) + 1;
+      } else {
+        counts[d.stage] = (counts[d.stage] ?? 0) + 1;
+      }
     });
     return counts;
   }, [deals]);
@@ -286,11 +347,21 @@ export function DealsList({ currentUserId }: Props) {
     if (!showGrouping) return null;
     const map = new Map<DealStage, DealRow[]>();
     STAGE_ORDER.forEach((s) => map.set(s, []));
+    const resolvedDefects: DealRow[] = [];
     visibleDeals.forEach((d) => {
       if (d.stage === "cancelled") return;
+      if (d.stage === "defect_reorder" && isDefectResolved(d)) {
+        resolvedDefects.push(d);
+        return;
+      }
       const arr = map.get(d.stage);
       if (arr) arr.push(d);
     });
+    // Append resolved defect deals to the end of "delivered" group
+    if (resolvedDefects.length) {
+      const delivered = map.get("delivered") ?? [];
+      map.set("delivered", [...delivered, ...resolvedDefects]);
+    }
     return map;
   }, [visibleDeals, showGrouping]);
 
@@ -634,8 +705,12 @@ function DealCard({
   onStageChange: (s: DealStage) => void | Promise<void>;
   onOwnerChange: (ownerId: string | null) => void | Promise<void>;
 }) {
-  const styles = STAGE_STYLES[deal.stage];
-  const muted = deal.stage === "delivered";
+  const resolvedDefect = deal.stage === "defect_reorder" && isDefectResolved(deal);
+  // Resolved defect deals are shown inside the delivered group with green tint + orange left border
+  const styles = resolvedDefect
+    ? { border: "border-l-orange-500", bg: "bg-green-50" }
+    : STAGE_STYLES[deal.stage];
+  const muted = deal.stage === "delivered" || resolvedDefect;
   const cancelled = deal.stage === "cancelled";
   const overdue = isOverdue(deal.promised_delivery_date, deal.stage);
 
@@ -657,6 +732,7 @@ function DealCard({
         muted && "text-gray-400",
         cancelled && "italic",
       )}
+      style={resolvedDefect ? { borderLeftWidth: "3px" } : undefined}
     >
       {/* SO number + stage + defect badge */}
       <div className="min-w-0 space-y-1">
@@ -774,7 +850,13 @@ function AmountCell({ deal }: { deal: DealRow }) {
       {!isAmber && isBlue && (
         <Clock size={14} className="shrink-0 text-blue-600" aria-hidden="true" />
       )}
-      <span>{formatIsk(deal.amount_isk)}</span>
+      <span>
+        {formatIsk(
+          deal.defect_resolution === "refund" && deal.refund_amount_isk != null
+            ? (deal.amount_isk ?? 0) - (deal.refund_amount_isk ?? 0)
+            : deal.amount_isk,
+        )}
+      </span>
     </span>
   );
 }

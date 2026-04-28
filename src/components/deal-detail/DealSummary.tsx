@@ -13,6 +13,7 @@ import {
 } from "./DealLinesEditor";
 
 type VskStatus = Database["public"]["Enums"]["vsk_status"];
+type DefectResolution = Database["public"]["Enums"]["defect_resolution"];
 
 interface Props {
   dealId: string;
@@ -21,6 +22,8 @@ interface Props {
   setShippingCost: (n: number) => void;
   vskStatus: VskStatus;
   readOnly?: boolean;
+  refundAmountIsk?: number | null;
+  defectResolution?: DefectResolution | null;
 }
 
 export function DealSummary({
@@ -30,6 +33,8 @@ export function DealSummary({
   setShippingCost,
   vskStatus,
   readOnly = false,
+  refundAmountIsk,
+  defectResolution,
 }: Props) {
   const [localShipping, setLocalShipping] = useState(String(shippingCost));
 
@@ -39,7 +44,13 @@ export function DealSummary({
 
   const subtotal = lines.reduce((s, l) => s + lineTotalIsk(l), 0);
   const totalCost = lines.reduce((s, l) => s + lineCostIsk(l), 0);
-  const totalMargin = subtotal - totalCost - shippingCost;
+  const refundActive =
+    defectResolution === "refund" &&
+    refundAmountIsk != null &&
+    refundAmountIsk > 0;
+  const refund = refundActive ? Number(refundAmountIsk) : 0;
+  const netAmount = subtotal - refund;
+  const totalMargin = subtotal - totalCost - shippingCost - refund;
   const marginPct = subtotal > 0 ? (totalMargin / subtotal) * 100 : 0;
 
   const vskRate =
@@ -70,6 +81,20 @@ export function DealSummary({
   return (
     <div className="mr-auto max-w-md space-y-3 rounded-md border border-border bg-card p-4">
       <Row label={t.dealSummary.subtotal} value={formatIsk(subtotal)} />
+      {refundActive && (
+        <>
+          <div className="flex items-center justify-between text-sm text-red-600">
+            <span>{t.defectResolution.refund}</span>
+            <span className="tabular-nums">-{formatIsk(refund)}</span>
+          </div>
+          <div className="border-t border-border pt-2">
+            <div className="flex items-center justify-between text-sm font-bold">
+              <span>{t.deal.netAmount}</span>
+              <span className="tabular-nums">{formatIsk(netAmount)}</span>
+            </div>
+          </div>
+        </>
+      )}
       <div className="flex items-center justify-between gap-3">
         <Label className="text-sm text-muted-foreground">
           {t.dealSummary.shipping}

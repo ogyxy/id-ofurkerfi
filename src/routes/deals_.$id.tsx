@@ -384,6 +384,8 @@ function DealDetailContent() {
         setShippingCost={setShippingCost}
         vskStatus={company.vsk_status}
         readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
+        refundAmountIsk={deal.refund_amount_isk as number | null}
+        defectResolution={deal.defect_resolution}
       />
 
       <PurchaseOrdersSection
