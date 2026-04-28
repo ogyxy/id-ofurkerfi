@@ -374,23 +374,29 @@ function HonnunContent() {
 
       {/* Filter row */}
       <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
-        {/* Type pills */}
+        {/* Type pills — single-active behaviour, no "Allar" pill */}
         <div className="flex flex-wrap gap-2">
-          {typePills.map((p) => (
-            <button
-              key={p.key}
-              type="button"
-              onClick={() => setTypeFilter(p.key)}
-              className={cn(
-                "whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                typeFilter === p.key
-                  ? "border-ide-navy bg-ide-navy text-white"
-                  : "border-border bg-background text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
+          {typePills.map((p) => {
+            const isActive = typeFilter === p.key;
+            // Hide non-active pills when one is active
+            if (typeFilter !== null && !isActive) return null;
+            return (
+              <button
+                key={p.key}
+                type="button"
+                onClick={() => setTypeFilter(isActive ? null : p.key)}
+                className={cn(
+                  "inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                  isActive
+                    ? "border-ide-navy bg-ide-navy text-white"
+                    : "border-border bg-background text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {p.label}
+                {isActive && <X className="h-3 w-3" />}
+              </button>
+            );
+          })}
         </div>
 
         {/* Company combobox */}
@@ -453,24 +459,6 @@ function HonnunContent() {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Date range */}
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-muted-foreground">{t.hönnunScreen.filterFrom}</label>
-          <Input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="h-9 w-36 text-sm"
-          />
-          <label className="text-xs text-muted-foreground">{t.hönnunScreen.filterTo}</label>
-          <Input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="h-9 w-36 text-sm"
-          />
         </div>
 
         {/* Clear filters */}
