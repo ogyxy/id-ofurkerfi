@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PhoneInput } from "@/components/PhoneInput";
+import { formatPhone, stripPhone, maskIcelandicLocal } from "@/lib/formatters";
+import { parsePhone } from "@/lib/phoneCountries";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +33,8 @@ type FormState = {
   last_name: string;
   title: string;
   email: string;
-  phone: string;
+  phoneCountryCode: string;
+  phoneLocal: string;
   is_primary: boolean;
   notes: string;
 };
@@ -40,7 +44,8 @@ const emptyForm: FormState = {
   last_name: "",
   title: "",
   email: "",
-  phone: "",
+  phoneCountryCode: "+354",
+  phoneLocal: "",
   is_primary: false,
   notes: "",
 };
@@ -64,13 +69,16 @@ export function ContactsTab({ companyId, contacts, onChanged }: Props) {
   };
 
   const openEdit = (c: Contact) => {
+    const parsed = parsePhone(c.phone);
     setEditingId(c.id);
     setForm({
       first_name: c.first_name ?? "",
       last_name: c.last_name ?? "",
       title: c.title ?? "",
       email: c.email ?? "",
-      phone: c.phone ?? "",
+      phoneCountryCode: parsed.countryCode,
+      phoneLocal:
+        parsed.countryCode === "+354" ? maskIcelandicLocal(parsed.local) : parsed.local,
       is_primary: c.is_primary,
       notes: c.notes ?? "",
     });
@@ -91,7 +99,7 @@ export function ContactsTab({ companyId, contacts, onChanged }: Props) {
       last_name: form.last_name.trim() || null,
       title: form.title.trim() || null,
       email: form.email.trim() || null,
-      phone: form.phone.trim() || null,
+      phone: stripPhone(form.phoneCountryCode, form.phoneLocal) || null,
       is_primary: form.is_primary,
       notes: form.notes.trim() || null,
     };
@@ -172,9 +180,11 @@ export function ContactsTab({ companyId, contacts, onChanged }: Props) {
             </div>
             <div>
               <Label>{t.contact.phone}</Label>
-              <Input
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              <PhoneInput
+                countryCode={form.phoneCountryCode}
+                localNumber={form.phoneLocal}
+                onCountryCodeChange={(v) => setForm({ ...form, phoneCountryCode: v })}
+                onLocalNumberChange={(v) => setForm({ ...form, phoneLocal: v })}
               />
             </div>
             <div className="flex items-center gap-2 pt-6">
@@ -255,7 +265,7 @@ export function ContactsTab({ companyId, contacts, onChanged }: Props) {
                     className="inline-flex items-center justify-end gap-1 text-muted-foreground hover:text-foreground"
                   >
                     <Phone className="h-3.5 w-3.5" />
-                    {c.phone}
+                    {formatPhone(c.phone)}
                   </a>
                 )}
               </div>

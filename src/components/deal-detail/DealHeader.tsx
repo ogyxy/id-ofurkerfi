@@ -3,6 +3,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { t, formatDate } from "@/lib/sala_translations_is";
 import { rememberCompanyReturnPath } from "@/lib/dealReturn";
 import { Button } from "@/components/ui/button";
+import { formatPhone } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { TrackingNumbersInline } from "./TrackingNumbersInline";
 
@@ -85,7 +86,7 @@ export function DealHeader({
             <div className="text-xs text-muted-foreground">
               {contactName}
               {contact.email && <> · {contact.email}</>}
-              {contact.phone && <> · {contact.phone}</>}
+              {contact.phone && <> · {formatPhone(contact.phone)}</>}
             </div>
           )}
           <TrackingNumbersInline

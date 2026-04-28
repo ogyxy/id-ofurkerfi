@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { rememberDealReturnPath } from "@/lib/dealReturn";
-import { maskKennitalaInput, stripKennitala, isValidKennitala } from "@/lib/formatters";
+import { maskKennitalaInput, stripKennitala, isValidKennitala, stripPhone } from "@/lib/formatters";
+import { PhoneInput } from "@/components/PhoneInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,7 +84,8 @@ export function CreateDealDrawer({
   const [newContactLast, setNewContactLast] = useState("");
   const [newContactTitle, setNewContactTitle] = useState("");
   const [newContactEmail, setNewContactEmail] = useState("");
-  const [newContactPhone, setNewContactPhone] = useState("");
+  const [newContactPhoneCountry, setNewContactPhoneCountry] = useState("+354");
+  const [newContactPhoneLocal, setNewContactPhoneLocal] = useState("");
 
   const [contactId, setContactId] = useState("");
   const [name, setName] = useState("");
@@ -166,7 +168,8 @@ export function CreateDealDrawer({
     setNewContactLast("");
     setNewContactTitle("");
     setNewContactEmail("");
-    setNewContactPhone("");
+    setNewContactPhoneCountry("+354");
+    setNewContactPhoneLocal("");
   };
 
   const selectCompany = (c: Company) => {
@@ -223,7 +226,7 @@ export function CreateDealDrawer({
           last_name: newContactLast.trim() || null,
           title: newContactTitle.trim() || null,
           email: newContactEmail.trim() || null,
-          phone: newContactPhone.trim() || null,
+          phone: stripPhone(newContactPhoneCountry, newContactPhoneLocal) || null,
           is_primary: true,
         })
         .select("id, first_name, last_name, company_id")
@@ -245,7 +248,8 @@ export function CreateDealDrawer({
     setNewContactLast("");
     setNewContactTitle("");
     setNewContactEmail("");
-    setNewContactPhone("");
+    setNewContactPhoneCountry("+354");
+    setNewContactPhoneLocal("");
   };
 
   const handleSave = async () => {
@@ -442,9 +446,11 @@ export function CreateDealDrawer({
                       </div>
                       <div>
                         <Label className="text-xs">{t.contact.phone}</Label>
-                        <Input
-                          value={newContactPhone}
-                          onChange={(e) => setNewContactPhone(e.target.value)}
+                        <PhoneInput
+                          countryCode={newContactPhoneCountry}
+                          localNumber={newContactPhoneLocal}
+                          onCountryCodeChange={setNewContactPhoneCountry}
+                          onLocalNumberChange={setNewContactPhoneLocal}
                         />
                       </div>
                     </div>

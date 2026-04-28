@@ -9,7 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CountrySelect } from "@/components/ui/CountrySelect";
 import { CurrencySelect } from "@/components/ui/CurrencySelect";
-import { maskKennitalaInput, stripKennitala, isValidKennitala } from "@/lib/formatters";
+import { PhoneInput } from "@/components/PhoneInput";
+import {
+  maskKennitalaInput,
+  stripKennitala,
+  isValidKennitala,
+  stripPhone,
+} from "@/lib/formatters";
+import { parsePhone } from "@/lib/phoneCountries";
 import {
   Sheet,
   SheetContent,
@@ -53,7 +60,8 @@ type FormState = {
   vsk_number: string;
   vsk_status: VskStatus;
   email: string;
-  phone: string;
+  phoneCountryCode: string;
+  phoneLocal: string;
   website: string;
   address_line_1: string;
   address_line_2: string;
@@ -66,13 +74,20 @@ type FormState = {
 };
 
 function fromCompany(c: Company): FormState {
+  const parsed = parsePhone(c.phone);
   return {
     name: c.name,
     kennitala: c.kennitala ? maskKennitalaInput(c.kennitala) : "",
     vsk_number: c.vsk_number ?? "",
     vsk_status: c.vsk_status,
     email: c.email ?? "",
-    phone: c.phone ?? "",
+    phoneCountryCode: parsed.countryCode,
+    phoneLocal:
+      parsed.countryCode === "+354"
+        ? (parsed.local.length > 3
+            ? `${parsed.local.slice(0, 3)}-${parsed.local.slice(3)}`
+            : parsed.local)
+        : parsed.local,
     website: c.website ?? "",
     address_line_1: c.address_line_1 ?? "",
     address_line_2: c.address_line_2 ?? "",
@@ -156,7 +171,7 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
         vsk_number: form.vsk_number.trim() || null,
         vsk_status: form.vsk_status,
         email: form.email.trim() || null,
-        phone: form.phone.trim() || null,
+        phone: stripPhone(form.phoneCountryCode, form.phoneLocal) || null,
         website: form.website.trim() || null,
         address_line_1: form.address_line_1.trim() || null,
         address_line_2: form.address_line_2.trim() || null,
@@ -243,7 +258,12 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
           </div>
           <div>
             <Label>{t.company.phone}</Label>
-            <Input value={form.phone} onChange={(e) => update("phone", e.target.value)} />
+            <PhoneInput
+              countryCode={form.phoneCountryCode}
+              localNumber={form.phoneLocal}
+              onCountryCodeChange={(v) => update("phoneCountryCode", v)}
+              onLocalNumberChange={(v) => update("phoneLocal", v)}
+            />
           </div>
           <div className="md:col-span-2">
             <Label>{t.company.website}</Label>
