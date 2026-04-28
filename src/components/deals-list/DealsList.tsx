@@ -181,11 +181,16 @@ export function DealsList({ currentUserId }: Props) {
       } else {
         let rows = (data ?? []) as unknown as DealRow[];
 
+        const matchedIds = new Set<string>(
+          (matchingLines ?? []).map((l) => l.deal_id),
+        );
+        if (!cancelled) setLineMatchedDealIds(matchedIds);
+
         if (searchTerm && matchingLines && matchingLines.length) {
           const existingIds = new Set(rows.map((d) => d.id));
-          const additionalIds = [
-            ...new Set(matchingLines.map((l) => l.deal_id)),
-          ].filter((id) => !existingIds.has(id));
+          const additionalIds = [...matchedIds].filter(
+            (id) => !existingIds.has(id),
+          );
           if (additionalIds.length) {
             const { data: additionalDeals } = await supabase
               .from("deals")
