@@ -273,6 +273,33 @@ export function DealsList({ currentUserId }: Props) {
     toast.success(t.status.savedSuccessfully);
   };
 
+  const handleOwnerChange = async (deal: DealRow, newOwnerId: string | null) => {
+    const { error } = await supabase
+      .from("deals")
+      .update({ owner_id: newOwnerId })
+      .eq("id", deal.id);
+    if (error) {
+      toast.error(t.status.somethingWentWrong);
+      return;
+    }
+    const newOwner = newOwnerId
+      ? profiles.find((p) => p.id === newOwnerId) ?? null
+      : null;
+    setDeals((prev) =>
+      prev.map((d) =>
+        d.id === deal.id
+          ? {
+              ...d,
+              owner: newOwner
+                ? { id: newOwner.id, name: newOwner.name }
+                : null,
+            }
+          : d,
+      ),
+    );
+    toast.success(t.status.savedSuccessfully);
+  };
+
   const isSearching = debouncedSearch.trim().length > 0;
   const showGrouping = !isSearching && selectedStages.has("all");
 
