@@ -69,13 +69,16 @@ export function ContactsTab({ companyId, contacts, onChanged }: Props) {
   };
 
   const openEdit = (c: Contact) => {
+    const parsed = parsePhone(c.phone);
     setEditingId(c.id);
     setForm({
       first_name: c.first_name ?? "",
       last_name: c.last_name ?? "",
       title: c.title ?? "",
       email: c.email ?? "",
-      phone: c.phone ?? "",
+      phoneCountryCode: parsed.countryCode,
+      phoneLocal:
+        parsed.countryCode === "+354" ? maskIcelandicLocal(parsed.local) : parsed.local,
       is_primary: c.is_primary,
       notes: c.notes ?? "",
     });
