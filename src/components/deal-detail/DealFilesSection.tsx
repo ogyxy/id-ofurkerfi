@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { FileText, Image as ImageIcon, File as FileIcon, Download, Trash2, Upload } from "lucide-react";
+import { Download, Trash2, Upload } from "lucide-react";
+import { FileThumbnail } from "@/components/FileThumbnail";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatDate } from "@/lib/sala_translations_is";
@@ -223,9 +224,6 @@ function FileCard({
   onDelete: () => void;
 }) {
   const [confirm, setConfirm] = useState(false);
-  const ext = fileExt(file.original_filename);
-  const isImage = IMAGE_EXTS.includes(ext);
-  const isPdf = ext === "pdf";
 
   return (
     <div className="group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
@@ -236,17 +234,11 @@ function FileCard({
         className="block w-full text-left"
         title={file.original_filename ?? ""}
       >
-        <div className="flex h-28 items-center justify-center bg-muted/30">
-          {isImage && file.signedUrl ? (
-            <img src={file.signedUrl} alt="" className="h-full w-full object-cover" />
-          ) : isPdf ? (
-            <FileText className="h-10 w-10 text-red-500" />
-          ) : isImage ? (
-            <ImageIcon className="h-10 w-10 text-muted-foreground" />
-          ) : (
-            <FileIcon className="h-10 w-10 text-muted-foreground" />
-          )}
-        </div>
+        <FileThumbnail
+          filename={file.original_filename}
+          signedUrl={file.signedUrl}
+          className="h-28"
+        />
         <div className="space-y-0.5 p-3">
           <div className="truncate text-sm font-medium" title={file.original_filename ?? ""}>
             {file.original_filename ?? "—"}
