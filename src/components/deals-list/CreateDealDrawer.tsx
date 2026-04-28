@@ -76,12 +76,20 @@ export function CreateDealDrawer({
   const [newEmail, setNewEmail] = useState("");
   const [creatingCompany, setCreatingCompany] = useState(false);
 
+  // Optional new contact for new company
+  const [addContact, setAddContact] = useState(false);
+  const [newContactFirst, setNewContactFirst] = useState("");
+  const [newContactLast, setNewContactLast] = useState("");
+  const [newContactTitle, setNewContactTitle] = useState("");
+  const [newContactEmail, setNewContactEmail] = useState("");
+  const [newContactPhone, setNewContactPhone] = useState("");
+
   const [contactId, setContactId] = useState("");
   const [name, setName] = useState("");
   const [ownerId, setOwnerId] = useState(currentUserId);
   const [stage, setStage] = useState<DealStage>("inquiry");
   const [markup, setMarkup] = useState("30");
-  const [estDate, setEstDate] = useState("");
+  const [promisedDate, setPromisedDate] = useState("");
   const [firstNote, setFirstNote] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -144,7 +152,7 @@ export function CreateDealDrawer({
     setName("");
     setStage("inquiry");
     setMarkup("30");
-    setEstDate("");
+    setPromisedDate("");
     setFirstNote("");
     setCompanySearch("");
     setCompanyDropdownOpen(false);
@@ -152,6 +160,12 @@ export function CreateDealDrawer({
     setNewName("");
     setNewKennitala("");
     setNewEmail("");
+    setAddContact(false);
+    setNewContactFirst("");
+    setNewContactLast("");
+    setNewContactTitle("");
+    setNewContactEmail("");
+    setNewContactPhone("");
   };
 
   const selectCompany = (c: Company) => {
@@ -180,8 +194,8 @@ export function CreateDealDrawer({
       })
       .select("id, name")
       .single();
-    setCreatingCompany(false);
     if (error || !data) {
+      setCreatingCompany(false);
       toast.error(t.status.somethingWentWrong);
       return;
     }
@@ -191,11 +205,40 @@ export function CreateDealDrawer({
         a.name.localeCompare(b.name),
       ),
     );
+
+    // Optional contact creation
+    if (addContact && newContactFirst.trim()) {
+      const { data: newContact } = await supabase
+        .from("contacts")
+        .insert({
+          company_id: newCompany.id,
+          first_name: newContactFirst.trim(),
+          last_name: newContactLast.trim() || null,
+          title: newContactTitle.trim() || null,
+          email: newContactEmail.trim() || null,
+          phone: newContactPhone.trim() || null,
+          is_primary: true,
+        })
+        .select("id, first_name, last_name, company_id")
+        .single();
+      if (newContact) {
+        setContacts([newContact as Contact]);
+        setContactId(newContact.id);
+      }
+    }
+
     selectCompany(newCompany);
+    setCreatingCompany(false);
     setNewOpen(false);
     setNewName("");
     setNewKennitala("");
     setNewEmail("");
+    setAddContact(false);
+    setNewContactFirst("");
+    setNewContactLast("");
+    setNewContactTitle("");
+    setNewContactEmail("");
+    setNewContactPhone("");
   };
 
   const handleSave = async () => {
@@ -213,7 +256,7 @@ export function CreateDealDrawer({
         name: name.trim(),
         stage,
         default_markup_pct: Number(markup) || 30,
-        estimated_delivery_date: estDate || null,
+        promised_delivery_date: promisedDate || null,
       })
       .select("id, company_id")
       .single();
@@ -343,6 +386,61 @@ export function CreateDealDrawer({
                     onChange={(e) => setNewEmail(e.target.value)}
                   />
                 </div>
+
+                <div className="border-t border-border pt-2">
+                  <label className="flex items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={addContact}
+                      onChange={(e) => setAddContact(e.target.checked)}
+                      className="h-3.5 w-3.5"
+                    />
+                    {t.deal.addContact}
+                  </label>
+                  {addContact && (
+                    <div className="mt-2 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">{t.contact.first_name}</Label>
+                          <Input
+                            value={newContactFirst}
+                            onChange={(e) => setNewContactFirst(e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">{t.contact.last_name}</Label>
+                          <Input
+                            value={newContactLast}
+                            onChange={(e) => setNewContactLast(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs">{t.contact.title}</Label>
+                        <Input
+                          value={newContactTitle}
+                          onChange={(e) => setNewContactTitle(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">{t.contact.email}</Label>
+                        <Input
+                          type="email"
+                          value={newContactEmail}
+                          onChange={(e) => setNewContactEmail(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">{t.contact.phone}</Label>
+                        <Input
+                          value={newContactPhone}
+                          onChange={(e) => setNewContactPhone(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-end gap-2 pt-1">
                   <Button
                     size="sm"
@@ -438,11 +536,11 @@ export function CreateDealDrawer({
           </div>
 
           <div>
-            <Label>{t.deal.estimated_delivery_date}</Label>
+            <Label>{t.deal.promised_delivery_date}</Label>
             <Input
               type="date"
-              value={estDate}
-              onChange={(e) => setEstDate(e.target.value)}
+              value={promisedDate}
+              onChange={(e) => setPromisedDate(e.target.value)}
             />
           </div>
 
