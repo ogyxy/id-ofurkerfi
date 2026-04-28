@@ -145,6 +145,7 @@ export function DealLinesEditor({
 
   const saveLine = async (line: EditableLine, orderIdx: number) => {
     if (!line.product_name.trim()) return; // don't save until name exists
+    if (line.emptyQty || line.emptyCost) return; // don't save until numeric fields filled
     const payload = {
       deal_id: dealId,
       line_order: orderIdx + 1,
