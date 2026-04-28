@@ -357,6 +357,7 @@ export type Database = {
           payday_invoice_number: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           promised_delivery_date: string | null
+          refund_amount_isk: number | null
           shipping_cost_isk: number
           so_number: string
           stage: Database["public"]["Enums"]["deal_stage"]
@@ -392,6 +393,7 @@ export type Database = {
           payday_invoice_number?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           promised_delivery_date?: string | null
+          refund_amount_isk?: number | null
           shipping_cost_isk?: number
           so_number?: string
           stage?: Database["public"]["Enums"]["deal_stage"]
@@ -427,6 +429,7 @@ export type Database = {
           payday_invoice_number?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           promised_delivery_date?: string | null
+          refund_amount_isk?: number | null
           shipping_cost_isk?: number
           so_number?: string
           stage?: Database["public"]["Enums"]["deal_stage"]
