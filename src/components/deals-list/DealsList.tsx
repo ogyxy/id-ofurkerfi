@@ -97,9 +97,7 @@ export function DealsList({ currentUserId }: Props) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedStages, setSelectedStages] = useState<Set<DealStage | "all">>(
-    new Set(["all"]),
-  );
+  const [activeStage, setActiveStage] = useState<DealStage | null>(null);
   const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set());
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
@@ -122,7 +120,7 @@ export function DealsList({ currentUserId }: Props) {
     })();
   }, []);
 
-  // Fetch deals
+  // Fetch all non-archived deals (filtering happens client-side so counts are always accurate)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -137,14 +135,6 @@ export function DealsList({ currentUserId }: Props) {
         query = query.or(
           `name.ilike.${term},so_number.ilike.${term},tracking_numbers.cs.{${debouncedSearch}}`,
         );
-      } else {
-        // Apply stage filter server-side
-        if (selectedStages.has("all")) {
-          // active = exclude cancelled
-          query = query.neq("stage", "cancelled");
-        } else {
-          query = query.in("stage", Array.from(selectedStages) as DealStage[]);
-        }
       }
 
       query = query.order("promised_delivery_date", {
@@ -164,17 +154,22 @@ export function DealsList({ currentUserId }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch, selectedStages]);
+  }, [debouncedSearch]);
 
   // Client-side filtering: owner + company/contact name on search
+  // Apply stage filter (default: hide cancelled), then owner + search
   const visibleDeals = useMemo(() => {
     let list = deals;
+    if (activeStage) {
+      list = list.filter((d) => d.stage === activeStage);
+    } else {
+      list = list.filter((d) => d.stage !== "cancelled");
+    }
     if (selectedOwners.size > 0 && !debouncedSearch.trim()) {
       list = list.filter((d) => d.owner && selectedOwners.has(d.owner.id));
     }
     if (debouncedSearch.trim()) {
       const s = debouncedSearch.toLowerCase();
-      // Server already matched name/so_number/tracking. Add company/contact match.
       list = list.filter(
         (d) =>
           d.name.toLowerCase().includes(s) ||
@@ -186,7 +181,7 @@ export function DealsList({ currentUserId }: Props) {
       );
     }
     return list;
-  }, [deals, selectedOwners, debouncedSearch]);
+  }, [deals, activeStage, selectedOwners, debouncedSearch]);
 
   const ownersWithDeals = useMemo(() => {
     const ids = new Set<string>();
@@ -196,35 +191,18 @@ export function DealsList({ currentUserId }: Props) {
     return profiles.filter((p) => ids.has(p.id));
   }, [deals, profiles]);
 
-  // Counts per stage (respecting owner filter, ignoring stage selection)
+  // Counts per stage — always reflect the full unarchived dataset, never affected by active filter
   const stageCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: 0 };
+    const counts: Record<string, number> = {};
     STAGE_ORDER.concat(["cancelled"]).forEach((s) => (counts[s] = 0));
-    // For counts we need a base set; reuse deals (which are pre-filtered by stage selection).
-    // To get accurate counts across all stages, we'd need a separate query. For v1, count from current dataset.
     deals.forEach((d) => {
-      if (selectedOwners.size > 0 && (!d.owner || !selectedOwners.has(d.owner.id))) return;
       counts[d.stage] = (counts[d.stage] ?? 0) + 1;
-      if (d.stage !== "cancelled") counts.all += 1;
     });
     return counts;
-  }, [deals, selectedOwners]);
+  }, [deals]);
 
-  const toggleStage = (stage: DealStage | "all") => {
-    setSelectedStages((prev) => {
-      const next = new Set(prev);
-      if (stage === "all") {
-        return new Set(["all"]);
-      }
-      next.delete("all");
-      if (next.has(stage)) {
-        next.delete(stage);
-        if (next.size === 0) next.add("all");
-      } else {
-        next.add(stage);
-      }
-      return next;
-    });
+  const toggleStage = (stage: DealStage) => {
+    setActiveStage((prev) => (prev === stage ? null : stage));
   };
 
   const toggleOwner = (id: string) => {
@@ -238,7 +216,7 @@ export function DealsList({ currentUserId }: Props) {
 
   const clearAll = () => {
     setSearch("");
-    setSelectedStages(new Set(["all"]));
+    setActiveStage(null);
     setSelectedOwners(new Set());
   };
 
@@ -301,7 +279,7 @@ export function DealsList({ currentUserId }: Props) {
   };
 
   const isSearching = debouncedSearch.trim().length > 0;
-  const showGrouping = !isSearching && selectedStages.has("all");
+  const showGrouping = !isSearching && activeStage === null;
 
   // Group deals by stage when default view
   const grouped = useMemo(() => {
@@ -393,30 +371,36 @@ export function DealsList({ currentUserId }: Props) {
         </div>
       )}
 
-      {/* Stage filter pills */}
+      {/* Stage filter pills — single active filter */}
       {!isSearching && (
         <div className="mb-6 flex flex-wrap items-center gap-2 overflow-x-auto">
-          <StagePill
-            label={t.deal.filterAll}
-            count={stageCounts.all}
-            active={selectedStages.has("all")}
-            onClick={() => toggleStage("all")}
-          />
-          {STAGE_ORDER.map((s) => (
+          {activeStage === null ? (
+            <>
+              {STAGE_ORDER.map((s) => (
+                <StagePill
+                  key={s}
+                  label={t.dealStage[s]}
+                  count={stageCounts[s] ?? 0}
+                  active={false}
+                  onClick={() => toggleStage(s)}
+                />
+              ))}
+              <StagePill
+                label={t.dealStage.cancelled}
+                count={stageCounts.cancelled ?? 0}
+                active={false}
+                onClick={() => toggleStage("cancelled")}
+              />
+            </>
+          ) : (
             <StagePill
-              key={s}
-              label={t.dealStage[s]}
-              count={stageCounts[s] ?? 0}
-              active={selectedStages.has(s)}
-              onClick={() => toggleStage(s)}
+              label={t.dealStage[activeStage]}
+              count={stageCounts[activeStage] ?? 0}
+              active
+              onClick={() => setActiveStage(null)}
+              showClose
             />
-          ))}
-          <StagePill
-            label={t.dealStage.cancelled}
-            count={stageCounts.cancelled ?? 0}
-            active={selectedStages.has("cancelled")}
-            onClick={() => toggleStage("cancelled")}
-          />
+          )}
         </div>
       )}
 
@@ -486,24 +470,29 @@ function StagePill({
   count,
   active,
   onClick,
+  showClose = false,
 }: {
   label: string;
   count: number;
   active: boolean;
   onClick: () => void;
+  showClose?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "whitespace-nowrap rounded-full border px-3 py-1 text-xs transition",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs transition",
         active
           ? "border-ide-navy bg-ide-navy text-white"
           : "border-border bg-white text-muted-foreground hover:text-foreground",
       )}
     >
-      {label} ({count})
+      <span>
+        {label} ({count})
+      </span>
+      {showClose && <X className="h-3 w-3" aria-hidden="true" />}
     </button>
   );
 }
