@@ -25,7 +25,7 @@ const navItems: Array<{
   { key: "dashboard", label: t.nav.dashboard },
   { key: "companies", label: t.nav.companies, to: "/companies" },
   { key: "deals", label: t.nav.deals, to: "/deals" },
-  { key: "designs", label: t.nav.designs },
+  { key: "designs", label: t.nav.designs, to: "/honnun" },
   { key: "products", label: t.nav.products },
   { key: "purchaseOrders", label: t.nav.purchaseOrders, to: "/innkaup" },
 ];
