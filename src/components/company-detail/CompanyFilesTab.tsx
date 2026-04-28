@@ -449,17 +449,13 @@ function FilterPill({
 
 function FileCard({
   file,
-  thumbUrl,
   typeLabel,
   linkedDeal,
-  onDownload,
   onDelete,
 }: {
   file: CompanyFileRow;
-  thumbUrl?: string;
   typeLabel: string;
   linkedDeal?: DealLite;
-  onDownload: () => void;
   onDelete: () => void;
 }) {
   const [confirm, setConfirm] = useState(false);
@@ -469,15 +465,16 @@ function FileCard({
 
   return (
     <div className="group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
-      <button
-        type="button"
-        onClick={onDownload}
+      <a
+        href={file.signedUrl ?? "#"}
+        target="_blank"
+        rel="noopener noreferrer"
         className="block w-full text-left"
         title={file.original_filename ?? ""}
       >
         <div className="flex h-28 items-center justify-center bg-muted/30">
-          {isImage && thumbUrl ? (
-            <img src={thumbUrl} alt="" className="h-full w-full object-cover" />
+          {isImage && file.signedUrl ? (
+            <img src={file.signedUrl} alt="" className="h-full w-full object-cover" />
           ) : isPdf ? (
             <FileText className="h-10 w-10 text-red-500" />
           ) : isImage ? (
@@ -502,7 +499,7 @@ function FileCard({
             {file.profile?.name ?? "—"} · {formatDate(file.uploaded_at)}
           </div>
         </div>
-      </button>
+      </a>
 
       {linkedDeal && (
         <div className="border-t border-border px-3 py-2">
@@ -522,21 +519,20 @@ function FileCard({
       )}
 
       <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDownload();
-          }}
+        <a
+          href={file.signedUrlDownload ?? "#"}
+          download={file.original_filename ?? ""}
+          onClick={(e) => e.stopPropagation()}
           className="rounded-md bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-foreground"
           aria-label={t.dealFile.download}
         >
           <Download className="h-4 w-4" />
-        </button>
+        </a>
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
+            e.preventDefault();
             setConfirm(true);
           }}
           className="rounded-md bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-red-600"
