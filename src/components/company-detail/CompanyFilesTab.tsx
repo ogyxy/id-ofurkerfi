@@ -83,6 +83,8 @@ interface CompanyFileRow {
   uploaded_at: string;
   uploaded_by: string | null;
   profile?: { id: string; name: string | null } | null;
+  signedUrl?: string | null;
+  signedUrlDownload?: string | null;
 }
 
 interface DealFileRow extends CompanyFileRow {
