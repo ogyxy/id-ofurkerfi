@@ -46,7 +46,11 @@ export type EditableLine = {
   unit_price_isk: number;
   manualPrice: boolean;
   notes: string;
+  emptyQty?: boolean;
+  emptyCost?: boolean;
 };
+
+const NO_SPINNER = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 
 export function fromDbLine(row: DealLineRow): EditableLine {
   return {
