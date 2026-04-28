@@ -67,7 +67,7 @@ type MergedFile =
   | (DealFileRow & { source: "deal"; signedUrl: string | null; signedUrlDownload: string | null })
   | (CompanyFileRow & { source: "company"; signedUrl: string | null; signedUrlDownload: string | null });
 
-type TypeFilter = "all" | "mockup" | "artwork" | "logo" | "presentation" | "brand";
+type TypeFilter = "mockup" | "artwork" | "logo" | "presentation" | "brand";
 
 // --------- Helpers ----------
 
@@ -134,10 +134,8 @@ function HonnunContent() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search, 300);
 
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter | null>(null);
   const [companyFilter, setCompanyFilter] = useState<string>("");
-  const [dateFrom, setDateFrom] = useState<string>("");
-  const [dateTo, setDateTo] = useState<string>("");
 
   const [companyQuery, setCompanyQuery] = useState("");
   const [companyOpen, setCompanyOpen] = useState(false);
@@ -283,13 +281,11 @@ function HonnunContent() {
   // Apply all filters
   const filtered = useMemo(() => {
     const term = debouncedSearch.trim().toLowerCase();
-    const fromTs = dateFrom ? new Date(dateFrom).getTime() : null;
-    const toTs = dateTo ? new Date(dateTo).getTime() + 86_400_000 : null; // include end day
 
     return allFiles
       .filter((f) => {
         // Type filter
-        if (typeFilter !== "all") {
+        if (typeFilter !== null) {
           if (typeFilter === "brand") {
             if (f.source !== "company") return false;
           } else {
@@ -302,11 +298,6 @@ function HonnunContent() {
           const cid = f.source === "deal" ? f.deal?.company_id : f.company_id;
           if (cid !== companyFilter) return false;
         }
-
-        // Date range
-        const ts = new Date(f.uploaded_at).getTime();
-        if (fromTs !== null && ts < fromTs) return false;
-        if (toTs !== null && ts >= toTs) return false;
 
         // Search
         if (term) {
@@ -327,26 +318,19 @@ function HonnunContent() {
         (a, b) =>
           new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime(),
       );
-  }, [allFiles, debouncedSearch, typeFilter, companyFilter, dateFrom, dateTo, lineMatchedDealIds]);
+  }, [allFiles, debouncedSearch, typeFilter, companyFilter, lineMatchedDealIds]);
 
   const hasActiveFilter =
-    !!search.trim() ||
-    typeFilter !== "all" ||
-    !!companyFilter ||
-    !!dateFrom ||
-    !!dateTo;
+    !!search.trim() || typeFilter !== null || !!companyFilter;
 
   const clearAll = () => {
     setSearch("");
-    setTypeFilter("all");
+    setTypeFilter(null);
     setCompanyFilter("");
     setCompanyQuery("");
-    setDateFrom("");
-    setDateTo("");
   };
 
   const typePills: Array<{ key: TypeFilter; label: string }> = [
-    { key: "all", label: t.hönnunScreen.filterAll },
     { key: "mockup", label: t.hönnunScreen.typeMockup },
     { key: "artwork", label: t.hönnunScreen.typeArtwork },
     { key: "logo", label: t.hönnunScreen.typeLogo },
