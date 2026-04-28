@@ -23,6 +23,7 @@ type DealRow = {
   name: string;
   stage: DealStage;
   amount_isk: number | null;
+  refund_amount_isk: number | null;
   promised_delivery_date: string | null;
   estimated_delivery_date: string | null;
   delivered_at: string | null;
@@ -34,6 +35,7 @@ type DealRow = {
   company: { id: string; name: string } | null;
   contact: { id: string; first_name: string | null; last_name: string | null } | null;
   owner: { id: string; name: string | null } | null;
+  childDeals?: { stage: DealStage }[];
 };
 
 type Profile = { id: string; name: string | null; email: string };
@@ -67,6 +69,7 @@ const SELECT = `
   name,
   stage,
   amount_isk,
+  refund_amount_isk,
   promised_delivery_date,
   estimated_delivery_date,
   delivered_at,
@@ -79,6 +82,21 @@ const SELECT = `
   contact:contacts(id, first_name, last_name),
   owner:profiles(id, name)
 `;
+
+function isDefectResolved(deal: DealRow): boolean {
+  if (deal.stage !== "defect_reorder") return false;
+  if (deal.defect_resolution === "refund" && deal.refund_amount_isk != null) return true;
+  if (deal.defect_resolution === "credit_note") return true;
+  if (deal.defect_resolution === "resolved") return true;
+  if (
+    deal.defect_resolution === "reorder" &&
+    (deal.childDeals?.length ?? 0) > 0 &&
+    deal.childDeals!.every((c) => c.stage === "delivered")
+  ) {
+    return true;
+  }
+  return false;
+}
 
 function initials(name: string | null | undefined): string {
   if (!name) return "?";
