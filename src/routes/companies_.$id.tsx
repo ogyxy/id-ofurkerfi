@@ -24,9 +24,14 @@ type Deal = {
   name: string;
   stage: Database["public"]["Enums"]["deal_stage"];
   amount_isk: number | null;
+  refund_amount_isk: number | null;
   promised_delivery_date: string | null;
+  delivered_at: string | null;
   invoice_status: Database["public"]["Enums"]["invoice_status"];
   payment_status: Database["public"]["Enums"]["payment_status"];
+  defect_resolution: Database["public"]["Enums"]["defect_resolution"];
+  created_at: string;
+  childDeals?: { stage: Database["public"]["Enums"]["deal_stage"] }[];
 };
 type Design = Pick<
   Database["public"]["Tables"]["designs"]["Row"],
@@ -45,7 +50,7 @@ export const Route = createFileRoute("/companies_/$id")({
   component: CompanyDetailPage,
 });
 
-type TabKey = "contacts" | "deals" | "designs" | "activities";
+type TabKey = "contacts" | "deals" | "designs";
 
 function CompanyDetailPage() {
   return (
