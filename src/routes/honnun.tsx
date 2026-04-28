@@ -158,7 +158,7 @@ function HonnunContent() {
       .select(
         `id, deal_id, storage_path, file_type, original_filename,
          file_size_bytes, uploaded_at, uploaded_by,
-         deal:deals(id, so_number, name, company_id, archived,
+         deal:deals!deal_files_deal_id_fkey(id, so_number, name, company_id, archived,
                     company:companies(id, name))`,
       )
       .in("file_type", ["mockup", "artwork", "logo", "presentation"])
@@ -169,7 +169,7 @@ function HonnunContent() {
       .select(
         `id, company_id, storage_path, file_type, original_filename,
          file_size_bytes, uploaded_at, uploaded_by,
-         company:companies(id, name)`,
+         company:companies!company_files_company_id_fkey(id, name)`,
       )
       .order("uploaded_at", { ascending: false });
 
