@@ -60,7 +60,7 @@ export function CompanyHeader({ company, onEdit }: Props) {
             className="inline-flex items-center gap-1.5 hover:text-foreground"
           >
             <Phone className="h-4 w-4" />
-            {company.phone}
+            {formatPhone(company.phone)}
           </a>
         )}
         {company.website && (
