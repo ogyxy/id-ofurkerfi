@@ -77,6 +77,7 @@ export function CreateDealDrawer({
   const [newKennitala, setNewKennitala] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [creatingCompany, setCreatingCompany] = useState(false);
+  const [newBillingCompanyId, setNewBillingCompanyId] = useState<string | null>(null);
 
   // Optional new contact for new company
   const [addContact, setAddContact] = useState(false);
