@@ -8,6 +8,7 @@ import {
 import { FileThumbnail } from "@/components/FileThumbnail";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
+import { AppMain } from "@/components/AppMain";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatDate } from "@/lib/sala_translations_is";
 import { formatFileSize } from "@/lib/formatters";
@@ -119,9 +120,9 @@ function HonnunPage() {
       {(session) => (
         <div className="min-h-screen bg-background">
           <Sidebar activeKey="designs" userEmail={session.user.email ?? ""} />
-          <main className="px-4 pb-8 pt-20 md:ml-60 md:px-8 md:pt-8">
+          <AppMain>
             <HonnunContent />
-          </main>
+          </AppMain>
         </div>
       )}
     </ProtectedRoute>

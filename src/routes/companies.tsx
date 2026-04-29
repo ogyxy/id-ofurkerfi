@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
+import { AppMain } from "@/components/AppMain";
 import { CompaniesTable } from "@/components/CompaniesTable";
 import { NewCompanyDrawer } from "@/components/companies-list/NewCompanyDrawer";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ function CompaniesPage() {
       {(session) => (
         <div className="min-h-screen bg-background">
           <Sidebar activeKey="companies" userEmail={session.user.email ?? ""} />
-          <main className="px-4 pb-8 pt-20 md:ml-60 md:px-8 md:pt-8">
+          <AppMain>
             <div className="mb-6 flex items-center justify-between gap-4">
               <h1 className="text-2xl font-semibold text-foreground">
                 {t.nav.companies}
@@ -38,7 +39,7 @@ function CompaniesPage() {
             </div>
             <CompaniesTable />
             <NewCompanyDrawer open={newOpen} onOpenChange={setNewOpen} />
-          </main>
+          </AppMain>
         </div>
       )}
     </ProtectedRoute>

@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
+import { AppMain } from "@/components/AppMain";
 import { rememberDealReturnPath, consumeCompanyReturnPath } from "@/lib/dealReturn";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -54,9 +55,9 @@ function CompanyDetailPage() {
       {(session) => (
         <div className="min-h-screen bg-background">
           <Sidebar activeKey="companies" userEmail={session.user.email ?? ""} />
-          <main className="px-4 pb-8 pt-20 md:ml-60 md:px-8 md:pt-8">
+          <AppMain>
             <CompanyDetailContent currentProfileId={session.user.id ?? null} />
-          </main>
+          </AppMain>
         </div>
       )}
     </ProtectedRoute>
