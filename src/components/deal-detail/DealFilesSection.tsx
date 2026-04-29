@@ -346,7 +346,7 @@ function UploadDealFileDialog({
     setUploading(true);
     const safe = pathSafe(companyName);
     const ts = Math.floor(Date.now() / 1000);
-    const storagePath = `${safe}/${soNumber}/${ts}-${file.name}`;
+    const storagePath = `${safe}/${pathSafe(soNumber)}/${ts}-${pathSafe(file.name)}`;
 
     const { error: upErr } = await supabase.storage
       .from("deal_files")

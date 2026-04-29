@@ -77,13 +77,22 @@ export function maskIcelandicLocal(value: string): string {
 
 /**
  * Make a string safe for use as a storage folder name.
- * Preserves Icelandic characters (UTF-8 paths are bucket-safe).
- * Replaces only path-breaking characters: / \ : * ? " < > |
+ * Supabase Storage rejects non-ASCII keys, so we transliterate Icelandic
+ * characters to ASCII equivalents and strip anything else outside the safe set.
  */
+const ICELANDIC_MAP: Record<string, string> = {
+  á: "a", Á: "A", é: "e", É: "E", í: "i", Í: "I", ó: "o", Ó: "O",
+  ú: "u", Ú: "U", ý: "y", Ý: "Y", ð: "d", Ð: "D", þ: "th", Þ: "Th",
+  æ: "ae", Æ: "Ae", ö: "o", Ö: "O", ø: "o", Ø: "O", å: "a", Å: "A",
+  ä: "a", Ä: "A", ü: "u", Ü: "U", ñ: "n", Ñ: "N", ç: "c", Ç: "C",
+};
+
 export function pathSafe(value: string | null | undefined): string {
   if (!value) return "unknown";
-  const cleaned = value
+  const transliterated = value.replace(/[^\u0000-\u007F]/g, (ch) => ICELANDIC_MAP[ch] ?? "");
+  const cleaned = transliterated
     .replace(/[\/\\:*?"<>|]/g, "-")
+    .replace(/[^\x20-\x7E]/g, "")
     .trim()
     .replace(/\s+/g, " ")
     .replace(/\.+$/, "");
