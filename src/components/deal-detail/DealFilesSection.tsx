@@ -193,16 +193,50 @@ export function DealFilesSection({
         </div>
       )}
 
-      <UploadDealFileDialog
+      <MultiFileUploadDialog
         open={uploadOpen}
-        onOpenChange={setUploadOpen}
-        dealId={dealId}
-        companyId={companyId}
-        companyName={companyName}
-        soNumber={soNumber}
-        currentProfileId={currentProfileId}
-        onUploaded={() => void load()}
-        guessType={guessType}
+        onClose={() => setUploadOpen(false)}
+        title={t.upload.title}
+        fileTypes={DEAL_FILE_TYPES.map((ft) => ({ value: ft, label: t.fileType[ft] }))}
+        smartGuess={smartGuessDealFileType}
+        uploadOne={async (file, fileType) => {
+          const safe = pathSafe(companyName);
+          const ts = Math.floor(Date.now() / 1000);
+          const storagePath = `${safe}/${pathSafe(soNumber)}/${ts}-${pathSafe(file.name)}`;
+          const { error: upErr } = await supabase.storage
+            .from("deal_files")
+            .upload(storagePath, file, {
+              cacheControl: "3600",
+              upsert: false,
+              contentType: file.type || "application/octet-stream",
+            });
+          if (upErr) throw new Error(upErr.message);
+          const { error: insErr } = await supabase.from("deal_files").insert({
+            deal_id: dealId,
+            storage_path: storagePath,
+            file_type: fileType,
+            original_filename: file.name,
+            file_size_bytes: file.size,
+            uploaded_by: currentProfileId,
+          });
+          if (insErr) throw new Error(insErr.message);
+        }}
+        onAnySuccess={() => void load()}
+        onBatchComplete={async (result) => {
+          if (result.successful > 0) {
+            const body =
+              result.successful === 1
+                ? `Skjali hlaðið upp`
+                : `${result.successful} skjölum hlaðið upp`;
+            await supabase.from("activities").insert({
+              deal_id: dealId,
+              company_id: companyId,
+              type: "note",
+              body,
+              created_by: currentProfileId,
+            });
+          }
+        }}
       />
     </div>
   );
