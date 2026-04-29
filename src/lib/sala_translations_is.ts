@@ -742,7 +742,7 @@ export const t = {
     pulseMargin:         'Framlegð',
     pulseVsPrevious:     'vs. fyrri 30',
 
-    pipelineTitle:       'Pipeline',
+    pipelineTitle:       'Opnar sölur',
     pipelineTotal:       'Heildarverðmæti opinna sala',
     noOpenDeals:         'Engar opnar sölur',
 

@@ -135,11 +135,6 @@ export function ExportReportDialog({ open, onOpenChange }: ExportReportDialogPro
       });
       const top = Object.values(byCompany).sort((a, b) => b.total - a.total).slice(0, 5);
 
-      // Defects
-      const defects = deals.filter(
-        (d: any) => d.stage === "defect_reorder" || (d.refund_amount_isk || 0) > 0
-      );
-
       // Pipeline (current state)
       const { data: openRaw } = await supabase
         .from("deals")
@@ -229,30 +224,6 @@ export function ExportReportDialog({ open, onOpenChange }: ExportReportDialogPro
       });
       // @ts-expect-error lastAutoTable injected by plugin
       y = (doc.lastAutoTable?.finalY ?? y) + 10;
-
-      // Defects
-      doc.setFontSize(13);
-      doc.text(L("Gallar á tímabilinu", "Defects in period"), 14, y);
-      y += 4;
-      if (defects.length === 0) {
-        doc.setFontSize(11);
-        doc.text(L("Engir gallar.", "No defects."), 14, y + 4);
-      } else {
-        autoTable(doc, {
-          startY: y,
-          head: [[
-            L("SO", "SO"),
-            L("Viðskiptavinur", "Customer"),
-            L("Endurgreiðsla (ISK)", "Refund (ISK)"),
-          ]],
-          body: defects.map((d: any) => [
-            d.so_number,
-            d.company?.name ?? "—",
-            formatIsk(d.refund_amount_isk || 0),
-          ]),
-          headStyles: { fillColor: [26, 37, 64] },
-        });
-      }
 
       doc.save(`sala-skyrsla-${range.slug}.pdf`);
       onOpenChange(false);

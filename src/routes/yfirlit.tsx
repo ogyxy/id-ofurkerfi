@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -10,10 +10,9 @@ import {
 } from "lucide-react";
 import {
   Bar,
-  BarChart,
   CartesianGrid,
+  ComposedChart,
   Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip as RTooltip,
   XAxis,
@@ -173,7 +172,7 @@ function YfirlitContent({
   const [prevPulse, setPrevPulse] = useState<PulseStats>({ revenue: 0, count: 0, avgDeal: 0, marginPct: 0 });
 
   const [pipeline, setPipeline] = useState<PipelineRow[]>([]);
-  const [marginTrend, setMarginTrend] = useState<Array<{ month: string; label: string; marginPct: number }>>([]);
+  const [marginTrend, setMarginTrend] = useState<Array<{ month: string; label: string; revenue: number; margin: number; marginPct: number }>>([]);
   const [topCustomers, setTopCustomers] = useState<CustomerRow[]>([]);
   const [activities, setActivities] = useState<ActivityRow[]>([]);
   const [exportOpen, setExportOpen] = useState(false);
@@ -322,12 +321,13 @@ function YfirlitContent({
         .sort()
         .map((key) => {
           const m = Number(key.slice(5, 7)) - 1;
+          const b = buckets[key];
           return {
             month: key,
             label: t.yfirlit.monthsShort[m],
-            marginPct: buckets[key].revenue > 0
-              ? (buckets[key].margin / buckets[key].revenue) * 100
-              : 0,
+            revenue: b.revenue,
+            margin: b.margin,
+            marginPct: b.revenue > 0 ? (b.margin / b.revenue) * 100 : 0,
           };
         });
       setMarginTrend(trend);
@@ -404,15 +404,6 @@ function YfirlitContent({
 
   const visibleTasks = showAllTasks ? tasks : tasks.slice(0, 5);
   const pipelineTotal = pipeline.reduce((s, p) => s + p.total, 0);
-  const pipelineChartData = useMemo(
-    () => [
-      pipeline.reduce((acc, p) => {
-        acc[p.stage] = p.total;
-        return acc;
-      }, { name: "" } as Record<string, any>),
-    ],
-    [pipeline]
-  );
 
   return (
     <div className="space-y-8">
@@ -551,31 +542,31 @@ function YfirlitContent({
             <p className="mb-3 text-2xl font-semibold text-foreground">
               {formatIsk(pipelineTotal)}
             </p>
-            <div className="h-12 w-full">
-              <ResponsiveContainer>
-                <BarChart layout="vertical" data={pipelineChartData} stackOffset="none">
-                  <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="name" hide />
-                  <RTooltip
-                    formatter={(value: number, key: string) =>
-                      [formatIsk(value), (t.dealStage as Record<string, string>)[key] ?? key]
-                    }
+            <div className="flex h-12 w-full overflow-hidden rounded-md">
+              {pipeline.map((p) => {
+                const widthPct = pipelineTotal > 0 ? (p.total / pipelineTotal) * 100 : 0;
+                if (widthPct === 0) return null;
+                const label = (t.dealStage as Record<string, string>)[p.stage] ?? p.stage;
+                return (
+                  <Link
+                    key={p.stage}
+                    to="/deals"
+                    search={{ stage: p.stage as any }}
+                    title={`${label} — ${p.count} · ${formatIsk(p.total)}`}
+                    style={{ width: `${widthPct}%`, background: STAGE_COLORS[p.stage] }}
+                    className="transition-opacity hover:opacity-80"
                   />
-                  {pipeline.map((p) => (
-                    <Bar
-                      key={p.stage}
-                      dataKey={p.stage}
-                      stackId="a"
-                      fill={STAGE_COLORS[p.stage]}
-                      radius={0}
-                    />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
+                );
+              })}
             </div>
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs">
               {pipeline.map((p) => (
-                <div key={p.stage} className="flex items-center gap-2">
+                <Link
+                  key={p.stage}
+                  to="/deals"
+                  search={{ stage: p.stage as any }}
+                  className="flex items-center gap-2 hover:underline"
+                >
                   <span
                     className="h-2.5 w-2.5 rounded-sm"
                     style={{ background: STAGE_COLORS[p.stage] }}
@@ -586,7 +577,7 @@ function YfirlitContent({
                   <span className="text-muted-foreground">
                     {p.count} · {formatIsk(p.total)}
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           </>
@@ -598,26 +589,65 @@ function YfirlitContent({
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {t.yfirlit.marginTrendTitle}
         </h2>
-        <div className="h-52 w-full">
+        <div className="h-64 w-full">
           <ResponsiveContainer>
-            <LineChart data={marginTrend} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
+            <ComposedChart data={marginTrend} margin={{ top: 10, right: 16, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="label" tick={{ fontSize: 12 }} />
               <YAxis
+                yAxisId="left"
+                tick={{ fontSize: 12 }}
+                tickFormatter={(v: number) =>
+                  v >= 1_000_000 ? `${(v / 1_000_000).toFixed(0)}m` : `${(v / 1000).toFixed(0)}k`
+                }
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
                 tick={{ fontSize: 12 }}
                 tickFormatter={(v: number) => `${v.toFixed(0)}%`}
               />
               <RTooltip
-                formatter={(v: number) => [`${v.toFixed(1)}%`, t.yfirlit.pulseMargin]}
+                formatter={(v: number, name: string) => {
+                  if (name === "marginPct") return [`${v.toFixed(1)}%`, t.yfirlit.pulseMargin];
+                  if (name === "revenue") return [formatIsk(v), t.yfirlit.pulseRevenue];
+                  return [String(v), name];
+                }}
               />
+              <Bar yAxisId="left" dataKey="revenue" radius={[4, 4, 0, 0]}>
+                {marginTrend.map((row, i) => {
+                  const prev = i > 0 ? marginTrend[i - 1].revenue : row.revenue;
+                  const up = row.revenue >= prev;
+                  return (
+                    <Cell key={row.month} fill={up ? "#bfdbfe" : "#fecaca"} />
+                  );
+                })}
+              </Bar>
               <Line
+                yAxisId="right"
                 type="monotone"
                 dataKey="marginPct"
-                stroke="#1a2540"
                 strokeWidth={2}
-                dot={{ r: 3, fill: "#1a2540" }}
+                stroke="#1a2540"
+                dot={(props: any) => {
+                  const { cx, cy, index } = props;
+                  const prev = index > 0 ? marginTrend[index - 1].marginPct : marginTrend[index].marginPct;
+                  const curr = marginTrend[index].marginPct;
+                  const up = curr >= prev;
+                  return (
+                    <circle
+                      key={index}
+                      cx={cx}
+                      cy={cy}
+                      r={4}
+                      fill={up ? "#059669" : "#dc2626"}
+                      stroke="#fff"
+                      strokeWidth={1}
+                    />
+                  );
+                }}
               />
-            </LineChart>
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </section>
@@ -791,7 +821,17 @@ function PulseTile({
 function ActivityFeedRow({ a }: { a: ActivityRow }) {
   const name = a.profile?.name || "—";
   const init = initials(a.profile?.name, "");
-  const body = a.body ?? "";
+  const rawBody = a.body ?? "";
+
+  // Translate body for stage_change entries (body is the raw enum value)
+  let displayBody: string = rawBody;
+  if (a.type === "stage_change") {
+    const stageLabel = (t.dealStage as Record<string, string>)[rawBody] ?? rawBody;
+    displayBody = `${t.log.stageChanged} ${stageLabel}`;
+  }
+
+  const typeLabel = (t.activityType as Record<string, string>)[a.type];
+
   return (
     <li className="flex gap-3">
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ide-navy text-xs font-medium text-white">
@@ -800,6 +840,9 @@ function ActivityFeedRow({ a }: { a: ActivityRow }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 text-sm">
           <span className="font-medium text-foreground">{name}</span>
+          {typeLabel && a.type !== "note" && (
+            <span className="text-xs text-muted-foreground">· {typeLabel}</span>
+          )}
           <span className="text-xs text-muted-foreground">{relativeTime(a.created_at)}</span>
         </div>
         <p className="text-sm text-muted-foreground">
@@ -814,7 +857,7 @@ function ActivityFeedRow({ a }: { a: ActivityRow }) {
               </Link>{" "}
             </>
           ) : null}
-          {body}
+          {displayBody}
         </p>
       </div>
     </li>
