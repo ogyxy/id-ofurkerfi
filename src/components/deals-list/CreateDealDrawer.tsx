@@ -8,6 +8,7 @@ import { t } from "@/lib/sala_translations_is";
 import { rememberDealReturnPath } from "@/lib/dealReturn";
 import { maskKennitalaInput, stripKennitala, isValidKennitala, stripPhone } from "@/lib/formatters";
 import { PhoneInput } from "@/components/PhoneInput";
+import { BillingCompanyCombobox } from "@/components/companies-list/BillingCompanyCombobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
