@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CountrySelect } from "@/components/ui/CountrySelect";
 import { CurrencySelect } from "@/components/ui/CurrencySelect";
 import { PhoneInput } from "@/components/PhoneInput";
+import { BillingCompanyCombobox } from "@/components/companies-list/BillingCompanyCombobox";
 import { maskKennitalaInput, stripKennitala, isValidKennitala, stripPhone } from "@/lib/formatters";
 import {
   Sheet,
