@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, Download, MoreHorizontal, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { FileThumbnail } from "@/components/FileThumbnail";
+import { MultiFileUploadDialog } from "@/components/MultiFileUploadDialog";
+import { smartGuessPoFileType } from "@/lib/uploadHelpers";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -634,14 +636,50 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         onSaved={() => void load()}
       />
 
-      <UploadFileDialog
+      <MultiFileUploadDialog
         open={uploadOpen}
-        onOpenChange={setUploadOpen}
-        poId={po.id}
-        poNumber={po.po_number}
-        supplierName={supplierName}
-        currentProfileId={currentProfileId}
-        onUploaded={() => void load()}
+        onClose={() => setUploadOpen(false)}
+        title={t.upload.title}
+        fileTypes={PO_FILE_TYPES.map((ft) => ({ value: ft, label: poFileTypeLabel(t, ft) }))}
+        smartGuess={smartGuessPoFileType}
+        uploadOne={async (file, fileType) => {
+          const supplierSafe = pathSafe(supplierName || "unknown");
+          const ts = Math.floor(Date.now() / 1000);
+          const storagePath = `${supplierSafe}/${pathSafe(po.po_number)}/${ts}-${pathSafe(file.name)}`;
+          const { error: upErr } = await supabase.storage
+            .from("po_files")
+            .upload(storagePath, file, {
+              cacheControl: "3600",
+              upsert: false,
+              contentType: file.type || "application/octet-stream",
+            });
+          if (upErr) throw new Error(upErr.message);
+          const { error: insErr } = await supabase.from("po_files").insert({
+            po_id: po.id,
+            storage_path: storagePath,
+            file_url: null,
+            file_type: fileType,
+            original_filename: file.name,
+            file_size_bytes: file.size,
+            uploaded_by: currentProfileId,
+          });
+          if (insErr) throw new Error(insErr.message);
+        }}
+        onAnySuccess={() => void load()}
+        onBatchComplete={async (result) => {
+          if (result.successful > 0 && po.deal_id) {
+            const body =
+              result.successful === 1
+                ? `${po.po_number}: Skjali hlaðið upp`
+                : `${po.po_number}: ${result.successful} skjölum hlaðið upp`;
+            await supabase.from("activities").insert({
+              deal_id: po.deal_id,
+              type: "note",
+              body,
+              created_by: currentProfileId,
+            });
+          }
+        }}
       />
     </div>
   );
@@ -771,17 +809,6 @@ function PoStepper({ status, onChange, onCancel, onReactivate }: StepperProps) {
   );
 }
 
-function guessPoFileType(name: string): PoFileType {
-  const n = name.toLowerCase();
-  if (n.includes("proof")) return "proof";
-  if (n.includes("confirmation") || n.includes("staðfesting") || n.includes("stadfesting"))
-    return "order_confirmation";
-  if (n.includes("invoice") || n.includes("reikningur")) return "invoice";
-  if (n.includes("artwork") || n.includes("design") || n.includes("hönnun") || n.includes("honnun"))
-    return "artwork";
-  return "other";
-}
-
 function FileCard({
   file,
   typeLabel,
@@ -894,143 +921,6 @@ function FileCard({
   );
 }
 
-function UploadFileDialog({
-  open,
-  onOpenChange,
-  poId,
-  poNumber,
-  supplierName,
-  currentProfileId,
-  onUploaded,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  poId: string;
-  poNumber: string;
-  supplierName: string;
-  currentProfileId: string;
-  onUploaded: () => void;
-}) {
-  const [file, setFile] = useState<File | null>(null);
-  const [type, setType] = useState<PoFileType>("other");
-  const [uploading, setUploading] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-
-  useEffect(() => {
-    if (!open) {
-      setFile(null);
-      setType("other");
-      setUploading(false);
-      setDragOver(false);
-    }
-  }, [open]);
-
-  const handleFile = (f: File | null) => {
-    setFile(f);
-    if (f) setType(guessPoFileType(f.name));
-  };
-
-  const handleUpload = async () => {
-    if (!file) return;
-    setUploading(true);
-    const supplierSafe = pathSafe(supplierName || "unknown");
-    const ts = Math.floor(Date.now() / 1000);
-    const storagePath = `${supplierSafe}/${pathSafe(poNumber)}/${ts}-${pathSafe(file.name)}`;
-    const { error: upErr } = await supabase.storage
-      .from("po_files")
-      .upload(storagePath, file, { upsert: false });
-    if (upErr) {
-      toast.error(t.status.somethingWentWrong);
-      setUploading(false);
-      return;
-    }
-    await supabase.from("po_files").insert({
-      po_id: poId,
-      storage_path: storagePath,
-      file_url: null,
-      file_type: type,
-      original_filename: file.name,
-      file_size_bytes: file.size,
-      uploaded_by: currentProfileId,
-    });
-    setUploading(false);
-    onOpenChange(false);
-    onUploaded();
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t.purchaseOrder.uploadFile}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <label
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOver(true);
-            }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragOver(false);
-              const f = e.dataTransfer.files?.[0] ?? null;
-              handleFile(f);
-            }}
-            className={cn(
-              "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-6 text-center text-sm transition-colors",
-              dragOver ? "border-ide-navy bg-muted/40" : "border-border",
-            )}
-          >
-            <Upload className="h-6 w-6 text-muted-foreground" />
-            <div className="text-muted-foreground">{t.purchaseOrder.dropHere}</div>
-            {file && (
-              <div className="font-medium text-foreground">
-                {file.name}{" "}
-                <span className="text-xs text-muted-foreground">
-                  ({formatFileSize(file.size)})
-                </span>
-              </div>
-            )}
-            <Input
-              type="file"
-              className="hidden"
-              onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
-            />
-          </label>
-
-          {file && (
-            <div>
-              <Label className="mb-2 block">{t.purchaseOrder.fileType}</Label>
-              <RadioGroup
-                value={type}
-                onValueChange={(v) => setType(v as PoFileType)}
-                className="grid grid-cols-2 gap-2"
-              >
-                {PO_FILE_TYPES.map((ft) => (
-                  <label key={ft} className="flex items-center gap-2 text-sm">
-                    <RadioGroupItem value={ft} />
-                    {poFileTypeLabel(t, ft)}
-                  </label>
-                ))}
-              </RadioGroup>
-            </div>
-          )}
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>{t.actions.cancel}</Button>
-          <Button
-            onClick={() => void handleUpload()}
-            disabled={!file || uploading}
-            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-          >
-            {uploading ? t.status.saving : t.actions.upload}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function EditPoDrawer({
   open,

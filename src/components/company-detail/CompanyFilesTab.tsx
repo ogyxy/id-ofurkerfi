@@ -7,21 +7,13 @@ import {
   Upload,
 } from "lucide-react";
 import { FileThumbnail } from "@/components/FileThumbnail";
+import { MultiFileUploadDialog } from "@/components/MultiFileUploadDialog";
+import { smartGuessBrandFileType } from "@/lib/uploadHelpers";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatDate } from "@/lib/sala_translations_is";
 import { pathSafe, formatFileSize } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -103,27 +95,6 @@ interface Props {
 }
 
 // ---------- Helpers ----------
-
-const IMAGE_EXTS = ["png", "jpg", "jpeg", "gif", "webp", "svg"];
-
-function fileExt(name: string | null | undefined): string {
-  if (!name) return "";
-  const i = name.lastIndexOf(".");
-  return i >= 0 ? name.slice(i + 1).toLowerCase() : "";
-}
-
-function guessCompanyType(name: string): CompanyFileType {
-  const n = name.toLowerCase();
-  const ext = fileExt(n);
-  if (["svg", "ai", "eps"].includes(ext) || n.includes("logo")) return "logo";
-  if (n.includes("guidelines") || n.includes("brand book") || n.includes("vörumerki"))
-    return "brand_guidelines";
-  if (["ttf", "otf", "woff", "woff2"].includes(ext) || n.includes("font")) return "font";
-  if (n.includes("color") || n.includes("litir") || n.includes("palette")) return "color_scheme";
-  if (n.includes("master") || n.includes("artwork") || n.includes("vector"))
-    return "master_artwork";
-  return "other";
-}
 
 function fileTypeLabel(ft: string): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -400,13 +371,35 @@ export function CompanyFilesTab({
         )}
       </section>
 
-      <UploadCompanyFileDialog
+      <MultiFileUploadDialog
         open={uploadOpen}
-        onOpenChange={setUploadOpen}
-        companyId={companyId}
-        companyName={companyName}
-        currentProfileId={currentProfileId}
-        onUploaded={() => void load()}
+        onClose={() => setUploadOpen(false)}
+        title={t.upload.titleBrand}
+        fileTypes={COMPANY_FILE_TYPES.map((ft) => ({ value: ft, label: fileTypeLabel(ft) }))}
+        smartGuess={smartGuessBrandFileType}
+        uploadOne={async (file, fileType) => {
+          const safe = pathSafe(companyName);
+          const ts = Math.floor(Date.now() / 1000);
+          const storagePath = `${safe}/Brand/${ts}-${pathSafe(file.name)}`;
+          const { error: upErr } = await supabase.storage
+            .from("deal_files")
+            .upload(storagePath, file, {
+              cacheControl: "3600",
+              upsert: false,
+              contentType: file.type || "application/octet-stream",
+            });
+          if (upErr) throw new Error(upErr.message);
+          const { error: insErr } = await supabase.from("company_files").insert({
+            company_id: companyId,
+            storage_path: storagePath,
+            file_type: fileType,
+            original_filename: file.name,
+            file_size_bytes: file.size,
+            uploaded_by: currentProfileId,
+          });
+          if (insErr) throw new Error(insErr.message);
+        }}
+        onAnySuccess={() => void load()}
       />
     </div>
   );
@@ -551,147 +544,3 @@ function FileCard({
   );
 }
 
-// ---------- Upload dialog (brand asset) ----------
-
-function UploadCompanyFileDialog({
-  open,
-  onOpenChange,
-  companyId,
-  companyName,
-  currentProfileId,
-  onUploaded,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  companyId: string;
-  companyName: string;
-  currentProfileId: string | null;
-  onUploaded: () => void;
-}) {
-  const [file, setFile] = useState<File | null>(null);
-  const [type, setType] = useState<CompanyFileType>("other");
-  const [uploading, setUploading] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-
-  useEffect(() => {
-    if (!open) {
-      setFile(null);
-      setType("other");
-      setUploading(false);
-    }
-  }, [open]);
-
-  const handleFile = (f: File | null) => {
-    setFile(f);
-    if (f) setType(guessCompanyType(f.name));
-  };
-
-  const handleUpload = async () => {
-    if (!file) return;
-    setUploading(true);
-    const safe = pathSafe(companyName);
-    const ts = Math.floor(Date.now() / 1000);
-    const storagePath = `${safe}/Brand/${ts}-${pathSafe(file.name)}`;
-
-    const { error: upErr } = await supabase.storage
-      .from("deal_files")
-      .upload(storagePath, file, { cacheControl: "3600", upsert: false });
-    if (upErr) {
-      toast.error(t.dealFile.uploadFailed);
-      setUploading(false);
-      return;
-    }
-    const { error: insErr } = await supabase.from("company_files").insert({
-      company_id: companyId,
-      storage_path: storagePath,
-      file_type: type,
-      original_filename: file.name,
-      file_size_bytes: file.size,
-      uploaded_by: currentProfileId,
-    });
-    if (insErr) {
-      toast.error(t.dealFile.uploadFailed);
-      setUploading(false);
-      return;
-    }
-    toast.success(t.status.savedSuccessfully);
-    setUploading(false);
-    onOpenChange(false);
-    onUploaded();
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t.companyFile.upload}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <label
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOver(true);
-            }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragOver(false);
-              const f = e.dataTransfer.files?.[0] ?? null;
-              handleFile(f);
-            }}
-            className={cn(
-              "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-6 text-center text-sm transition-colors",
-              dragOver ? "border-ide-navy bg-muted/40" : "border-border",
-            )}
-          >
-            <Upload className="h-6 w-6 text-muted-foreground" />
-            <div className="text-muted-foreground">{t.dealFile.dropHere}</div>
-            {file && (
-              <div className="font-medium text-foreground">
-                {file.name}{" "}
-                <span className="text-xs text-muted-foreground">
-                  ({formatFileSize(file.size)})
-                </span>
-              </div>
-            )}
-            <Input
-              type="file"
-              className="hidden"
-              onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
-            />
-          </label>
-
-          {file && (
-            <div>
-              <Label className="mb-2 block">{t.dealFile.fileType}</Label>
-              <RadioGroup
-                value={type}
-                onValueChange={(v) => setType(v as CompanyFileType)}
-                className="grid grid-cols-2 gap-2"
-              >
-                {COMPANY_FILE_TYPES.map((ft) => (
-                  <label key={ft} className="flex items-center gap-2 text-sm">
-                    <RadioGroupItem value={ft} />
-                    {fileTypeLabel(ft)}
-                  </label>
-                ))}
-              </RadioGroup>
-            </div>
-          )}
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            {t.actions.cancel}
-          </Button>
-          <Button
-            onClick={() => void handleUpload()}
-            disabled={!file || uploading}
-            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-          >
-            {uploading ? t.dealFile.uploading : t.actions.upload}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
