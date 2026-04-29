@@ -726,8 +726,8 @@ export const t = {
     viewingFor:       'Skoða fyrir',
     viewingForLabel:  'Yfirlit fyrir',
 
-    myTasksTitle:        'Verkefni mín í dag',
-    myTasksTitleOther:   'Verkefni {name} í dag',
+    myTasksTitle:        'VERKEFNI SEM ÞARF AÐ SKOÐA',
+    myTasksTitleOther:   'VERKEFNI SEM {name} ÞARF AÐ SKOÐA',
     myTasksEmpty:        'Engin sérstök verkefni í dag',
     taskOverdue:         'Á að afhenda',
     taskUninvoiced:      'Reikningur ekki gefinn út',
