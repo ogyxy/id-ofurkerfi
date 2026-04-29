@@ -104,19 +104,6 @@ function fileExt(name: string | null | undefined): string {
   return i >= 0 ? name.slice(i + 1).toLowerCase() : "";
 }
 
-function guessCompanyType(name: string): CompanyFileType {
-  const n = name.toLowerCase();
-  const ext = fileExt(n);
-  if (["svg", "ai", "eps"].includes(ext) || n.includes("logo")) return "logo";
-  if (n.includes("guidelines") || n.includes("brand book") || n.includes("vörumerki"))
-    return "brand_guidelines";
-  if (["ttf", "otf", "woff", "woff2"].includes(ext) || n.includes("font")) return "font";
-  if (n.includes("color") || n.includes("litir") || n.includes("palette")) return "color_scheme";
-  if (n.includes("master") || n.includes("artwork") || n.includes("vector"))
-    return "master_artwork";
-  return "other";
-}
-
 function fileTypeLabel(ft: string): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (t.fileType as Record<string, string>)[ft] ?? t.fileType.other;
