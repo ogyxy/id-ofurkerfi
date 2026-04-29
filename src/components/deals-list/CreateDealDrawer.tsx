@@ -171,6 +171,7 @@ export function CreateDealDrawer({
     setNewContactEmail("");
     setNewContactPhoneCountry("+354");
     setNewContactPhoneLocal("");
+    setNewBillingCompanyId(null);
   };
 
   const selectCompany = (c: Company) => {
