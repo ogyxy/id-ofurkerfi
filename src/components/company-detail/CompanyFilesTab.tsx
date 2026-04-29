@@ -7,6 +7,8 @@ import {
   Upload,
 } from "lucide-react";
 import { FileThumbnail } from "@/components/FileThumbnail";
+import { MultiFileUploadDialog } from "@/components/MultiFileUploadDialog";
+import { smartGuessBrandFileType } from "@/lib/uploadHelpers";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatDate } from "@/lib/sala_translations_is";
