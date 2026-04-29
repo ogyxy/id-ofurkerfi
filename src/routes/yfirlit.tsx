@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import {
   Bar,
-  BarChart,
   CartesianGrid,
   ComposedChart,
   Line,
