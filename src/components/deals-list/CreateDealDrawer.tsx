@@ -29,7 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
-type Company = { id: string; name: string };
+type Company = { id: string; name: string; billing_company_id: string | null };
 type Contact = {
   id: string;
   first_name: string | null;
@@ -102,7 +102,7 @@ export function CreateDealDrawer({
     (async () => {
       const { data } = await supabase
         .from("companies")
-        .select("id, name")
+        .select("id, name, billing_company_id")
         .eq("archived", false)
         .order("name");
       setCompanies((data ?? []) as Company[]);
