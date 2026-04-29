@@ -709,6 +709,65 @@ export const t = {
     other:              'Annað',
   },
 
+  // ---------------------------------------------------------------------------
+  // Yfirlit (dashboard / landing page)
+  // ---------------------------------------------------------------------------
+  yfirlit: {
+    pageTitle:        'Yfirlit',
+    greetingMorning:  'Góðan daginn',
+    greetingAfter:    'Góðan dag',
+    greetingEvening:  'Gott kvöld',
+    viewingFor:       'Skoða fyrir',
+    viewingForLabel:  'Yfirlit fyrir',
+
+    myTasksTitle:        'Verkefni mín í dag',
+    myTasksTitleOther:   'Verkefni {name} í dag',
+    myTasksEmpty:        'Engin sérstök verkefni í dag',
+    taskOverdue:         'Á að afhenda',
+    taskUninvoiced:      'Reikningur ekki gefinn út',
+    taskDefectPending:   'Galli án viðbragða',
+    taskUnpaidOld:       'Greiðsla á gjalddaga',
+    showMore:            '{count} fleiri',
+
+    pulseTitle:          'Síðustu 30 dagar',
+    pulseRevenue:        'Tekjur',
+    pulseDeals:          'Sölur kláraðar',
+    pulseAvgDeal:        'Meðalsala',
+    pulseMargin:         'Framlegð',
+    pulseVsPrevious:     'vs. fyrri 30',
+
+    pipelineTitle:       'Pipeline',
+    pipelineTotal:       'Heildarverðmæti opinna sala',
+    noOpenDeals:         'Engar opnar sölur',
+
+    marginTrendTitle:    'Framlegð síðustu 6 mánuði',
+
+    topCustomersTitle:   'Stærstu viðskiptavinir (þetta ár)',
+    noCustomersYet:      'Engir viðskiptavinir með skráðar tekjur',
+    dealsCount:          '{n} sölur',
+
+    recentActivityTitle: 'Nýlegt',
+    noRecentActivity:    'Engin nýleg virkni',
+
+    exportButton:        'Hlaða niður skýrslu',
+    exportDialog: {
+      title:             'Hlaða niður skýrslu',
+      period:            'Tímabil',
+      periodMonth:       'Mánuður',
+      periodYTD:         'Þetta ár',
+      periodLastYear:    'Síðasta ár',
+      selectMonth:       'Veldu mánuð',
+      language:          'Tungumál',
+      languageIs:        'Íslenska',
+      languageEn:        'English',
+      download:          'Hlaða niður',
+      cancel:            'Hætta við',
+    },
+
+    monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'Maí', 'Jún', 'Júl', 'Ágú', 'Sep', 'Okt', 'Nóv', 'Des'],
+    monthsLong:  ['janúar', 'febrúar', 'mars', 'apríl', 'maí', 'júní', 'júlí', 'ágúst', 'september', 'október', 'nóvember', 'desember'],
+  },
+
 } as const;
 
 

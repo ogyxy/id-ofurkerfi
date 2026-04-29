@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as YfirlitRouteImport } from './routes/yfirlit'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InnkaupRouteImport } from './routes/innkaup'
 import { Route as HonnunRouteImport } from './routes/honnun'
@@ -19,6 +20,11 @@ import { Route as InnkaupIdRouteImport } from './routes/innkaup_.$id'
 import { Route as DealsIdRouteImport } from './routes/deals_.$id'
 import { Route as CompaniesIdRouteImport } from './routes/companies_.$id'
 
+const YfirlitRoute = YfirlitRouteImport.update({
+  id: '/yfirlit',
+  path: '/yfirlit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/honnun': typeof HonnunRoute
   '/innkaup': typeof InnkaupRoute
   '/login': typeof LoginRoute
+  '/yfirlit': typeof YfirlitRoute
   '/companies/$id': typeof CompaniesIdRoute
   '/deals/$id': typeof DealsIdRoute
   '/innkaup/$id': typeof InnkaupIdRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/honnun': typeof HonnunRoute
   '/innkaup': typeof InnkaupRoute
   '/login': typeof LoginRoute
+  '/yfirlit': typeof YfirlitRoute
   '/companies/$id': typeof CompaniesIdRoute
   '/deals/$id': typeof DealsIdRoute
   '/innkaup/$id': typeof InnkaupIdRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/honnun': typeof HonnunRoute
   '/innkaup': typeof InnkaupRoute
   '/login': typeof LoginRoute
+  '/yfirlit': typeof YfirlitRoute
   '/companies_/$id': typeof CompaniesIdRoute
   '/deals_/$id': typeof DealsIdRoute
   '/innkaup_/$id': typeof InnkaupIdRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/honnun'
     | '/innkaup'
     | '/login'
+    | '/yfirlit'
     | '/companies/$id'
     | '/deals/$id'
     | '/innkaup/$id'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/honnun'
     | '/innkaup'
     | '/login'
+    | '/yfirlit'
     | '/companies/$id'
     | '/deals/$id'
     | '/innkaup/$id'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/honnun'
     | '/innkaup'
     | '/login'
+    | '/yfirlit'
     | '/companies_/$id'
     | '/deals_/$id'
     | '/innkaup_/$id'
@@ -142,6 +154,7 @@ export interface RootRouteChildren {
   HonnunRoute: typeof HonnunRoute
   InnkaupRoute: typeof InnkaupRoute
   LoginRoute: typeof LoginRoute
+  YfirlitRoute: typeof YfirlitRoute
   CompaniesIdRoute: typeof CompaniesIdRoute
   DealsIdRoute: typeof DealsIdRoute
   InnkaupIdRoute: typeof InnkaupIdRoute
@@ -149,6 +162,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/yfirlit': {
+      id: '/yfirlit'
+      path: '/yfirlit'
+      fullPath: '/yfirlit'
+      preLoaderRoute: typeof YfirlitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
   HonnunRoute: HonnunRoute,
   InnkaupRoute: InnkaupRoute,
   LoginRoute: LoginRoute,
+  YfirlitRoute: YfirlitRoute,
   CompaniesIdRoute: CompaniesIdRoute,
   DealsIdRoute: DealsIdRoute,
   InnkaupIdRoute: InnkaupIdRoute,

@@ -34,7 +34,7 @@ const navItems: Array<{
   to?: string;
   icon: LucideIcon;
 }> = [
-  { key: "dashboard", label: t.nav.dashboard, icon: LayoutDashboard },
+  { key: "dashboard", label: t.nav.dashboard, to: "/yfirlit", icon: LayoutDashboard },
   { key: "companies", label: t.nav.companies, to: "/companies", icon: Users },
   { key: "deals", label: t.nav.deals, to: "/deals", icon: Package },
   { key: "designs", label: t.nav.designs, to: "/honnun", icon: Palette },
