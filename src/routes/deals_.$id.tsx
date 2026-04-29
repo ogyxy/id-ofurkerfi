@@ -149,9 +149,18 @@ function DealDetailContent() {
       return;
     }
 
-    const d = dealRes.data as Deal & {
-      company: Company;
+    const raw = dealRes.data as unknown as Deal & {
+      company: Omit<Company, "billing_company"> & {
+        billing_company: { id: string; name: string } | { id: string; name: string }[] | null;
+      };
       contact: Contact | null;
+    };
+    const bc = Array.isArray(raw.company.billing_company)
+      ? (raw.company.billing_company[0] ?? null)
+      : raw.company.billing_company;
+    const d: Deal & { company: Company; contact: Contact | null } = {
+      ...raw,
+      company: { ...raw.company, billing_company: bc },
     };
     setDeal(d);
     setCompany(d.company);
