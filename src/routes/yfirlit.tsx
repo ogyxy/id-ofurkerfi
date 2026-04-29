@@ -856,9 +856,10 @@ function ActivityFeedRow({ a }: { a: ActivityRow }) {
               <Link
                 to="/deals/$id"
                 params={{ id: a.deal.id }}
-                className="font-mono text-foreground hover:underline"
+                className="font-medium text-foreground hover:underline"
               >
-                {a.deal.so_number}
+                {a.deal.name}
+                {a.deal.company ? ` · ${a.deal.company.name}` : ""}
               </Link>{" "}
             </>
           ) : null}
