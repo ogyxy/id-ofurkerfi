@@ -330,19 +330,26 @@ export function CreateDealDrawer({
             </div>
 
             {selectedCompany ? (
-              <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
-                <span className="truncate text-sm font-medium">
-                  {selectedCompany.name}
-                </span>
-                <button
-                  type="button"
-                  onClick={clearCompany}
-                  className="text-muted-foreground hover:text-foreground"
-                  aria-label="clear"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+              <>
+                <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
+                  <span className="truncate text-sm font-medium">
+                    {selectedCompany.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={clearCompany}
+                    className="text-muted-foreground hover:text-foreground"
+                    aria-label="clear"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                {selectedBillingName && (
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {t.newCompany.invoiceSentTo}: {selectedBillingName}
+                  </div>
+                )}
+              </>
             ) : (
               <div className="relative">
                 <Input
