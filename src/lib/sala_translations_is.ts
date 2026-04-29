@@ -674,6 +674,25 @@ export const t = {
     typeBrand:           'Vörumerki',
   },
 
+  // ---------------------------------------------------------------------------
+  // Multi-file upload dialog
+  // ---------------------------------------------------------------------------
+  upload: {
+    title:             'Hlaða upp skjölum',
+    titleBrand:        'Hlaða upp brand-skjölum',
+    dropzone:          'Dragðu skrár hingað eða smelltu',
+    addMore:           'Bæta við fleiri skrám',
+    setAllAs:          'Setja allt sem',
+    clearAll:          'Hreinsa allt',
+    fileCount:         '{count} skrár valdar',
+    uploadButton:      'Hlaða upp',
+    uploadingProgress: 'Hleður upp {current} af {total}...',
+    uploadComplete:    '{count} skrár hlaðnar upp',
+    partialFailure:    '{success} af {total} tókst, {failed} mistókust',
+    retryFailed:       'Reyna aftur',
+    removeFile:        'Fjarlægja',
+  },
+
   fileType: {
     mockup:             'Mockup',
     artwork:            'Hönnun',
