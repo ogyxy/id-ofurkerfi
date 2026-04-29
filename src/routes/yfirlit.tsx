@@ -404,15 +404,6 @@ function YfirlitContent({
 
   const visibleTasks = showAllTasks ? tasks : tasks.slice(0, 5);
   const pipelineTotal = pipeline.reduce((s, p) => s + p.total, 0);
-  const pipelineChartData = useMemo(
-    () => [
-      pipeline.reduce((acc, p) => {
-        acc[p.stage] = p.total;
-        return acc;
-      }, { name: "" } as Record<string, any>),
-    ],
-    [pipeline]
-  );
 
   return (
     <div className="space-y-8">
