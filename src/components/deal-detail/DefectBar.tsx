@@ -59,6 +59,7 @@ const STAGE_BADGE: Record<DealStage, string> = {
   quote_sent: "bg-indigo-50 text-indigo-700 border-indigo-300",
   order_confirmed: "bg-amber-50 text-amber-700 border-amber-300",
   delivered: "bg-green-50 text-green-700 border-green-300",
+  ready_for_pickup: "bg-teal-50 text-teal-700 border-teal-300",
   defect_reorder: "bg-orange-50 text-orange-700 border-orange-300",
   cancelled: "bg-gray-100 text-gray-500 border-gray-300",
 };
