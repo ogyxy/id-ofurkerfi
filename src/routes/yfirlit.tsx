@@ -85,7 +85,12 @@ interface ActivityRow {
   body: string | null;
   created_at: string;
   profile?: { id: string; name: string | null } | null;
-  deal?: { id: string; so_number: string; name: string } | null;
+  deal?: {
+    id: string;
+    so_number: string;
+    name: string;
+    company?: { id: string; name: string } | null;
+  } | null;
 }
 
 // ---------- Helpers ----------
@@ -394,7 +399,7 @@ function YfirlitContent({
         .select(
           `id, type, body, created_at,
            profile:profiles!created_by(id, name),
-           deal:deals(id, so_number, name)`
+           deal:deals(id, so_number, name, company:companies(id, name))`
         )
         .order("created_at", { ascending: false })
         .limit(10);
@@ -851,9 +856,10 @@ function ActivityFeedRow({ a }: { a: ActivityRow }) {
               <Link
                 to="/deals/$id"
                 params={{ id: a.deal.id }}
-                className="font-mono text-foreground hover:underline"
+                className="font-medium text-foreground hover:underline"
               >
-                {a.deal.so_number}
+                {a.deal.name}
+                {a.deal.company ? ` · ${a.deal.company.name}` : ""}
               </Link>{" "}
             </>
           ) : null}
