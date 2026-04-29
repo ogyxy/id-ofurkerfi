@@ -135,11 +135,6 @@ export function ExportReportDialog({ open, onOpenChange }: ExportReportDialogPro
       });
       const top = Object.values(byCompany).sort((a, b) => b.total - a.total).slice(0, 5);
 
-      // Defects
-      const defects = deals.filter(
-        (d: any) => d.stage === "defect_reorder" || (d.refund_amount_isk || 0) > 0
-      );
-
       // Pipeline (current state)
       const { data: openRaw } = await supabase
         .from("deals")
