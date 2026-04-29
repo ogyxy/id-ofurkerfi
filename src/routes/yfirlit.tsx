@@ -85,7 +85,12 @@ interface ActivityRow {
   body: string | null;
   created_at: string;
   profile?: { id: string; name: string | null } | null;
-  deal?: { id: string; so_number: string; name: string } | null;
+  deal?: {
+    id: string;
+    so_number: string;
+    name: string;
+    company?: { id: string; name: string } | null;
+  } | null;
 }
 
 // ---------- Helpers ----------
