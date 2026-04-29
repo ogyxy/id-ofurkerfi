@@ -94,6 +94,7 @@ const emptyCompany: CompanyForm = {
   preferred_currency: "ISK",
   payment_terms_days: "14",
   notes: "",
+  billing_company_id: null,
 };
 
 const emptyContact: ContactForm = {
