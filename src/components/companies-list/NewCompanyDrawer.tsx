@@ -64,6 +64,7 @@ type CompanyForm = {
   preferred_currency: string;
   payment_terms_days: string;
   notes: string;
+  billing_company_id: string | null;
 };
 
 type ContactForm = {
