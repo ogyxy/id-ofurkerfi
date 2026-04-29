@@ -206,7 +206,7 @@ function YfirlitContent({
           `id, so_number, name, stage, amount_isk,
            promised_delivery_date, delivered_at,
            invoice_status, payment_status,
-           defect_resolution, invoice_received_date, invoice_date,
+           defect_resolution, invoice_date,
            company:companies(id, name, payment_terms_days)`
         )
         .eq("owner_id", viewedUserId)
