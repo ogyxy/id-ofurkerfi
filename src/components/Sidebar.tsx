@@ -1,9 +1,21 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Menu, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  LayoutDashboard,
+  Menu,
+  Package,
+  Palette,
+  ShoppingCart,
+  Users,
+  X,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { t } from "@/lib/sala_translations_is";
 import { SidebarNavLink } from "./SidebarNavLink";
+import { useSidebarCollapsed } from "@/hooks/use-sidebar-collapsed";
 import ideLogo from "@/assets/ide-logo.png";
 
 interface SidebarProps {
@@ -12,7 +24,6 @@ interface SidebarProps {
     | "companies"
     | "deals"
     | "designs"
-    | "products"
     | "purchaseOrders";
   userEmail: string;
 }
@@ -21,20 +32,20 @@ const navItems: Array<{
   key: SidebarProps["activeKey"];
   label: string;
   to?: string;
+  icon: LucideIcon;
 }> = [
-  { key: "dashboard", label: t.nav.dashboard },
-  { key: "companies", label: t.nav.companies, to: "/companies" },
-  { key: "deals", label: t.nav.deals, to: "/deals" },
-  { key: "designs", label: t.nav.designs, to: "/honnun" },
-  { key: "products", label: t.nav.products },
-  { key: "purchaseOrders", label: t.nav.purchaseOrders, to: "/innkaup" },
+  { key: "dashboard", label: t.nav.dashboard, icon: LayoutDashboard },
+  { key: "companies", label: t.nav.companies, to: "/companies", icon: Users },
+  { key: "deals", label: t.nav.deals, to: "/deals", icon: Package },
+  { key: "designs", label: t.nav.designs, to: "/honnun", icon: Palette },
+  { key: "purchaseOrders", label: t.nav.purchaseOrders, to: "/innkaup", icon: ShoppingCart },
 ];
 
 export function Sidebar({ activeKey, userEmail }: SidebarProps) {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useSidebarCollapsed();
 
-  // Lock body scroll while the mobile drawer is open
   useEffect(() => {
     if (!mobileOpen) return;
     const original = document.body.style.overflow;
@@ -49,14 +60,20 @@ export function Sidebar({ activeKey, userEmail }: SidebarProps) {
     navigate({ to: "/login" });
   };
 
-  const drawerContent = (
+  const drawerContent = (isCollapsed: boolean) => (
     <>
-      <div className="flex items-center justify-between px-6 py-6">
-        <img
-          src={ideLogo}
-          alt={t.brand.name}
-          className="h-16 w-auto object-contain"
-        />
+      <div
+        className={`flex items-center px-4 py-6 ${
+          isCollapsed ? "justify-center" : "justify-between px-6"
+        }`}
+      >
+        {!isCollapsed && (
+          <img
+            src={ideLogo}
+            alt={t.brand.name}
+            className="h-16 w-auto object-contain"
+          />
+        )}
         <button
           type="button"
           onClick={() => setMobileOpen(false)}
@@ -74,21 +91,28 @@ export function Sidebar({ activeKey, userEmail }: SidebarProps) {
             label={item.label}
             to={item.to}
             active={item.key === activeKey}
+            icon={item.icon}
+            collapsed={isCollapsed}
             onClick={() => setMobileOpen(false)}
           />
         ))}
       </nav>
 
       <div className="border-t border-white/10 px-4 py-4">
-        <div className="mb-2 truncate text-xs text-white/60" title={userEmail}>
-          {userEmail}
-        </div>
+        {!isCollapsed && (
+          <div className="mb-2 truncate text-xs text-white/60" title={userEmail}>
+            {userEmail}
+          </div>
+        )}
         <button
           type="button"
           onClick={handleSignOut}
-          className="text-sm text-white/80 hover:text-white hover:underline"
+          className={`text-sm text-white/80 hover:text-white hover:underline ${
+            isCollapsed ? "w-full text-center text-xs" : ""
+          }`}
+          title={isCollapsed ? t.nav.signOut : undefined}
         >
-          {t.nav.signOut}
+          {isCollapsed ? "↩" : t.nav.signOut}
         </button>
       </div>
     </>
@@ -127,12 +151,24 @@ export function Sidebar({ activeKey, userEmail }: SidebarProps) {
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {drawerContent}
+        {drawerContent(false)}
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col bg-ide-navy text-white md:flex">
-        {drawerContent}
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 hidden flex-col bg-ide-navy text-white transition-[width] duration-200 md:flex ${
+          collapsed ? "w-14" : "w-60"
+        }`}
+      >
+        {drawerContent(collapsed)}
+        <button
+          type="button"
+          onClick={() => setCollapsed(!collapsed)}
+          aria-label={collapsed ? "Stækka valmynd" : "Minnka valmynd"}
+          className="absolute -right-3 top-20 hidden h-6 w-6 items-center justify-center rounded-full border border-border bg-ide-navy text-white shadow hover:bg-ide-navy-hover md:flex"
+        >
+          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+        </button>
       </aside>
     </>
   );
