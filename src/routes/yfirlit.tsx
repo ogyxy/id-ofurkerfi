@@ -552,31 +552,31 @@ function YfirlitContent({
             <p className="mb-3 text-2xl font-semibold text-foreground">
               {formatIsk(pipelineTotal)}
             </p>
-            <div className="h-12 w-full">
-              <ResponsiveContainer>
-                <BarChart layout="vertical" data={pipelineChartData} stackOffset="none">
-                  <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="name" hide />
-                  <RTooltip
-                    formatter={(value: number, key: string) =>
-                      [formatIsk(value), (t.dealStage as Record<string, string>)[key] ?? key]
-                    }
+            <div className="flex h-12 w-full overflow-hidden rounded-md">
+              {pipeline.map((p) => {
+                const widthPct = pipelineTotal > 0 ? (p.total / pipelineTotal) * 100 : 0;
+                if (widthPct === 0) return null;
+                const label = (t.dealStage as Record<string, string>)[p.stage] ?? p.stage;
+                return (
+                  <Link
+                    key={p.stage}
+                    to="/deals"
+                    search={{ stage: p.stage as any }}
+                    title={`${label} — ${p.count} · ${formatIsk(p.total)}`}
+                    style={{ width: `${widthPct}%`, background: STAGE_COLORS[p.stage] }}
+                    className="transition-opacity hover:opacity-80"
                   />
-                  {pipeline.map((p) => (
-                    <Bar
-                      key={p.stage}
-                      dataKey={p.stage}
-                      stackId="a"
-                      fill={STAGE_COLORS[p.stage]}
-                      radius={0}
-                    />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
+                );
+              })}
             </div>
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs">
               {pipeline.map((p) => (
-                <div key={p.stage} className="flex items-center gap-2">
+                <Link
+                  key={p.stage}
+                  to="/deals"
+                  search={{ stage: p.stage as any }}
+                  className="flex items-center gap-2 hover:underline"
+                >
                   <span
                     className="h-2.5 w-2.5 rounded-sm"
                     style={{ background: STAGE_COLORS[p.stage] }}
@@ -587,7 +587,7 @@ function YfirlitContent({
                   <span className="text-muted-foreground">
                     {p.count} · {formatIsk(p.total)}
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           </>
@@ -599,26 +599,65 @@ function YfirlitContent({
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {t.yfirlit.marginTrendTitle}
         </h2>
-        <div className="h-52 w-full">
+        <div className="h-64 w-full">
           <ResponsiveContainer>
-            <LineChart data={marginTrend} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
+            <ComposedChart data={marginTrend} margin={{ top: 10, right: 16, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="label" tick={{ fontSize: 12 }} />
               <YAxis
+                yAxisId="left"
+                tick={{ fontSize: 12 }}
+                tickFormatter={(v: number) =>
+                  v >= 1_000_000 ? `${(v / 1_000_000).toFixed(0)}m` : `${(v / 1000).toFixed(0)}k`
+                }
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
                 tick={{ fontSize: 12 }}
                 tickFormatter={(v: number) => `${v.toFixed(0)}%`}
               />
               <RTooltip
-                formatter={(v: number) => [`${v.toFixed(1)}%`, t.yfirlit.pulseMargin]}
+                formatter={(v: number, name: string) => {
+                  if (name === "marginPct") return [`${v.toFixed(1)}%`, t.yfirlit.pulseMargin];
+                  if (name === "revenue") return [formatIsk(v), t.yfirlit.pulseRevenue];
+                  return [String(v), name];
+                }}
               />
+              <Bar yAxisId="left" dataKey="revenue" radius={[4, 4, 0, 0]}>
+                {marginTrend.map((row, i) => {
+                  const prev = i > 0 ? marginTrend[i - 1].revenue : row.revenue;
+                  const up = row.revenue >= prev;
+                  return (
+                    <Cell key={row.month} fill={up ? "#bfdbfe" : "#fecaca"} />
+                  );
+                })}
+              </Bar>
               <Line
+                yAxisId="right"
                 type="monotone"
                 dataKey="marginPct"
-                stroke="#1a2540"
                 strokeWidth={2}
-                dot={{ r: 3, fill: "#1a2540" }}
+                stroke="#1a2540"
+                dot={(props: any) => {
+                  const { cx, cy, index } = props;
+                  const prev = index > 0 ? marginTrend[index - 1].marginPct : marginTrend[index].marginPct;
+                  const curr = marginTrend[index].marginPct;
+                  const up = curr >= prev;
+                  return (
+                    <circle
+                      key={index}
+                      cx={cx}
+                      cy={cy}
+                      r={4}
+                      fill={up ? "#059669" : "#dc2626"}
+                      stroke="#fff"
+                      strokeWidth={1}
+                    />
+                  );
+                }}
               />
-            </LineChart>
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </section>
