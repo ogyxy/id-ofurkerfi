@@ -11,7 +11,9 @@ type Deal = Database["public"]["Tables"]["deals"]["Row"];
 type Company = Pick<
   Database["public"]["Tables"]["companies"]["Row"],
   "id" | "name" | "vsk_status" | "payment_terms_days"
->;
+> & {
+  billing_company?: { id: string; name: string } | null;
+};
 type Contact = Pick<
   Database["public"]["Tables"]["contacts"]["Row"],
   "id" | "first_name" | "last_name" | "email" | "phone"
@@ -82,6 +84,11 @@ export function DealHeader({
           >
             {company.name}
           </Link>
+          {company.billing_company && (
+            <div className="text-xs text-muted-foreground">
+              {t.newCompany.invoiceTo}: {company.billing_company.name}
+            </div>
+          )}
           {contact && (
             <div className="text-xs text-muted-foreground">
               {contactName}
