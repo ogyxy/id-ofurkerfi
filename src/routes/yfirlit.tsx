@@ -821,7 +821,17 @@ function PulseTile({
 function ActivityFeedRow({ a }: { a: ActivityRow }) {
   const name = a.profile?.name || "—";
   const init = initials(a.profile?.name, "");
-  const body = a.body ?? "";
+  const rawBody = a.body ?? "";
+
+  // Translate body for stage_change entries (body is the raw enum value)
+  let displayBody: string = rawBody;
+  if (a.type === "stage_change") {
+    const stageLabel = (t.dealStage as Record<string, string>)[rawBody] ?? rawBody;
+    displayBody = `${t.log.stageChanged} ${stageLabel}`;
+  }
+
+  const typeLabel = (t.activityType as Record<string, string>)[a.type];
+
   return (
     <li className="flex gap-3">
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ide-navy text-xs font-medium text-white">
@@ -830,6 +840,9 @@ function ActivityFeedRow({ a }: { a: ActivityRow }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 text-sm">
           <span className="font-medium text-foreground">{name}</span>
+          {typeLabel && a.type !== "note" && (
+            <span className="text-xs text-muted-foreground">· {typeLabel}</span>
+          )}
           <span className="text-xs text-muted-foreground">{relativeTime(a.created_at)}</span>
         </div>
         <p className="text-sm text-muted-foreground">
@@ -844,7 +857,7 @@ function ActivityFeedRow({ a }: { a: ActivityRow }) {
               </Link>{" "}
             </>
           ) : null}
-          {body}
+          {displayBody}
         </p>
       </div>
     </li>
