@@ -400,13 +400,35 @@ export function CompanyFilesTab({
         )}
       </section>
 
-      <UploadCompanyFileDialog
+      <MultiFileUploadDialog
         open={uploadOpen}
-        onOpenChange={setUploadOpen}
-        companyId={companyId}
-        companyName={companyName}
-        currentProfileId={currentProfileId}
-        onUploaded={() => void load()}
+        onClose={() => setUploadOpen(false)}
+        title={t.upload.titleBrand}
+        fileTypes={COMPANY_FILE_TYPES.map((ft) => ({ value: ft, label: fileTypeLabel(ft) }))}
+        smartGuess={smartGuessBrandFileType}
+        uploadOne={async (file, fileType) => {
+          const safe = pathSafe(companyName);
+          const ts = Math.floor(Date.now() / 1000);
+          const storagePath = `${safe}/Brand/${ts}-${pathSafe(file.name)}`;
+          const { error: upErr } = await supabase.storage
+            .from("deal_files")
+            .upload(storagePath, file, {
+              cacheControl: "3600",
+              upsert: false,
+              contentType: file.type || "application/octet-stream",
+            });
+          if (upErr) throw new Error(upErr.message);
+          const { error: insErr } = await supabase.from("company_files").insert({
+            company_id: companyId,
+            storage_path: storagePath,
+            file_type: fileType,
+            original_filename: file.name,
+            file_size_bytes: file.size,
+            uploaded_by: currentProfileId,
+          });
+          if (insErr) throw new Error(insErr.message);
+        }}
+        onAnySuccess={() => void load()}
       />
     </div>
   );
