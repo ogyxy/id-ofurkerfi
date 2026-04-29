@@ -119,7 +119,7 @@ function DealDetailContent() {
       supabase
         .from("deals")
         .select(
-          `*, company:companies!deals_company_id_fkey(id, name, vsk_status, payment_terms_days, billing_company:companies!companies_billing_company_id_fkey(id, name)), contact:contacts(id, first_name, last_name, email, phone)`,
+          `*, company:companies!deals_company_id_fkey(id, name, vsk_status, payment_terms_days, billing_company:companies!billing_company_id(id, name)), contact:contacts(id, first_name, last_name, email, phone)`,
         )
         .eq("id", id)
         .maybeSingle(),
