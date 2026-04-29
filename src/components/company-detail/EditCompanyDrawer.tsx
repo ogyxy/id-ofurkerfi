@@ -324,6 +324,14 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
             />
           </div>
           <div className="md:col-span-2">
+            <Label>{t.newCompany.billedVia}</Label>
+            <BillingCompanyCombobox
+              value={form.billing_company_id}
+              onChange={(v) => update("billing_company_id", v)}
+              excludeId={company.id}
+            />
+          </div>
+          <div className="md:col-span-2">
             <Label>{t.company.notes}</Label>
             <Textarea
               rows={4}
