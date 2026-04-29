@@ -377,6 +377,7 @@ export const t = {
     searchingAll:             'Leitar í öllum sölum...',
     allOwners:                'Allar',
     unassignOwner:            'Taka af',
+    yearFilter:               'Ár',
     addContact:               'Bæta við tengilið',
     amountTooltipNotInvoiced: 'Ekki rukkað — pöntun afhent en reikningur hefur ekki verið gefinn út',
     amountTooltipUnpaid:      'Ógreitt — reikningur hefur verið gefinn út en greiðsla hefur ekki borist',
