@@ -30,7 +30,7 @@ export function LoginForm() {
       return;
     }
 
-    navigate({ to: "/companies" });
+    navigate({ to: "/yfirlit" });
   };
 
   return (
