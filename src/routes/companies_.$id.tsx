@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
 import { AppMain } from "@/components/AppMain";
-import { rememberDealReturnPath, consumeCompanyReturnPath } from "@/lib/dealReturn";
+import { rememberDealReturnPath, consumeCompanyReturnPath, rememberCompanyReturnPath } from "@/lib/dealReturn";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
