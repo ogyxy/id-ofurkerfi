@@ -33,6 +33,7 @@ type DealRow = {
   defect_resolution: DefectResolution;
   tracking_numbers: string[];
   archived: boolean;
+  created_at: string;
   company: { id: string; name: string } | null;
   contact: { id: string; first_name: string | null; last_name: string | null } | null;
   owner: { id: string; name: string | null } | null;
