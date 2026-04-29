@@ -42,6 +42,7 @@ type Profile = { id: string; name: string | null; email: string };
 
 interface Props {
   currentUserId: string;
+  initialStage?: DealStage | null;
 }
 
 const STAGE_ORDER: DealStage[] = [
@@ -110,12 +111,12 @@ function isOverdue(date: string | null, stage: DealStage): boolean {
   return new Date(date) < new Date(new Date().toDateString());
 }
 
-export function DealsList({ currentUserId }: Props) {
+export function DealsList({ currentUserId, initialStage = null }: Props) {
   const [deals, setDeals] = useState<DealRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [activeStage, setActiveStage] = useState<DealStage | null>(null);
+  const [activeStage, setActiveStage] = useState<DealStage | null>(initialStage);
   const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set());
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
