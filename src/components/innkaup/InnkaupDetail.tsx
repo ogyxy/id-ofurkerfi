@@ -935,7 +935,7 @@ function UploadFileDialog({
     setUploading(true);
     const supplierSafe = pathSafe(supplierName || "unknown");
     const ts = Math.floor(Date.now() / 1000);
-    const storagePath = `${supplierSafe}/${poNumber}/${ts}-${file.name}`;
+    const storagePath = `${supplierSafe}/${pathSafe(poNumber)}/${ts}-${pathSafe(file.name)}`;
     const { error: upErr } = await supabase.storage
       .from("po_files")
       .upload(storagePath, file, { upsert: false });
