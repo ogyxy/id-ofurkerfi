@@ -96,14 +96,6 @@ interface Props {
 
 // ---------- Helpers ----------
 
-const IMAGE_EXTS = ["png", "jpg", "jpeg", "gif", "webp", "svg"];
-
-function fileExt(name: string | null | undefined): string {
-  if (!name) return "";
-  const i = name.lastIndexOf(".");
-  return i >= 0 ? name.slice(i + 1).toLowerCase() : "";
-}
-
 function fileTypeLabel(ft: string): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (t.fileType as Record<string, string>)[ft] ?? t.fileType.other;
