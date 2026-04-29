@@ -60,25 +60,6 @@ interface Props {
   currentProfileId: string | null;
 }
 
-const IMAGE_EXTS = ["png", "jpg", "jpeg", "gif", "webp", "svg"];
-
-function fileExt(name: string | null | undefined): string {
-  if (!name) return "";
-  const i = name.lastIndexOf(".");
-  return i >= 0 ? name.slice(i + 1).toLowerCase() : "";
-}
-
-function guessType(name: string): DealFileType {
-  const n = name.toLowerCase();
-  const ext = fileExt(n);
-  if (n.includes("mockup")) return "mockup";
-  if (n.includes("artwork") || n.includes("design") || n.includes("hönnun")) return "artwork";
-  if (n.includes("logo")) return "logo";
-  if (n.includes("presentation") || n.includes("kynning") || ext === "ppt" || ext === "pptx") return "presentation";
-  if (n.includes("tilboð") || n.includes("tilbod") || n.includes("quote")) return "quote";
-  if (n.includes("reikningur") || n.includes("invoice")) return "invoice";
-  return "other";
-}
 
 export function DealFilesSection({
   dealId,
