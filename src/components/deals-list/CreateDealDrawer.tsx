@@ -425,6 +425,7 @@ export function CreateDealDrawer({
                   />
                 </div>
 
+                <div className="border-t border-border pt-2">
                   <label className="flex items-center gap-2 text-xs">
                     <input
                       type="checkbox"
