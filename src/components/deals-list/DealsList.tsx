@@ -60,6 +60,7 @@ const STAGE_STYLES: Record<DealStage, { border: string; bg: string }> = {
   quote_in_progress: { border: "border-l-blue-500", bg: "bg-blue-50" },
   quote_sent: { border: "border-l-indigo-500", bg: "bg-indigo-50" },
   order_confirmed: { border: "border-l-amber-500", bg: "bg-amber-50" },
+  ready_for_pickup: { border: "border-l-teal-500", bg: "bg-teal-50" },
   delivered: { border: "border-l-green-500", bg: "bg-green-50" },
   defect_reorder: { border: "border-l-orange-500", bg: "bg-orange-50" },
   cancelled: { border: "border-l-gray-300", bg: "bg-gray-50" },
