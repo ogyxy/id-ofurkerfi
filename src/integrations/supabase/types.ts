@@ -1227,6 +1227,7 @@ export type Database = {
         | "quote_in_progress"
         | "quote_sent"
         | "order_confirmed"
+        | "ready_for_pickup"
         | "delivered"
         | "cancelled"
         | "defect_reorder"
@@ -1394,6 +1395,7 @@ export const Constants = {
         "quote_in_progress",
         "quote_sent",
         "order_confirmed",
+        "ready_for_pickup",
         "delivered",
         "cancelled",
         "defect_reorder",
