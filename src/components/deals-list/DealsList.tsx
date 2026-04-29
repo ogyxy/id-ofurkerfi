@@ -121,11 +121,14 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [activeStage, setActiveStage] = useState<DealStage | null>(initialStage);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set());
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [lineMatchedDealIds, setLineMatchedDealIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   // Debounce search
   useEffect(() => {
@@ -144,107 +147,157 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     })();
   }, []);
 
-  // Fetch all non-archived deals (filtering happens client-side so counts are always accurate)
+  // Load available years (last 3 distinct years that have deals)
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("deals")
+        .select("created_at")
+        .eq("archived", false)
+        .order("created_at", { ascending: false })
+        .limit(10000);
+      if (!data) return;
+      const years = new Set<number>();
+      for (const row of data as { created_at: string }[]) {
+        const y = new Date(row.created_at).getFullYear();
+        if (!Number.isNaN(y)) years.add(y);
+      }
+      const sorted = [...years].sort((a, b) => b - a).slice(0, 3);
+      setAvailableYears(sorted);
+    })();
+  }, []);
+
+  // Fetch deals — search bypasses year filter; otherwise filter by selectedYear server-side.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
       const searchTerm = debouncedSearch.trim();
+
+      if (searchTerm) {
+        // Server-side search (debounced 300ms, limit 200)
+        const term = `%${searchTerm}%`;
+        const dealsQuery = supabase
+          .from("deals")
+          .select(SELECT)
+          .eq("archived", false)
+          .or(
+            `name.ilike.${term},so_number.ilike.${term},payday_invoice_number.ilike.${term},notes.ilike.${term},tracking_numbers.cs.{${searchTerm}}`,
+          )
+          .order("created_at", { ascending: false })
+          .limit(200);
+
+        const linesPromise = supabase
+          .from("deal_lines")
+          .select("deal_id")
+          .or(
+            `product_name.ilike.${term},product_supplier_sku.ilike.${term}`,
+          );
+
+        // Company name search → fetch ids then deals.in(...)
+        const companiesPromise = supabase
+          .from("companies")
+          .select("id")
+          .ilike("name", term)
+          .limit(200);
+
+        const [
+          { data: dealsData, error: dealsErr },
+          { data: matchingLines },
+          { data: companyMatches },
+        ] = await Promise.all([dealsQuery, linesPromise, companiesPromise]);
+
+        if (cancelled) return;
+
+        const matchedLineIds = new Set<string>(
+          (matchingLines ?? []).map((l) => l.deal_id),
+        );
+        setLineMatchedDealIds(matchedLineIds);
+
+        let rows = dealsErr ? [] : ((dealsData ?? []) as unknown as DealRow[]);
+        const existingIds = new Set(rows.map((d) => d.id));
+
+        // Pull deals matched by lines or by company name
+        const extraIds = new Set<string>();
+        matchedLineIds.forEach((id) => {
+          if (!existingIds.has(id)) extraIds.add(id);
+        });
+        if (companyMatches && companyMatches.length) {
+          const companyIds = companyMatches.map((c) => c.id);
+          const { data: byCompany } = await supabase
+            .from("deals")
+            .select(SELECT)
+            .eq("archived", false)
+            .in("company_id", companyIds)
+            .limit(200);
+          if (byCompany) {
+            for (const d of byCompany as unknown as DealRow[]) {
+              if (!existingIds.has(d.id)) {
+                rows.push(d);
+                existingIds.add(d.id);
+                extraIds.delete(d.id);
+              }
+            }
+          }
+        }
+        if (extraIds.size) {
+          const { data: additionalDeals } = await supabase
+            .from("deals")
+            .select(SELECT)
+            .in("id", [...extraIds])
+            .eq("archived", false);
+          if (additionalDeals) {
+            rows = [...rows, ...(additionalDeals as unknown as DealRow[])];
+          }
+        }
+
+        rows = await attachChildDeals(rows);
+        if (!cancelled) {
+          // Sort by created_at desc
+          rows.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+          setDeals(rows.slice(0, 200));
+          setLoading(false);
+        }
+        return;
+      }
+
+      // No search → fetch all (or by year), sorted by created_at DESC
       let query = supabase
         .from("deals")
         .select(SELECT)
         .eq("archived", false);
 
-      if (searchTerm) {
-        const term = `%${searchTerm}%`;
-        query = query.or(
-          `name.ilike.${term},so_number.ilike.${term},tracking_numbers.cs.{${searchTerm}}`,
-        );
+      if (selectedYear !== null) {
+        const start = `${selectedYear}-01-01T00:00:00Z`;
+        const end = `${selectedYear + 1}-01-01T00:00:00Z`;
+        query = query.gte("created_at", start).lt("created_at", end);
       }
 
-      query = query.order("promised_delivery_date", {
-        ascending: true,
-        nullsFirst: false,
-      });
+      query = query
+        .order("created_at", { ascending: false })
+        .range(0, 9999);
 
-      const linesPromise = searchTerm
-        ? supabase
-            .from("deal_lines")
-            .select("deal_id")
-            .or(
-              `product_name.ilike.%${searchTerm}%,product_supplier_sku.ilike.%${searchTerm}%`,
-            )
-        : Promise.resolve({ data: null as { deal_id: string }[] | null });
-
-      const [{ data, error }, { data: matchingLines }] = await Promise.all([
-        query,
-        linesPromise,
-      ]);
+      const { data, error } = await query;
       if (cancelled) return;
       if (error) {
         setDeals([]);
-      } else {
-        let rows = (data ?? []) as unknown as DealRow[];
-
-        const matchedIds = new Set<string>(
-          (matchingLines ?? []).map((l) => l.deal_id),
-        );
-        if (!cancelled) setLineMatchedDealIds(matchedIds);
-
-        if (searchTerm && matchingLines && matchingLines.length) {
-          const existingIds = new Set(rows.map((d) => d.id));
-          const additionalIds = [...matchedIds].filter(
-            (id) => !existingIds.has(id),
-          );
-          if (additionalIds.length) {
-            const { data: additionalDeals } = await supabase
-              .from("deals")
-              .select(SELECT)
-              .in("id", additionalIds)
-              .eq("archived", false);
-            if (additionalDeals) {
-              rows = [...rows, ...(additionalDeals as unknown as DealRow[])];
-            }
-          }
-        }
-        // Fetch child deals for defect_reorder rows w/ reorder resolution
-        const defectReorderIds = rows
-          .filter(
-            (d) =>
-              d.stage === "defect_reorder" && d.defect_resolution === "reorder",
-          )
-          .map((d) => d.id);
-        if (defectReorderIds.length) {
-          const { data: children } = await supabase
-            .from("deals")
-            .select("parent_deal_id, stage")
-            .in("parent_deal_id", defectReorderIds);
-          if (!cancelled && children) {
-            const byParent = new Map<string, { stage: DealStage }[]>();
-            (children as { parent_deal_id: string; stage: DealStage }[]).forEach(
-              (c) => {
-                const arr = byParent.get(c.parent_deal_id) ?? [];
-                arr.push({ stage: c.stage });
-                byParent.set(c.parent_deal_id, arr);
-              },
-            );
-            rows = rows.map((d) => ({
-              ...d,
-              childDeals: byParent.get(d.id) ?? [],
-            }));
-          }
-        }
-        if (!cancelled) setDeals(rows);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+      let rows = (data ?? []) as unknown as DealRow[];
+      rows = await attachChildDeals(rows);
+      if (!cancelled) {
+        setDeals(rows);
+        setLineMatchedDealIds(new Set());
+        setLoading(false);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearch]);
+  }, [debouncedSearch, selectedYear]);
 
-  // Client-side filtering: owner + company/contact name on search
-  // Apply stage filter (default: hide cancelled), then owner + search
+  // Apply remaining client-side filters (stage, owner)
   const visibleDeals = useMemo(() => {
     let list = deals;
     if (activeStage === "defect_reorder") {
@@ -259,27 +312,12 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
       );
     } else if (activeStage) {
       list = list.filter((d) => d.stage === activeStage);
-    } else {
-      list = list.filter((d) => d.stage !== "cancelled");
     }
-    if (selectedOwners.size > 0 && !debouncedSearch.trim()) {
+    if (selectedOwners.size > 0) {
       list = list.filter((d) => d.owner && selectedOwners.has(d.owner.id));
     }
-    if (debouncedSearch.trim()) {
-      const s = debouncedSearch.toLowerCase();
-      list = list.filter(
-        (d) =>
-          lineMatchedDealIds.has(d.id) ||
-          d.name.toLowerCase().includes(s) ||
-          d.so_number.toLowerCase().includes(s) ||
-          (d.tracking_numbers ?? []).some((tn) => tn.toLowerCase().includes(s)) ||
-          d.company?.name?.toLowerCase().includes(s) ||
-          d.contact?.first_name?.toLowerCase().includes(s) ||
-          d.contact?.last_name?.toLowerCase().includes(s),
-      );
-    }
     return list;
-  }, [deals, activeStage, selectedOwners, debouncedSearch, lineMatchedDealIds]);
+  }, [deals, activeStage, selectedOwners]);
 
   const ownersWithDeals = useMemo(() => {
     const ids = new Set<string>();
@@ -288,25 +326,6 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     });
     return profiles.filter((p) => ids.has(p.id));
   }, [deals, profiles]);
-
-  // Counts per stage — always reflect the full unarchived dataset, never affected by active filter.
-  // Resolved defect deals are counted under "delivered" and excluded from "defect_reorder".
-  const stageCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    STAGE_ORDER.concat(["cancelled"]).forEach((s) => (counts[s] = 0));
-    deals.forEach((d) => {
-      if (d.stage === "defect_reorder" && isDefectResolved(d)) {
-        counts["delivered"] = (counts["delivered"] ?? 0) + 1;
-      } else {
-        counts[d.stage] = (counts[d.stage] ?? 0) + 1;
-      }
-    });
-    return counts;
-  }, [deals]);
-
-  const toggleStage = (stage: DealStage) => {
-    setActiveStage((prev) => (prev === stage ? null : stage));
-  };
 
   const toggleOwner = (id: string) => {
     setSelectedOwners((prev) => {
@@ -321,6 +340,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     setSearch("");
     setActiveStage(null);
     setSelectedOwners(new Set());
+    setSelectedYear(null);
   };
 
   const openDeal = (id: string) => {
@@ -339,7 +359,6 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
       toast.error(t.status.somethingWentWrong);
       return;
     }
-    // Optimistic local update
     setDeals((prev) =>
       prev.map((d) =>
         d.id === deal.id
@@ -382,30 +401,14 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
   };
 
   const isSearching = debouncedSearch.trim().length > 0;
-  const showGrouping = !isSearching && activeStage === null;
 
-  // Group deals by stage when default view
-  const grouped = useMemo(() => {
-    if (!showGrouping) return null;
-    const map = new Map<DealStage, DealRow[]>();
-    STAGE_ORDER.forEach((s) => map.set(s, []));
-    const resolvedDefects: DealRow[] = [];
-    visibleDeals.forEach((d) => {
-      if (d.stage === "cancelled") return;
-      if (d.stage === "defect_reorder" && isDefectResolved(d)) {
-        resolvedDefects.push(d);
-        return;
-      }
-      const arr = map.get(d.stage);
-      if (arr) arr.push(d);
-    });
-    // Append resolved defect deals to the end of "delivered" group
-    if (resolvedDefects.length) {
-      const delivered = map.get("delivered") ?? [];
-      map.set("delivered", [...delivered, ...resolvedDefects]);
-    }
-    return map;
-  }, [visibleDeals, showGrouping]);
+  // Virtualizer
+  const rowVirtualizer = useVirtualizer({
+    count: visibleDeals.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 88,
+    overscan: 8,
+  });
 
   return (
     <div>
@@ -419,6 +422,44 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
           {t.deal.createButton}
         </Button>
       </div>
+
+      {/* Year filter pills */}
+      {availableYears.length > 0 && (
+        <div className="mb-3">
+          <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+            {t.deal.yearFilter}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedYear(null)}
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs transition",
+                selectedYear === null
+                  ? "border-ide-navy bg-ide-navy text-white"
+                  : "border-border bg-white text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t.deal.allOwners /* "Allar" */}
+            </button>
+            {availableYears.map((y) => (
+              <button
+                key={y}
+                type="button"
+                onClick={() => setSelectedYear((prev) => (prev === y ? null : y))}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs transition",
+                  selectedYear === y
+                    ? "border-ide-navy bg-ide-navy text-white"
+                    : "border-border bg-white text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative mb-4">
@@ -445,7 +486,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
       )}
 
       {/* Owner strip */}
-      {!isSearching && ownersWithDeals.length > 0 && (
+      {ownersWithDeals.length > 0 && (
         <div className="mb-4">
           <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
             {t.deal.owner}
@@ -484,40 +525,20 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
         </div>
       )}
 
-      {/* Stage filter pills — single active filter */}
-      {!isSearching && (
-        <div className="mb-6 flex flex-wrap items-center gap-2 overflow-x-auto">
-          {activeStage === null ? (
-            <>
-              {STAGE_ORDER.map((s) => (
-                <StagePill
-                  key={s}
-                  label={t.dealStage[s]}
-                  count={stageCounts[s] ?? 0}
-                  active={false}
-                  onClick={() => toggleStage(s)}
-                />
-              ))}
-              <StagePill
-                label={t.dealStage.cancelled}
-                count={stageCounts.cancelled ?? 0}
-                active={false}
-                onClick={() => toggleStage("cancelled")}
-              />
-            </>
-          ) : (
-            <StagePill
-              label={t.dealStage[activeStage]}
-              count={stageCounts[activeStage] ?? 0}
-              active
-              onClick={() => setActiveStage(null)}
-              showClose
-            />
-          )}
+      {/* Active stage indicator (from URL param) */}
+      {activeStage && (
+        <div className="mb-4">
+          <StagePill
+            label={t.dealStage[activeStage]}
+            count={visibleDeals.length}
+            active
+            onClick={() => setActiveStage(null)}
+            showClose
+          />
         </div>
       )}
 
-      {/* Deals list */}
+      {/* Flat virtualized list */}
       {loading ? (
         <div className="py-12 text-center text-muted-foreground">{t.status.loading}</div>
       ) : visibleDeals.length === 0 ? (
@@ -531,40 +552,46 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
             {t.deal.clearFilters}
           </button>
         </div>
-      ) : showGrouping && grouped ? (
-        <div className="space-y-6">
-          {STAGE_ORDER.map((s) => {
-            const rows = grouped.get(s) ?? [];
-            return (
-              <StageGroup key={s} stage={s} count={rows.length}>
-                <div className="space-y-2">
-                  {rows.map((d) => (
-                    <DealCard
-                      key={d.id}
-                      deal={d}
-                      profiles={profiles}
-                      onOpen={() => openDeal(d.id)}
-                      onStageChange={(stage) => handleStageChange(d, stage)}
-                      onOwnerChange={(ownerId) => handleOwnerChange(d, ownerId)}
-                    />
-                  ))}
-                </div>
-              </StageGroup>
-            );
-          })}
-        </div>
       ) : (
-        <div className="space-y-2">
-          {visibleDeals.map((d) => (
-            <DealCard
-              key={d.id}
-              deal={d}
-              profiles={profiles}
-              onOpen={() => openDeal(d.id)}
-              onStageChange={(stage) => handleStageChange(d, stage)}
-              onOwnerChange={(ownerId) => handleOwnerChange(d, ownerId)}
-            />
-          ))}
+        <div
+          ref={scrollRef}
+          className="relative overflow-auto"
+          style={{ height: "calc(100vh - 320px)" }}
+        >
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: "100%",
+              position: "relative",
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map((vItem) => {
+              const d = visibleDeals[vItem.index];
+              return (
+                <div
+                  key={d.id}
+                  ref={rowVirtualizer.measureElement}
+                  data-index={vItem.index}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    transform: `translateY(${vItem.start}px)`,
+                    paddingBottom: 8,
+                  }}
+                >
+                  <DealCard
+                    deal={d}
+                    profiles={profiles}
+                    onOpen={() => openDeal(d.id)}
+                    onStageChange={(stage) => handleStageChange(d, stage)}
+                    onOwnerChange={(ownerId) => handleOwnerChange(d, ownerId)}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -576,6 +603,31 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
       />
     </div>
   );
+}
+
+// Helper: fetch child deals for defect_reorder rows w/ reorder resolution
+async function attachChildDeals(rows: DealRow[]): Promise<DealRow[]> {
+  const defectReorderIds = rows
+    .filter(
+      (d) => d.stage === "defect_reorder" && d.defect_resolution === "reorder",
+    )
+    .map((d) => d.id);
+  if (!defectReorderIds.length) return rows;
+  const { data: children } = await supabase
+    .from("deals")
+    .select("parent_deal_id, stage")
+    .in("parent_deal_id", defectReorderIds);
+  if (!children) return rows;
+  const byParent = new Map<string, { stage: DealStage }[]>();
+  (children as { parent_deal_id: string; stage: DealStage }[]).forEach((c) => {
+    const arr = byParent.get(c.parent_deal_id) ?? [];
+    arr.push({ stage: c.stage });
+    byParent.set(c.parent_deal_id, arr);
+  });
+  return rows.map((d) => ({
+    ...d,
+    childDeals: byParent.get(d.id) ?? [],
+  }));
 }
 
 function StagePill({
