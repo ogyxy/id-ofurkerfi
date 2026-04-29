@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
+import { AppMain } from "@/components/AppMain";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
@@ -55,9 +56,9 @@ function DealDetailPage() {
       {(session) => (
         <div className="min-h-screen bg-background">
           <Sidebar activeKey="deals" userEmail={session.user.email ?? ""} />
-          <main className="px-4 pb-8 pt-20 md:ml-60 md:px-8 md:pt-8">
+          <AppMain>
             <DealDetailContent />
-          </main>
+          </AppMain>
         </div>
       )}
     </ProtectedRoute>
