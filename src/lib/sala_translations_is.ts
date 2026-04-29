@@ -308,6 +308,12 @@ export const t = {
     advancedDetails:     'Ítarlegar upplýsingar',
     nameRequired:        'Nafn er nauðsynlegt',
     firstNameRequired:   'Fornafn er nauðsynlegt',
+    billedVia:           'Reikningsfærð á',
+    linkedCustomers:     'Tengdir viðskiptavinir',
+    billedViaSearch:     'Leita að fyrirtæki…',
+    billedViaNone:       'Ekkert',
+    invoiceSentTo:       'Reikningur sendur á',
+    invoiceTo:           'Reikningur á',
   },
 
   // ---------------------------------------------------------------------------
