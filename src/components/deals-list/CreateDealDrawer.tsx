@@ -8,6 +8,7 @@ import { t } from "@/lib/sala_translations_is";
 import { rememberDealReturnPath } from "@/lib/dealReturn";
 import { maskKennitalaInput, stripKennitala, isValidKennitala, stripPhone } from "@/lib/formatters";
 import { PhoneInput } from "@/components/PhoneInput";
+import { BillingCompanyCombobox } from "@/components/companies-list/BillingCompanyCombobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
-type Company = { id: string; name: string };
+type Company = { id: string; name: string; billing_company_id: string | null };
 type Contact = {
   id: string;
   first_name: string | null;
@@ -77,6 +78,7 @@ export function CreateDealDrawer({
   const [newKennitala, setNewKennitala] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [creatingCompany, setCreatingCompany] = useState(false);
+  const [newBillingCompanyId, setNewBillingCompanyId] = useState<string | null>(null);
 
   // Optional new contact for new company
   const [addContact, setAddContact] = useState(false);
@@ -102,7 +104,7 @@ export function CreateDealDrawer({
     (async () => {
       const { data } = await supabase
         .from("companies")
-        .select("id, name")
+        .select("id, name, billing_company_id")
         .eq("archived", false)
         .order("name");
       setCompanies((data ?? []) as Company[]);
@@ -149,6 +151,11 @@ export function CreateDealDrawer({
     [companies, companyId],
   );
 
+  const selectedBillingName = useMemo(() => {
+    if (!selectedCompany?.billing_company_id) return null;
+    return companies.find((c) => c.id === selectedCompany.billing_company_id)?.name ?? null;
+  }, [companies, selectedCompany]);
+
   const reset = () => {
     setCompanyId("");
     setContactId("");
@@ -170,6 +177,7 @@ export function CreateDealDrawer({
     setNewContactEmail("");
     setNewContactPhoneCountry("+354");
     setNewContactPhoneLocal("");
+    setNewBillingCompanyId(null);
   };
 
   const selectCompany = (c: Company) => {
@@ -201,8 +209,9 @@ export function CreateDealDrawer({
         email: newEmail.trim() || null,
         country: "Iceland",
         preferred_currency: "ISK",
+        billing_company_id: newBillingCompanyId,
       })
-      .select("id, name")
+      .select("id, name, billing_company_id")
       .single();
     if (error || !data) {
       setCreatingCompany(false);
@@ -250,6 +259,7 @@ export function CreateDealDrawer({
     setNewContactEmail("");
     setNewContactPhoneCountry("+354");
     setNewContactPhoneLocal("");
+    setNewBillingCompanyId(null);
   };
 
   const handleSave = async () => {
@@ -320,19 +330,26 @@ export function CreateDealDrawer({
             </div>
 
             {selectedCompany ? (
-              <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
-                <span className="truncate text-sm font-medium">
-                  {selectedCompany.name}
-                </span>
-                <button
-                  type="button"
-                  onClick={clearCompany}
-                  className="text-muted-foreground hover:text-foreground"
-                  aria-label="clear"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+              <>
+                <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
+                  <span className="truncate text-sm font-medium">
+                    {selectedCompany.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={clearCompany}
+                    className="text-muted-foreground hover:text-foreground"
+                    aria-label="clear"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                {selectedBillingName && (
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {t.newCompany.invoiceSentTo}: {selectedBillingName}
+                  </div>
+                )}
+              </>
             ) : (
               <div className="relative">
                 <Input
@@ -398,6 +415,13 @@ export function CreateDealDrawer({
                     type="email"
                     value={newEmail}
                     onChange={(e) => setNewEmail(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{t.newCompany.billedVia}</Label>
+                  <BillingCompanyCombobox
+                    value={newBillingCompanyId}
+                    onChange={setNewBillingCompanyId}
                   />
                 </div>
 

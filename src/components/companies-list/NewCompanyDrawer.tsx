@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CountrySelect } from "@/components/ui/CountrySelect";
 import { CurrencySelect } from "@/components/ui/CurrencySelect";
 import { PhoneInput } from "@/components/PhoneInput";
+import { BillingCompanyCombobox } from "@/components/companies-list/BillingCompanyCombobox";
 import { maskKennitalaInput, stripKennitala, isValidKennitala, stripPhone } from "@/lib/formatters";
 import {
   Sheet,
@@ -64,6 +65,7 @@ type CompanyForm = {
   preferred_currency: string;
   payment_terms_days: string;
   notes: string;
+  billing_company_id: string | null;
 };
 
 type ContactForm = {
@@ -93,6 +95,7 @@ const emptyCompany: CompanyForm = {
   preferred_currency: "ISK",
   payment_terms_days: "14",
   notes: "",
+  billing_company_id: null,
 };
 
 const emptyContact: ContactForm = {
@@ -180,6 +183,7 @@ export function NewCompanyDrawer({ open, onOpenChange }: Props) {
         preferred_currency: companyForm.preferred_currency || "ISK",
         payment_terms_days: Number.isFinite(terms) ? terms : 14,
         notes: companyForm.notes.trim() || null,
+        billing_company_id: companyForm.billing_company_id,
       })
       .select()
       .single();
@@ -347,6 +351,13 @@ export function NewCompanyDrawer({ open, onOpenChange }: Props) {
                   type="number"
                   value={companyForm.payment_terms_days}
                   onChange={(e) => updateCompany("payment_terms_days", e.target.value)}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label>{t.newCompany.billedVia}</Label>
+                <BillingCompanyCombobox
+                  value={companyForm.billing_company_id}
+                  onChange={(v) => updateCompany("billing_company_id", v)}
                 />
               </div>
               <div className="md:col-span-2">

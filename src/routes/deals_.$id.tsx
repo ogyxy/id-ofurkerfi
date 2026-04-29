@@ -33,7 +33,9 @@ type DealStage = Database["public"]["Enums"]["deal_stage"];
 type Company = Pick<
   Database["public"]["Tables"]["companies"]["Row"],
   "id" | "name" | "vsk_status" | "payment_terms_days"
->;
+> & {
+  billing_company?: { id: string; name: string } | null;
+};
 type Contact = Pick<
   Database["public"]["Tables"]["contacts"]["Row"],
   "id" | "first_name" | "last_name" | "email" | "phone"
@@ -117,7 +119,7 @@ function DealDetailContent() {
       supabase
         .from("deals")
         .select(
-          `*, company:companies(id, name, vsk_status, payment_terms_days), contact:contacts(id, first_name, last_name, email, phone)`,
+          `*, company:companies!deals_company_id_fkey(id, name, vsk_status, payment_terms_days, billing_company:companies!companies_billing_company_id_fkey(id, name)), contact:contacts(id, first_name, last_name, email, phone)`,
         )
         .eq("id", id)
         .maybeSingle(),
@@ -147,9 +149,18 @@ function DealDetailContent() {
       return;
     }
 
-    const d = dealRes.data as Deal & {
-      company: Company;
+    const raw = dealRes.data as unknown as Deal & {
+      company: Omit<Company, "billing_company"> & {
+        billing_company: { id: string; name: string } | { id: string; name: string }[] | null;
+      };
       contact: Contact | null;
+    };
+    const bc = Array.isArray(raw.company.billing_company)
+      ? (raw.company.billing_company[0] ?? null)
+      : raw.company.billing_company;
+    const d: Deal & { company: Company; contact: Contact | null } = {
+      ...raw,
+      company: { ...raw.company, billing_company: bc },
     };
     setDeal(d);
     setCompany(d.company);

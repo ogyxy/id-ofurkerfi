@@ -131,6 +131,7 @@ export type Database = {
           address_line_1: string | null
           address_line_2: string | null
           archived: boolean
+          billing_company_id: string | null
           city: string | null
           country: string | null
           created_at: string
@@ -154,6 +155,7 @@ export type Database = {
           address_line_1?: string | null
           address_line_2?: string | null
           archived?: boolean
+          billing_company_id?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
@@ -177,6 +179,7 @@ export type Database = {
           address_line_1?: string | null
           address_line_2?: string | null
           archived?: boolean
+          billing_company_id?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
@@ -197,6 +200,13 @@ export type Database = {
           website?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "companies_billing_company_id_fkey"
+            columns: ["billing_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "companies_created_by_fkey"
             columns: ["created_by"]

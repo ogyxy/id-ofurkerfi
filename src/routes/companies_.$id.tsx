@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
 import { AppMain } from "@/components/AppMain";
-import { rememberDealReturnPath, consumeCompanyReturnPath } from "@/lib/dealReturn";
+import { rememberDealReturnPath, consumeCompanyReturnPath, rememberCompanyReturnPath } from "@/lib/dealReturn";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
@@ -71,6 +71,8 @@ function CompanyDetailContent({ currentProfileId }: { currentProfileId: string |
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [company, setCompany] = useState<Company | null>(null);
+  const [billingCompany, setBillingCompany] = useState<{ id: string; name: string } | null>(null);
+  const [linkedBrands, setLinkedBrands] = useState<Array<{ id: string; name: string }>>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [, setActivities] = useState<Activity[]>([]);
@@ -155,6 +157,27 @@ function CompanyDetailContent({ currentProfileId }: { currentProfileId: string |
     }
     setDeals(dealRows);
     setActivities((activitiesRes.data ?? []) as Activity[]);
+
+    // Billing parent + linked child brands
+    const c = companyRes.data as Company;
+    if (c.billing_company_id) {
+      const { data: parent } = await supabase
+        .from("companies")
+        .select("id, name")
+        .eq("id", c.billing_company_id)
+        .maybeSingle();
+      setBillingCompany(parent ? { id: parent.id, name: parent.name } : null);
+    } else {
+      setBillingCompany(null);
+    }
+    const { data: brands } = await supabase
+      .from("companies")
+      .select("id, name")
+      .eq("billing_company_id", id)
+      .eq("archived", false)
+      .order("name");
+    setLinkedBrands((brands ?? []) as Array<{ id: string; name: string }>);
+
     setLoading(false);
     void refreshFileCount();
   }, [id, refreshFileCount]);
@@ -203,7 +226,11 @@ function CompanyDetailContent({ currentProfileId }: { currentProfileId: string |
         {t.actions.back}
       </button>
 
-      <CompanyHeader company={company} onEdit={() => setEditOpen(true)} />
+      <CompanyHeader
+        company={company}
+        billingCompany={billingCompany}
+        onEdit={() => setEditOpen(true)}
+      />
 
       {/* Tabs nav */}
       <div className="border-b border-border">
@@ -254,6 +281,29 @@ function CompanyDetailContent({ currentProfileId }: { currentProfileId: string |
           />
         )}
       </div>
+
+      {linkedBrands.length > 0 && (
+        <div className="rounded-md border border-border bg-card p-6 shadow-sm">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-ide-navy">
+            {t.newCompany.linkedCustomers}
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {linkedBrands.map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => {
+                  rememberCompanyReturnPath();
+                  navigate({ to: "/companies/$id", params: { id: b.id } });
+                }}
+                className="inline-flex items-center rounded-full border border-border bg-muted px-3 py-1 text-sm text-foreground hover:bg-muted/70"
+              >
+                {b.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <EditCompanyDrawer
         open={editOpen}

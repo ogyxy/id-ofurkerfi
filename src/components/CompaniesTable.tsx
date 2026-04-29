@@ -19,6 +19,7 @@ import {
 type CompanyRow = {
   id: string;
   name: string;
+  billing_company_id: string | null;
 };
 
 type DealRow = {
@@ -58,7 +59,7 @@ export function CompaniesTable() {
       const [companiesRes, dealsRes] = await Promise.all([
         supabase
           .from("companies")
-          .select("id, name")
+          .select("id, name, billing_company_id")
           .eq("archived", false)
           .order("name", { ascending: true }),
         supabase
@@ -128,7 +129,30 @@ export function CompaniesTable() {
   const filtered = useMemo(() => {
     const q = search.trim().toLocaleLowerCase("is");
     if (!q) return rows;
-    return rows.filter((c) => c.name.toLocaleLowerCase("is").includes(q));
+    const nameById = new Map(rows.map((r) => [r.id, r.name.toLocaleLowerCase("is")]));
+    // Direct name matches
+    const directIds = new Set(
+      rows.filter((r) => r.name.toLocaleLowerCase("is").includes(q)).map((r) => r.id),
+    );
+    // Brands whose billing parent matches → include the parent too
+    const parentIdsToInclude = new Set<string>();
+    for (const r of rows) {
+      if (r.billing_company_id) {
+        const parentName = nameById.get(r.billing_company_id);
+        if (parentName && parentName.includes(q)) {
+          // Searching for parent → already included via direct match below.
+          // But we want the brand too:
+          directIds.add(r.id);
+        }
+        const selfName = r.name.toLocaleLowerCase("is");
+        if (selfName.includes(q)) {
+          // Brand matches → include its parent
+          parentIdsToInclude.add(r.billing_company_id);
+        }
+      }
+    }
+    for (const pid of parentIdsToInclude) directIds.add(pid);
+    return rows.filter((r) => directIds.has(r.id));
   }, [rows, search]);
 
   const sorted = useMemo(() => {

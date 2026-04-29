@@ -1,17 +1,20 @@
 import { Mail, Phone, Globe, MapPin } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
 import { formatKennitala, formatPhone } from "@/lib/formatters";
+import { rememberCompanyReturnPath } from "@/lib/dealReturn";
 
 type Company = Database["public"]["Tables"]["companies"]["Row"];
 
 interface Props {
   company: Company;
+  billingCompany: { id: string; name: string } | null;
   onEdit: () => void;
 }
 
-export function CompanyHeader({ company, onEdit }: Props) {
+export function CompanyHeader({ company, billingCompany, onEdit }: Props) {
   const addressParts = [company.address_line_1, company.city, company.postcode]
     .filter((p) => p && p.trim().length > 0)
     .join(", ");
@@ -24,7 +27,7 @@ export function CompanyHeader({ company, onEdit }: Props) {
           <h1 className="text-2xl font-semibold text-foreground md:text-3xl">
             {company.name}
           </h1>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {company.kennitala && (
               <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
                 {t.company.kennitala}: {formatKennitala(company.kennitala)}
@@ -35,7 +38,16 @@ export function CompanyHeader({ company, onEdit }: Props) {
                 {t.company.vsk_number}: {company.vsk_number}
               </span>
             )}
-          
+            {billingCompany && (
+              <Link
+                to="/companies/$id"
+                params={{ id: billingCompany.id }}
+                onClick={() => rememberCompanyReturnPath()}
+                className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+              >
+                {t.newCompany.billedVia}: <span className="ml-1 font-medium">{billingCompany.name}</span>
+              </Link>
+            )}
           </div>
         </div>
         <Button variant="outline" onClick={onEdit}>

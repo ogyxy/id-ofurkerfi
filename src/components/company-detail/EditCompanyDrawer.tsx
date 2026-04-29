@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CountrySelect } from "@/components/ui/CountrySelect";
 import { CurrencySelect } from "@/components/ui/CurrencySelect";
 import { PhoneInput } from "@/components/PhoneInput";
+import { BillingCompanyCombobox } from "@/components/companies-list/BillingCompanyCombobox";
 import {
   maskKennitalaInput,
   stripKennitala,
@@ -71,6 +72,7 @@ type FormState = {
   preferred_currency: string;
   payment_terms_days: string;
   notes: string;
+  billing_company_id: string | null;
 };
 
 function fromCompany(c: Company): FormState {
@@ -97,6 +99,7 @@ function fromCompany(c: Company): FormState {
     preferred_currency: c.preferred_currency,
     payment_terms_days: String(c.payment_terms_days),
     notes: c.notes ?? "",
+    billing_company_id: c.billing_company_id ?? null,
   };
 }
 
@@ -181,6 +184,7 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
         preferred_currency: form.preferred_currency.trim() || "ISK",
         payment_terms_days: Number.isFinite(terms) ? terms : 14,
         notes: form.notes.trim() || null,
+        billing_company_id: form.billing_company_id,
       })
       .eq("id", company.id);
     setSaving(false);
@@ -317,6 +321,14 @@ export function EditCompanyDrawer({ open, onOpenChange, company, onSaved }: Prop
               type="number"
               value={form.payment_terms_days}
               onChange={(e) => update("payment_terms_days", e.target.value)}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Label>{t.newCompany.billedVia}</Label>
+            <BillingCompanyCombobox
+              value={form.billing_company_id}
+              onChange={(v) => update("billing_company_id", v)}
+              excludeId={company.id}
             />
           </div>
           <div className="md:col-span-2">
