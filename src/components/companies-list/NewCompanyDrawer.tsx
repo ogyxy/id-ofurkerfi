@@ -182,6 +182,7 @@ export function NewCompanyDrawer({ open, onOpenChange }: Props) {
         preferred_currency: companyForm.preferred_currency || "ISK",
         payment_terms_days: Number.isFinite(terms) ? terms : 14,
         notes: companyForm.notes.trim() || null,
+        billing_company_id: companyForm.billing_company_id,
       })
       .select()
       .single();
