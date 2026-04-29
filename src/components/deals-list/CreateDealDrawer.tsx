@@ -151,6 +151,11 @@ export function CreateDealDrawer({
     [companies, companyId],
   );
 
+  const selectedBillingName = useMemo(() => {
+    if (!selectedCompany?.billing_company_id) return null;
+    return companies.find((c) => c.id === selectedCompany.billing_company_id)?.name ?? null;
+  }, [companies, selectedCompany]);
+
   const reset = () => {
     setCompanyId("");
     setContactId("");
