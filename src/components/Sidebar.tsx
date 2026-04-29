@@ -63,22 +63,22 @@ export function Sidebar({ activeKey, userEmail }: SidebarProps) {
   const drawerContent = (isCollapsed: boolean) => (
     <>
       <div
-        className={`flex items-center px-4 py-6 ${
-          isCollapsed ? "justify-center" : "justify-between px-6"
+        className={`relative flex items-center px-4 py-6 ${
+          isCollapsed ? "justify-center" : "justify-center"
         }`}
       >
         {!isCollapsed && (
           <img
             src={ideLogo}
             alt={t.brand.name}
-            className="h-16 w-auto object-contain"
+            className="h-24 w-auto object-contain"
           />
         )}
         <button
           type="button"
           onClick={() => setMobileOpen(false)}
           aria-label={t.nav.signOut}
-          className="text-white/80 hover:text-white md:hidden"
+          className="absolute right-4 top-4 text-white/80 hover:text-white md:hidden"
         >
           <X className="h-5 w-5" />
         </button>
