@@ -69,6 +69,7 @@ export const t = {
     quote_in_progress: 'Tilboð í vinnslu',
     quote_sent:        'Tilboð sent',
     order_confirmed:   'Staðfest pöntun',
+    ready_for_pickup:  'Tilbúið til afhendingar',
     delivered:         'Pöntun afhent',
     cancelled:         'Hætt við',
     defect_reorder:    'Galli / Vesen',
