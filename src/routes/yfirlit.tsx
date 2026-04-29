@@ -399,7 +399,7 @@ function YfirlitContent({
         .select(
           `id, type, body, created_at,
            profile:profiles!created_by(id, name),
-           deal:deals(id, so_number, name)`
+           deal:deals(id, so_number, name, company:companies(id, name))`
         )
         .order("created_at", { ascending: false })
         .limit(10);
