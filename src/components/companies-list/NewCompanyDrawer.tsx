@@ -353,7 +353,12 @@ export function NewCompanyDrawer({ open, onOpenChange }: Props) {
                 />
               </div>
               <div className="md:col-span-2">
-                <Label>{t.company.notes}</Label>
+                <Label>{t.newCompany.billedVia}</Label>
+                <BillingCompanyCombobox
+                  value={companyForm.billing_company_id}
+                  onChange={(v) => updateCompany("billing_company_id", v)}
+                />
+              </div>
                 <Textarea
                   rows={3}
                   value={companyForm.notes}
