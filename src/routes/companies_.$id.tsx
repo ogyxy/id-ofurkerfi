@@ -71,6 +71,8 @@ function CompanyDetailContent({ currentProfileId }: { currentProfileId: string |
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [company, setCompany] = useState<Company | null>(null);
+  const [billingCompany, setBillingCompany] = useState<{ id: string; name: string } | null>(null);
+  const [linkedBrands, setLinkedBrands] = useState<Array<{ id: string; name: string }>>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [, setActivities] = useState<Activity[]>([]);
