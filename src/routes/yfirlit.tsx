@@ -173,7 +173,7 @@ function YfirlitContent({
   const [prevPulse, setPrevPulse] = useState<PulseStats>({ revenue: 0, count: 0, avgDeal: 0, marginPct: 0 });
 
   const [pipeline, setPipeline] = useState<PipelineRow[]>([]);
-  const [marginTrend, setMarginTrend] = useState<Array<{ month: string; label: string; marginPct: number }>>([]);
+  const [marginTrend, setMarginTrend] = useState<Array<{ month: string; label: string; revenue: number; margin: number; marginPct: number }>>([]);
   const [topCustomers, setTopCustomers] = useState<CustomerRow[]>([]);
   const [activities, setActivities] = useState<ActivityRow[]>([]);
   const [exportOpen, setExportOpen] = useState(false);
@@ -322,12 +322,13 @@ function YfirlitContent({
         .sort()
         .map((key) => {
           const m = Number(key.slice(5, 7)) - 1;
+          const b = buckets[key];
           return {
             month: key,
             label: t.yfirlit.monthsShort[m],
-            marginPct: buckets[key].revenue > 0
-              ? (buckets[key].margin / buckets[key].revenue) * 100
-              : 0,
+            revenue: b.revenue,
+            margin: b.margin,
+            marginPct: b.revenue > 0 ? (b.margin / b.revenue) * 100 : 0,
           };
         });
       setMarginTrend(trend);
