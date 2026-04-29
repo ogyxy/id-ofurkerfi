@@ -157,6 +157,27 @@ function CompanyDetailContent({ currentProfileId }: { currentProfileId: string |
     }
     setDeals(dealRows);
     setActivities((activitiesRes.data ?? []) as Activity[]);
+
+    // Billing parent + linked child brands
+    const c = companyRes.data as Company;
+    if (c.billing_company_id) {
+      const { data: parent } = await supabase
+        .from("companies")
+        .select("id, name")
+        .eq("id", c.billing_company_id)
+        .maybeSingle();
+      setBillingCompany(parent ? { id: parent.id, name: parent.name } : null);
+    } else {
+      setBillingCompany(null);
+    }
+    const { data: brands } = await supabase
+      .from("companies")
+      .select("id, name")
+      .eq("billing_company_id", id)
+      .eq("archived", false)
+      .order("name");
+    setLinkedBrands((brands ?? []) as Array<{ id: string; name: string }>);
+
     setLoading(false);
     void refreshFileCount();
   }, [id, refreshFileCount]);
@@ -205,7 +226,11 @@ function CompanyDetailContent({ currentProfileId }: { currentProfileId: string |
         {t.actions.back}
       </button>
 
-      <CompanyHeader company={company} onEdit={() => setEditOpen(true)} />
+      <CompanyHeader
+        company={company}
+        billingCompany={billingCompany}
+        onEdit={() => setEditOpen(true)}
+      />
 
       {/* Tabs nav */}
       <div className="border-b border-border">
