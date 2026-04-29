@@ -858,8 +858,8 @@ function ActivityFeedRow({ a }: { a: ActivityRow }) {
                 params={{ id: a.deal.id }}
                 className="font-medium text-foreground hover:underline"
               >
+                {a.deal.company ? `${a.deal.company.name} · ` : ""}
                 {a.deal.name}
-                {a.deal.company ? ` · ${a.deal.company.name}` : ""}
               </Link>{" "}
             </>
           ) : null}
