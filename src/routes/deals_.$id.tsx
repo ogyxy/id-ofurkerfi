@@ -33,7 +33,9 @@ type DealStage = Database["public"]["Enums"]["deal_stage"];
 type Company = Pick<
   Database["public"]["Tables"]["companies"]["Row"],
   "id" | "name" | "vsk_status" | "payment_terms_days"
->;
+> & {
+  billing_company?: { id: string; name: string } | null;
+};
 type Contact = Pick<
   Database["public"]["Tables"]["contacts"]["Row"],
   "id" | "first_name" | "last_name" | "email" | "phone"
