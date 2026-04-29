@@ -202,8 +202,9 @@ export function CreateDealDrawer({
         email: newEmail.trim() || null,
         country: "Iceland",
         preferred_currency: "ISK",
+        billing_company_id: newBillingCompanyId,
       })
-      .select("id, name")
+      .select("id, name, billing_company_id")
       .single();
     if (error || !data) {
       setCreatingCompany(false);
@@ -251,6 +252,7 @@ export function CreateDealDrawer({
     setNewContactEmail("");
     setNewContactPhoneCountry("+354");
     setNewContactPhoneLocal("");
+    setNewBillingCompanyId(null);
   };
 
   const handleSave = async () => {
