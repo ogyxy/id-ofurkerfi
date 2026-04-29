@@ -82,6 +82,7 @@ const SELECT = `
   defect_resolution,
   tracking_numbers,
   archived,
+  created_at,
   company:companies(id, name),
   contact:contacts(id, first_name, last_name),
   owner:profiles(id, name)
