@@ -634,14 +634,50 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         onSaved={() => void load()}
       />
 
-      <UploadFileDialog
+      <MultiFileUploadDialog
         open={uploadOpen}
-        onOpenChange={setUploadOpen}
-        poId={po.id}
-        poNumber={po.po_number}
-        supplierName={supplierName}
-        currentProfileId={currentProfileId}
-        onUploaded={() => void load()}
+        onClose={() => setUploadOpen(false)}
+        title={t.upload.title}
+        fileTypes={PO_FILE_TYPES.map((ft) => ({ value: ft, label: poFileTypeLabel(t, ft) }))}
+        smartGuess={smartGuessPoFileType}
+        uploadOne={async (file, fileType) => {
+          const supplierSafe = pathSafe(supplierName || "unknown");
+          const ts = Math.floor(Date.now() / 1000);
+          const storagePath = `${supplierSafe}/${pathSafe(po.po_number)}/${ts}-${pathSafe(file.name)}`;
+          const { error: upErr } = await supabase.storage
+            .from("po_files")
+            .upload(storagePath, file, {
+              cacheControl: "3600",
+              upsert: false,
+              contentType: file.type || "application/octet-stream",
+            });
+          if (upErr) throw new Error(upErr.message);
+          const { error: insErr } = await supabase.from("po_files").insert({
+            po_id: po.id,
+            storage_path: storagePath,
+            file_url: null,
+            file_type: fileType,
+            original_filename: file.name,
+            file_size_bytes: file.size,
+            uploaded_by: currentProfileId,
+          });
+          if (insErr) throw new Error(insErr.message);
+        }}
+        onAnySuccess={() => void load()}
+        onBatchComplete={async (result) => {
+          if (result.successful > 0 && po.deal_id) {
+            const body =
+              result.successful === 1
+                ? `${po.po_number}: Skjali hlaðið upp`
+                : `${po.po_number}: ${result.successful} skjölum hlaðið upp`;
+            await supabase.from("activities").insert({
+              deal_id: po.deal_id,
+              type: "note",
+              body,
+              created_by: currentProfileId,
+            });
+          }
+        }}
       />
     </div>
   );
