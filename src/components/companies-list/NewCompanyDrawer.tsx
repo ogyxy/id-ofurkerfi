@@ -359,6 +359,8 @@ export function NewCompanyDrawer({ open, onOpenChange }: Props) {
                   onChange={(v) => updateCompany("billing_company_id", v)}
                 />
               </div>
+              <div className="md:col-span-2">
+                <Label>{t.company.notes}</Label>
                 <Textarea
                   rows={3}
                   value={companyForm.notes}
