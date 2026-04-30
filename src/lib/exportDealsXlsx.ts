@@ -82,7 +82,7 @@ export function exportDealsToXlsx(deals: ExportableDeal[]) {
   const iskFmt = '#,##0" kr."';
   const range = XLSX.utils.decode_range(ws["!ref"]!);
   for (let r = 1; r <= range.e.r; r++) {
-    for (const col of [5, 6]) {
+    for (const col of [6, 7]) {
       const addr = XLSX.utils.encode_cell({ r, c: col });
       const cell = ws[addr];
       if (cell && typeof cell.v === "number") {
@@ -108,7 +108,7 @@ export function exportDealsToXlsx(deals: ExportableDeal[]) {
   }
 
   // Column widths
-  const widths = [12, 32, 28, 22, 18, 16, 14, 12, 12, 18, 16, 18, 12, 24];
+  const widths = [12, 12, 32, 28, 22, 18, 16, 14, 12, 12, 18, 16, 18, 24];
   ws["!cols"] = widths.map((w) => ({ wch: w }));
 
   // Convert range to an Excel Table for filtering/sorting
