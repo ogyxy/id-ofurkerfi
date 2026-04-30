@@ -620,13 +620,21 @@ function YfirlitContent({
                 }}
               />
               <Bar yAxisId="left" dataKey="revenue" radius={[4, 4, 0, 0]}>
-                {marginTrend.map((row, i) => {
-                  const prev = i > 0 ? marginTrend[i - 1].revenue : row.revenue;
-                  const up = row.revenue >= prev;
-                  return (
-                    <Cell key={row.month} fill={up ? "#bfdbfe" : "#fecaca"} />
-                  );
-                })}
+                {(() => {
+                  const sortedRev = [...marginTrend]
+                    .map((r) => r.revenue)
+                    .sort((a, b) => a - b);
+                  const n = sortedRev.length;
+                  // Tertile thresholds across visible bars
+                  const lowMax = n > 0 ? sortedRev[Math.floor(n / 3)] : 0;
+                  const midMax = n > 0 ? sortedRev[Math.floor((2 * n) / 3)] : 0;
+                  return marginTrend.map((row) => {
+                    let fill = "#9ca3af"; // grey — low
+                    if (row.revenue > midMax) fill = "#16a34a"; // green — high
+                    else if (row.revenue > lowMax) fill = "#86efac"; // faded green — average
+                    return <Cell key={row.month} fill={fill} />;
+                  });
+                })()}
               </Bar>
               <Line
                 yAxisId="right"
