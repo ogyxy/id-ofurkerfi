@@ -765,7 +765,7 @@ export const t = {
     pipelineTotal:       'Heildarverðmæti opinna sala',
     noOpenDeals:         'Engar opnar sölur',
 
-    marginTrendTitle:    'Framlegð síðustu 6 mánuði',
+    marginTrendTitle:    'SALA OG FRAMLEGÐAR % SÍÐUSTU 6 MÁNUÐI',
 
     topCustomersTitle:   'Stærstu viðskiptavinir (þetta ár)',
     noCustomersYet:      'Engir viðskiptavinir með skráðar tekjur',
