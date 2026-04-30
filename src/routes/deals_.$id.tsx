@@ -13,6 +13,7 @@ import { StageStepper } from "@/components/deal-detail/StageStepper";
 import { DeliveredBar } from "@/components/deal-detail/DeliveredBar";
 import { DefectBar } from "@/components/deal-detail/DefectBar";
 import { DefectDescriptionModal } from "@/components/deal-detail/DefectDescriptionModal";
+import { StepperActions } from "@/components/deal-detail/StepperActions";
 import { ParentDealBanner } from "@/components/deal-detail/ParentDealBanner";
 import { DealHeader } from "@/components/deal-detail/DealHeader";
 import {
@@ -389,6 +390,8 @@ function DealDetailContent() {
         onSaved={load}
         readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
       />
+
+      <StepperActions stage={deal.stage} onChange={updateStage} />
 
       <DealSummary
         dealId={deal.id}
