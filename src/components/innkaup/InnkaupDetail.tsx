@@ -723,6 +723,58 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
   );
 }
 
+function InlineText({
+  value,
+  placeholder,
+  onSave,
+}: {
+  value: string | null;
+  placeholder?: string;
+  onSave: (v: string | null) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? "");
+  useEffect(() => setDraft(value ?? ""), [value]);
+
+  if (editing) {
+    return (
+      <span className="inline-flex items-center gap-1">
+        <Input
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              onSave(draft.trim() || null);
+              setEditing(false);
+            } else if (e.key === "Escape") {
+              setDraft(value ?? "");
+              setEditing(false);
+            }
+          }}
+          onBlur={() => {
+            onSave(draft.trim() || null);
+            setEditing(false);
+          }}
+          className="h-7 w-48 px-2 py-0 text-sm"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      className="inline-flex items-center gap-1 rounded px-1 text-sm text-foreground hover:bg-muted"
+    >
+      {value || <span className="text-muted-foreground">{placeholder ?? "—"}</span>}
+      <Pencil className="h-3 w-3 text-muted-foreground" />
+    </button>
+  );
+}
+
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-3 text-sm">
