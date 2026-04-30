@@ -98,20 +98,63 @@ export function exportDealsToXlsx(
     ];
   });
 
-  const aoa: (string | number | Date | null)[][] = [HEADERS as unknown as string[], ...rows];
+  const dataRowCount = rows.length;
+  const firstDataExcelRow = 2; // header=1, first data=2
+  const lastDataExcelRow = dataRowCount + 1;
+  const totalExcelRow = dataRowCount + 2; // 1-based Excel row for totals
+
+  const totalsRow: (string | number | Date | null)[] = [
+    "Samtals",
+    null,
+    `${dataRowCount.toLocaleString("is-IS")} sölur`,
+    "",
+    "",
+    "",
+    0,
+    0,
+    0,
+    0,
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ];
+
+  const aoa: (string | number | Date | null)[][] = [
+    HEADERS as unknown as string[],
+    ...rows,
+    totalsRow,
+  ];
   const ws = XLSX.utils.aoa_to_sheet(aoa, { cellDates: true });
+
+  // Replace totals numeric cells with formulas (only when there are data rows)
+  if (dataRowCount > 0) {
+    const formulas: Record<string, string> = {
+      [`G${totalExcelRow}`]: `SUM(G${firstDataExcelRow}:G${lastDataExcelRow})`,
+      [`H${totalExcelRow}`]: `SUM(H${firstDataExcelRow}:H${lastDataExcelRow})`,
+      [`I${totalExcelRow}`]: `SUM(I${firstDataExcelRow}:I${lastDataExcelRow})`,
+      [`J${totalExcelRow}`]: `IF(G${totalExcelRow}=0,0,I${totalExcelRow}/G${totalExcelRow})`,
+    };
+    for (const [addr, f] of Object.entries(formulas)) {
+      ws[addr] = { t: "n", f };
+    }
+  }
+
 
   // ISK number format: 123.456 kr.   (dot as thousands separator)
   const iskFmt = '#,##0" kr."';
   const pctFmt = "0.0%";
   const dateFmt = "dd.mm.yyyy";
   const range = XLSX.utils.decode_range(ws["!ref"]!);
+  const totalRowZeroBased = dataRowCount + 1;
   for (let r = 1; r <= range.e.r; r++) {
     // ISK columns: Söluverð (6), Kostnaðarverð (7), Framlegð (8)
     for (const col of [6, 7, 8]) {
       const addr = XLSX.utils.encode_cell({ r, c: col });
       const cell = ws[addr];
-      if (cell && typeof cell.v === "number") {
+      if (cell && (typeof cell.v === "number" || typeof cell.f === "string")) {
         cell.t = "n";
         cell.z = iskFmt;
       }
@@ -120,18 +163,20 @@ export function exportDealsToXlsx(
     {
       const addr = XLSX.utils.encode_cell({ r, c: 9 });
       const cell = ws[addr];
-      if (cell && typeof cell.v === "number") {
+      if (cell && (typeof cell.v === "number" || typeof cell.f === "string")) {
         cell.t = "n";
         cell.z = pctFmt;
       }
     }
-    // Date columns: Stofnað (1), Deadline (10), Afhent (11)
-    for (const col of [1, 10, 11]) {
-      const addr = XLSX.utils.encode_cell({ r, c: col });
-      const cell = ws[addr];
-      if (cell && cell.v instanceof Date) {
-        cell.t = "d";
-        cell.z = dateFmt;
+    // Date columns: Stofnað (1), Deadline (10), Afhent (11) — skip totals row
+    if (r !== totalRowZeroBased) {
+      for (const col of [1, 10, 11]) {
+        const addr = XLSX.utils.encode_cell({ r, c: col });
+        const cell = ws[addr];
+        if (cell && cell.v instanceof Date) {
+          cell.t = "d";
+          cell.z = dateFmt;
+        }
       }
     }
   }
@@ -148,11 +193,40 @@ export function exportDealsToXlsx(
     }
   }
 
+  // Totals row styling: bold, light blue background, top border, right-align numerics
+  const totalsBaseStyle = {
+    font: { bold: true, color: { rgb: "1A2540" } },
+    fill: { fgColor: { rgb: "E6F0FA" } },
+    border: { top: { style: "medium", color: { rgb: "1A2540" } } },
+    alignment: { vertical: "center", horizontal: "left" as const },
+  };
+  const totalsNumericStyle = {
+    ...totalsBaseStyle,
+    alignment: { vertical: "center", horizontal: "right" as const },
+  };
+  const numericCols = new Set([6, 7, 8, 9]);
+  for (let c = 0; c <= range.e.c; c++) {
+    const addr = XLSX.utils.encode_cell({ r: totalRowZeroBased, c });
+    if (!ws[addr]) {
+      ws[addr] = { t: "s", v: "" };
+    }
+    (ws[addr] as { s?: unknown }).s = numericCols.has(c)
+      ? totalsNumericStyle
+      : totalsBaseStyle;
+  }
+
   // Column widths
   const widths = [12, 12, 32, 28, 22, 18, 16, 16, 14, 12, 12, 12, 18, 16, 18, 24];
   ws["!cols"] = widths.map((w) => ({ wch: w }));
 
-  ws["!autofilter"] = { ref: ws["!ref"]! };
+  // Freeze header row. Excel cannot natively freeze a bottom row.
+  (ws as unknown as { "!views"?: unknown[] })["!views"] = [
+    { state: "frozen", ySplit: 1, xSplit: 0, topLeftCell: "A2", activePane: "bottomLeft" },
+  ];
+
+  // Autofilter only over the data range (exclude totals row)
+  const lastDataRowRef = XLSX.utils.encode_cell({ r: dataRowCount, c: range.e.c });
+  ws["!autofilter"] = { ref: `A1:${lastDataRowRef}` };
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Sölur");
