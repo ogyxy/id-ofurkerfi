@@ -516,18 +516,6 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
             {t.deal.yearFilter}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedYear(null)}
-              className={cn(
-                "rounded-full border px-3 py-1 text-xs transition",
-                selectedYear === null
-                  ? "border-ide-navy bg-ide-navy text-white"
-                  : "border-border bg-white text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {t.deal.allOwners /* "Allar" */}
-            </button>
             {availableYears.map((y) => (
               <button
                 key={y}
@@ -578,18 +566,6 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
             {t.deal.owner}
           </div>
           <div className="flex flex-wrap items-center gap-2 overflow-x-auto">
-            <button
-              type="button"
-              onClick={() => setSelectedOwners(new Set())}
-              className={cn(
-                "rounded-full border px-3 py-1 text-xs transition",
-                selectedOwners.size === 0
-                  ? "border-ide-navy bg-ide-navy text-white"
-                  : "border-border bg-white text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {t.deal.allOwners}
-            </button>
             {ownersWithDeals.map((p) => {
               const active = selectedOwners.has(p.id);
               return (
