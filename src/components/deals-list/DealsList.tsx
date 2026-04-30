@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, X, AlertTriangle, Check, Plus, ChevronDown, Clock, AlertCircle, Copy } from "lucide-react";
+import { Search, X, AlertTriangle, Check, Plus, ChevronDown, Clock, AlertCircle, Copy, Download } from "lucide-react";
+import { exportDealsToXlsx } from "@/lib/exportDealsXlsx";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -167,6 +168,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
   const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set());
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [lineMatchedDealIds, setLineMatchedDealIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   
@@ -501,12 +503,32 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-foreground">{t.nav.deals}</h1>
-        <Button
-          onClick={() => setCreateOpen(true)}
-          className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-        >
-          {t.deal.createButton}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            disabled={exporting || visibleDeals.length === 0}
+            onClick={async () => {
+              setExporting(true);
+              try {
+                exportDealsToXlsx(visibleDeals);
+                toast.success(`${visibleDeals.length} sölur fluttar út`);
+              } catch {
+                toast.error(t.status.somethingWentWrong);
+              } finally {
+                setExporting(false);
+              }
+            }}
+          >
+            <Download className="mr-1 h-4 w-4" />
+            {exporting ? t.status.loading : "Excel"}
+          </Button>
+          <Button
+            onClick={() => setCreateOpen(true)}
+            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+          >
+            {t.deal.createButton}
+          </Button>
+        </div>
       </div>
 
       {/* Year filter pills */}
