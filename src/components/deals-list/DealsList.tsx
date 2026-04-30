@@ -531,7 +531,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                   const full = p?.name?.trim() || p?.email || "";
                   ownerName = full.split(/\s+/)[0] || null;
                 }
-                exportDealsToXlsx(visibleDeals, {
+                await exportDealsToXlsx(visibleDeals, {
                   stageLabel: activeStep ? stageLabelMap[activeStep] : null,
                   year: selectedYear,
                   ownerName,
