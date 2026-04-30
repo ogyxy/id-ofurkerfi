@@ -291,7 +291,40 @@ export function CreateDealDrawer({
     setNewBillingCompanyId(null);
   };
 
-  const handleSave = async () => {
+  const createInlineContact = async () => {
+    if (!companyId || !inlineContactFirst.trim()) return;
+    setCreatingContact(true);
+    const { data, error } = await supabase
+      .from("contacts")
+      .insert({
+        company_id: companyId,
+        first_name: inlineContactFirst.trim(),
+        last_name: inlineContactLast.trim() || null,
+        title: inlineContactTitle.trim() || null,
+        email: inlineContactEmail.trim() || null,
+        phone: stripPhone(inlineContactPhoneCountry, inlineContactPhoneLocal) || null,
+        is_primary: contacts.length === 0,
+      })
+      .select("id, first_name, last_name, company_id")
+      .single();
+    setCreatingContact(false);
+    if (error || !data) {
+      toast.error(t.status.somethingWentWrong);
+      return;
+    }
+    const c = data as Contact;
+    setContacts((prev) => [...prev, c]);
+    setContactId(c.id);
+    setInlineContactOpen(false);
+    setInlineContactFirst("");
+    setInlineContactLast("");
+    setInlineContactTitle("");
+    setInlineContactEmail("");
+    setInlineContactPhoneCountry("+354");
+    setInlineContactPhoneLocal("");
+  };
+
+  const performSave = async () => {
     if (!companyId || !name.trim()) {
       toast.error(t.status.somethingWentWrong);
       return;
