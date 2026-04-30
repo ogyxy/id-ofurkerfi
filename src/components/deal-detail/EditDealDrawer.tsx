@@ -75,7 +75,7 @@ function fromDeal(d: Deal): FormState {
     contact_id: d.contact_id ?? "",
     owner_id: d.owner_id ?? "",
     promised_delivery_date: d.promised_delivery_date ?? "",
-    estimated_delivery_date: d.estimated_delivery_date ?? "",
+    promised_delivery_date: d.promised_delivery_date ?? "",
     invoice_status: d.invoice_status,
     payment_status: d.payment_status,
     invoice_date: d.invoice_date ?? "",
