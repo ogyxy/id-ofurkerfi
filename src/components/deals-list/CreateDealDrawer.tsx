@@ -92,7 +92,7 @@ export function CreateDealDrawer({
   const [contactId, setContactId] = useState("");
   const [name, setName] = useState("");
   const [ownerId, setOwnerId] = useState(currentUserId);
-  const [stage, setStage] = useState<DealStage>("inquiry");
+  // Stage is hardcoded to quote_in_progress for new deals — no UI control.
   const [markup, setMarkup] = useState("30");
   const [promisedDate, setPromisedDate] = useState("");
   const [firstNote, setFirstNote] = useState("");
@@ -160,7 +160,7 @@ export function CreateDealDrawer({
     setCompanyId("");
     setContactId("");
     setName("");
-    setStage("inquiry");
+    // stage is fixed at quote_in_progress; nothing to reset
     setMarkup("30");
     setPromisedDate("");
     setFirstNote("");
@@ -275,7 +275,7 @@ export function CreateDealDrawer({
         contact_id: contactId || null,
         owner_id: ownerId || null,
         name: name.trim(),
-        stage,
+        stage: "quote_in_progress",
         default_markup_pct: Number(markup) || 30,
         promised_delivery_date: promisedDate || null,
       })
@@ -550,21 +550,7 @@ export function CreateDealDrawer({
             </Select>
           </div>
 
-          <div>
-            <Label>{t.deal.stage}</Label>
-            <Select value={stage} onValueChange={(v) => setStage(v as DealStage)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STAGES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {t.dealStage[s]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Stage is hardcoded to "Tilboð í vinnslu" — not user-editable. */}
 
           <div>
             <Label>{t.deal.default_markup_pct}</Label>
