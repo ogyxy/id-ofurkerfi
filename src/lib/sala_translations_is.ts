@@ -103,7 +103,7 @@ export const t = {
   invoiceStatus: {
     not_invoiced: 'Ekki rukkað',
     partial:      'Rukkað að hluta',
-    full:         'Rukkað að fullu',
+    full:         'Rukkað',
   },
 
   // ---------------------------------------------------------------------------
