@@ -168,6 +168,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
   const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set());
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [lineMatchedDealIds, setLineMatchedDealIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   
