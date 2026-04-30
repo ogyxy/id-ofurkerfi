@@ -1,11 +1,5 @@
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { t } from "@/lib/sala_translations_is";
-
-function toDate(value: string | null | undefined): Date | null {
-  if (!value) return null;
-  const d = new Date(value);
-  return isNaN(d.getTime()) ? null : d;
-}
 import type { Database } from "@/integrations/supabase/types";
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
@@ -32,49 +26,64 @@ export interface ExportableDeal {
   owner: { name: string | null } | null;
 }
 
-const HEADERS = [
-  "Sölunúmer",
-  "Stofnað",
-  "Heiti",
-  "Viðskiptavinur",
-  "Tengiliður",
-  "Staða",
-  "Söluverð",
-  "Kostnaðarverð",
-  "Framlegð",
-  "Framlegð %",
-  "Deadline",
-  "Afhent",
-  "Reikningsstaða",
-  "Greiðslustaða",
-  "Söluaðili",
-  "Tracking númer",
-] as const;
-
-function contactName(c: ExportableDeal["contact"]): string {
-  if (!c) return "";
-  return [c.first_name, c.last_name].filter(Boolean).join(" ").trim();
-}
-
 export interface ExportFilenameParts {
   stageLabel?: string | null;
   year?: number | null;
   ownerName?: string | null;
 }
 
-export function exportDealsToXlsx(
+function toDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function contactName(c: ExportableDeal["contact"]): string {
+  if (!c) return "";
+  return [c.first_name, c.last_name].filter(Boolean).join(" ").trim();
+}
+
+const ISK_FMT = '#,##0" kr."';
+const PCT_FMT = "0.0%";
+const DATE_FMT = "dd.mm.yyyy";
+
+const COLUMNS = [
+  { name: "Sölunúmer", key: "so_number", width: 12 },
+  { name: "Stofnað", key: "created_at", width: 12, numFmt: DATE_FMT },
+  { name: "Heiti", key: "name", width: 32 },
+  { name: "Viðskiptavinur", key: "company", width: 28 },
+  { name: "Tengiliður", key: "contact", width: 22 },
+  { name: "Staða", key: "stage", width: 18 },
+  { name: "Söluverð", key: "price", width: 16, numFmt: ISK_FMT, totalsRowFunction: "sum" as const },
+  { name: "Kostnaðarverð", key: "cost", width: 16, numFmt: ISK_FMT, totalsRowFunction: "sum" as const },
+  { name: "Framlegð", key: "margin", width: 14, numFmt: ISK_FMT, totalsRowFunction: "sum" as const },
+  { name: "Framlegð %", key: "margin_pct", width: 12, numFmt: PCT_FMT, totalsRowFormula: "" },
+  { name: "Deadline", key: "promised", width: 12, numFmt: DATE_FMT },
+  { name: "Afhent", key: "delivered_at", width: 12, numFmt: DATE_FMT },
+  { name: "Reikningsstaða", key: "invoice_status", width: 18 },
+  { name: "Greiðslustaða", key: "payment_status", width: 16 },
+  { name: "Söluaðili", key: "owner", width: 18 },
+  { name: "Tracking númer", key: "tracking", width: 24 },
+];
+
+export async function exportDealsToXlsx(
   deals: ExportableDeal[],
   filenameParts: ExportFilenameParts = {},
 ) {
+  const wb = new ExcelJS.Workbook();
+  wb.created = new Date();
+  const ws = wb.addWorksheet("Sölur", {
+    views: [{ state: "frozen", ySplit: 1 }],
+  });
 
-  const rows = deals.map((d) => {
+  // Build data rows
+  const dataRows = deals.map((d) => {
     const price = d.amount_isk != null ? Number(d.amount_isk) : null;
     const cost =
       d.total_cost_isk != null
         ? Number(d.total_cost_isk) + Number(d.shipping_cost_isk ?? 0)
         : null;
-    const margin =
-      price != null && cost != null ? price - cost : null;
+    const margin = price != null && cost != null ? price - cost : null;
     const marginPct =
       margin != null && price != null && price !== 0 ? margin / price : null;
 
@@ -98,139 +107,87 @@ export function exportDealsToXlsx(
     ];
   });
 
-  const dataRowCount = rows.length;
-  const firstDataExcelRow = 2; // header=1, first data=2
-  const lastDataExcelRow = dataRowCount + 1;
-  const totalExcelRow = dataRowCount + 2; // 1-based Excel row for totals
+  const hasData = dataRows.length > 0;
+  // Excel Tables require at least one data row. If empty, write a single blank row.
+  const tableRows = hasData ? dataRows : [Array(COLUMNS.length).fill(null)];
 
-  const totalsRow: (string | number | Date | null)[] = [
-    "Samtals",
-    null,
-    `${dataRowCount.toLocaleString("is-IS")} sölur`,
-    "",
-    "",
-    "",
-    0,
-    0,
-    0,
-    0,
-    "",
-    "",
-    "",
-    "",
-    "",
-    "",
-  ];
+  ws.addTable({
+    name: "Solur",
+    ref: "A1",
+    headerRow: true,
+    totalsRow: hasData,
+    style: {
+      theme: "TableStyleMedium2",
+      showRowStripes: true,
+    },
+    columns: COLUMNS.map((c, idx) => {
+      const col: ExcelJS.TableColumnProperties = { name: c.name, filterButton: true };
+      if (!hasData) return col;
+      if (idx === 0) {
+        col.totalsRowLabel = "Samtals";
+      } else if (idx === 2) {
+        // "Heiti" gets the count label
+        col.totalsRowLabel = `${dataRows.length.toLocaleString("is-IS")} sölur`;
+      } else if (c.totalsRowFunction) {
+        col.totalsRowFunction = c.totalsRowFunction;
+      } else if (c.key === "margin_pct") {
+        // Weighted margin %: SUM(Framlegð) / SUM(Söluverð)
+        col.totalsRowFormula = `IFERROR(Solur[[#Totals],[Framlegð]]/Solur[[#Totals],[Söluverð]],0)`;
+      }
+      return col;
+    }),
+    rows: tableRows,
+  });
 
-  const aoa: (string | number | Date | null)[][] = [
-    HEADERS as unknown as string[],
-    ...rows,
-    totalsRow,
-  ];
-  const ws = XLSX.utils.aoa_to_sheet(aoa, { cellDates: true });
+  // Column widths + number formats
+  COLUMNS.forEach((c, idx) => {
+    const column = ws.getColumn(idx + 1);
+    column.width = c.width;
+    if (c.numFmt) column.numFmt = c.numFmt;
+  });
 
-  // Replace totals numeric cells with formulas (only when there are data rows)
-  if (dataRowCount > 0) {
-    const formulas: Record<string, string> = {
-      [`G${totalExcelRow}`]: `SUM(G${firstDataExcelRow}:G${lastDataExcelRow})`,
-      [`H${totalExcelRow}`]: `SUM(H${firstDataExcelRow}:H${lastDataExcelRow})`,
-      [`I${totalExcelRow}`]: `SUM(I${firstDataExcelRow}:I${lastDataExcelRow})`,
-      [`J${totalExcelRow}`]: `IF(G${totalExcelRow}=0,0,I${totalExcelRow}/G${totalExcelRow})`,
+  // Style header row (overrides table theme header for our brand)
+  const headerRow = ws.getRow(1);
+  headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+  headerRow.alignment = { vertical: "middle", horizontal: "left" };
+  headerRow.eachCell((cell) => {
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF1A2540" },
     };
-    for (const [addr, f] of Object.entries(formulas)) {
-      ws[addr] = { t: "n", f };
-    }
-  }
+  });
 
-
-  // ISK number format: 123.456 kr.   (dot as thousands separator)
-  const iskFmt = '#,##0" kr."';
-  const pctFmt = "0.0%";
-  const dateFmt = "dd.mm.yyyy";
-  const range = XLSX.utils.decode_range(ws["!ref"]!);
-  const totalRowZeroBased = dataRowCount + 1;
-  for (let r = 1; r <= range.e.r; r++) {
-    // ISK columns: Söluverð (6), Kostnaðarverð (7), Framlegð (8)
-    for (const col of [6, 7, 8]) {
-      const addr = XLSX.utils.encode_cell({ r, c: col });
-      const cell = ws[addr];
-      if (cell && (typeof cell.v === "number" || typeof cell.f === "string")) {
-        cell.t = "n";
-        cell.z = iskFmt;
+  // Style totals row (bold, soft-blue fill, top border, right-align numerics)
+  if (hasData) {
+    const totalsRowNum = 1 + dataRows.length + 1; // header + data + totals
+    const totalsRow = ws.getRow(totalsRowNum);
+    const numericColIdx = new Set([7, 8, 9, 10]); // 1-based: G, H, I, J
+    totalsRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      cell.font = { bold: true, color: { argb: "FF1A2540" } };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE6F0FA" },
+      };
+      cell.border = {
+        top: { style: "medium", color: { argb: "FF1A2540" } },
+      };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: numericColIdx.has(colNumber) ? "right" : "left",
+      };
+    });
+    // Re-apply number formats on totals row (table doesn't always inherit)
+    COLUMNS.forEach((c, idx) => {
+      if (c.numFmt) {
+        const cell = totalsRow.getCell(idx + 1);
+        cell.numFmt = c.numFmt;
       }
-    }
-    // Percentage column: Framlegð % (9)
-    {
-      const addr = XLSX.utils.encode_cell({ r, c: 9 });
-      const cell = ws[addr];
-      if (cell && (typeof cell.v === "number" || typeof cell.f === "string")) {
-        cell.t = "n";
-        cell.z = pctFmt;
-      }
-    }
-    // Date columns: Stofnað (1), Deadline (10), Afhent (11) — skip totals row
-    if (r !== totalRowZeroBased) {
-      for (const col of [1, 10, 11]) {
-        const addr = XLSX.utils.encode_cell({ r, c: col });
-        const cell = ws[addr];
-        if (cell && cell.v instanceof Date) {
-          cell.t = "d";
-          cell.z = dateFmt;
-        }
-      }
-    }
+    });
   }
 
-  const headerStyle = {
-    font: { bold: true, color: { rgb: "FFFFFF" } },
-    fill: { fgColor: { rgb: "1A2540" } },
-    alignment: { vertical: "center", horizontal: "left" },
-  };
-  for (let c = 0; c <= range.e.c; c++) {
-    const addr = XLSX.utils.encode_cell({ r: 0, c });
-    if (ws[addr]) {
-      (ws[addr] as { s?: unknown }).s = headerStyle;
-    }
-  }
-
-  // Totals row styling: bold, light blue background, top border, right-align numerics
-  const totalsBaseStyle = {
-    font: { bold: true, color: { rgb: "1A2540" } },
-    fill: { fgColor: { rgb: "E6F0FA" } },
-    border: { top: { style: "medium", color: { rgb: "1A2540" } } },
-    alignment: { vertical: "center", horizontal: "left" as const },
-  };
-  const totalsNumericStyle = {
-    ...totalsBaseStyle,
-    alignment: { vertical: "center", horizontal: "right" as const },
-  };
-  const numericCols = new Set([6, 7, 8, 9]);
-  for (let c = 0; c <= range.e.c; c++) {
-    const addr = XLSX.utils.encode_cell({ r: totalRowZeroBased, c });
-    if (!ws[addr]) {
-      ws[addr] = { t: "s", v: "" };
-    }
-    (ws[addr] as { s?: unknown }).s = numericCols.has(c)
-      ? totalsNumericStyle
-      : totalsBaseStyle;
-  }
-
-  // Column widths
-  const widths = [12, 12, 32, 28, 22, 18, 16, 16, 14, 12, 12, 12, 18, 16, 18, 24];
-  ws["!cols"] = widths.map((w) => ({ wch: w }));
-
-  // Freeze header row. Excel cannot natively freeze a bottom row.
-  (ws as unknown as { "!views"?: unknown[] })["!views"] = [
-    { state: "frozen", ySplit: 1, xSplit: 0, topLeftCell: "A2", activePane: "bottomLeft" },
-  ];
-
-  // Autofilter only over the data range (exclude totals row)
-  const lastDataRowRef = XLSX.utils.encode_cell({ r: dataRowCount, c: range.e.c });
-  ws["!autofilter"] = { ref: `A1:${lastDataRowRef}` };
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Sölur");
-
+  // Build filename
   const parts: string[] = [];
   const stageYear = [
     filenameParts.stageLabel?.trim() || null,
@@ -242,5 +199,17 @@ export function exportDealsToXlsx(
   if (filenameParts.ownerName?.trim()) parts.push(filenameParts.ownerName.trim());
   const suffix = parts.length ? ` - ${parts.join(" - ")}` : "";
   const filename = `IDÉ Sölur${suffix}.xlsx`;
-  XLSX.writeFile(wb, filename, { bookType: "xlsx", compression: true });
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
