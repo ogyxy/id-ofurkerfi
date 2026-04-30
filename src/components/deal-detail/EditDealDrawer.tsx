@@ -58,7 +58,7 @@ type FormState = {
   contact_id: string;
   owner_id: string;
   promised_delivery_date: string;
-  estimated_delivery_date: string;
+  // estimated_delivery_date is intentionally omitted — it can only be edited from /innkaup/:id
   invoice_status: InvoiceStatus;
   payment_status: PaymentStatus;
   invoice_date: string;
