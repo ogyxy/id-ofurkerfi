@@ -205,6 +205,17 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
       toast.error(t.status.somethingWentWrong);
       return;
     }
+    // Sync expected_delivery_date → linked deal estimated_delivery_date
+    if (
+      "expected_delivery_date" in patch &&
+      po.deal_id &&
+      patch.expected_delivery_date !== undefined
+    ) {
+      await supabase
+        .from("deals")
+        .update({ estimated_delivery_date: patch.expected_delivery_date ?? null })
+        .eq("id", po.deal_id);
+    }
     await load();
   };
 
@@ -220,6 +231,24 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
       return null;
     }
   };
+
+  // Auto-fetch exchange rate when missing
+  useEffect(() => {
+    if (!po) return;
+    if (po.currency === "ISK") return;
+    if (po.exchange_rate) return;
+    void (async () => {
+      const rate = await fetchExchangeRate(po.currency);
+      if (rate) {
+        await supabase
+          .from("purchase_orders")
+          .update({ exchange_rate: rate })
+          .eq("id", po.id);
+        await load();
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [po?.id, po?.currency, po?.exchange_rate]);
 
   const handleStatusChange = async (next: POStatus) => {
     if (!po) return;
