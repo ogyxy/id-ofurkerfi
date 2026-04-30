@@ -745,6 +745,37 @@ export function CreateDealDrawer({
           </Button>
         </SheetFooter>
       </SheetContent>
+
+      <AlertDialog open={confirmNoContactOpen} onOpenChange={setConfirmNoContactOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.deal.confirmNoContactTitle}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.deal.confirmNoContactBody}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setConfirmNoContactOpen(false);
+                setInlineContactOpen(true);
+              }}
+            >
+              {t.deal.confirmNoContactNo}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setConfirmNoContactOpen(false);
+                setNewCompanyNeedsContactConfirm(false);
+                await performSave();
+              }}
+              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+            >
+              {t.deal.confirmNoContactYes}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }
