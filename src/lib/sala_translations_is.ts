@@ -330,6 +330,7 @@ export const t = {
     estimated_delivery_date: 'Áætluð móttaka',
     actual_close_date:       'Raunveruleg lokadagsetning',
     tracking_numbers:        'Tracking númer',
+    notDelivered:            'Ekki afhent',
     margin_isk:              'Framlegð',
     invoice_status:          'Reikningsstaða',
     payment_status:          'Greiðslustaða',
@@ -782,6 +783,7 @@ export const t = {
     taskUninvoiced:      'Reikningur ekki gefinn út',
     taskDefectPending:   'Galli án viðbragða',
     taskUnpaidOld:       'Greiðsla á gjalddaga',
+    taskDeliveryMismatch:'Áætluð móttaka eftir afhendingu',
     showMore:            '{count} fleiri',
 
     pulseTitle:          'Síðustu 30 dagar',

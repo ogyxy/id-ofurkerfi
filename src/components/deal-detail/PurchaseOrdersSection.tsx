@@ -103,7 +103,7 @@ export function PurchaseOrdersSection({
         fixedDealId={dealId}
         currentProfileId={currentProfileId}
         onCreated={() => void onChanged()}
-        navigateOnCreate={false}
+        navigateOnCreate={true}
       />
     </div>
   );

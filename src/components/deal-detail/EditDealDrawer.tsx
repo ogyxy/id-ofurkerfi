@@ -58,7 +58,7 @@ type FormState = {
   contact_id: string;
   owner_id: string;
   promised_delivery_date: string;
-  estimated_delivery_date: string;
+  // estimated_delivery_date is intentionally omitted — it can only be edited from /innkaup/:id
   invoice_status: InvoiceStatus;
   payment_status: PaymentStatus;
   invoice_date: string;
@@ -75,7 +75,6 @@ function fromDeal(d: Deal): FormState {
     contact_id: d.contact_id ?? "",
     owner_id: d.owner_id ?? "",
     promised_delivery_date: d.promised_delivery_date ?? "",
-    estimated_delivery_date: d.estimated_delivery_date ?? "",
     invoice_status: d.invoice_status,
     payment_status: d.payment_status,
     invoice_date: d.invoice_date ?? "",
@@ -146,7 +145,7 @@ export function EditDealDrawer({
         contact_id: form.contact_id || null,
         owner_id: form.owner_id || null,
         promised_delivery_date: form.promised_delivery_date || null,
-        estimated_delivery_date: form.estimated_delivery_date || null,
+        
         invoice_status: form.invoice_status,
         payment_status: form.payment_status,
         invoice_date: form.invoice_date || null,
@@ -241,16 +240,6 @@ export function EditDealDrawer({
                 value={form.promised_delivery_date}
                 onChange={(e) =>
                   update("promised_delivery_date", e.target.value)
-                }
-              />
-            </div>
-            <div>
-              <Label>{t.deal.estimated_delivery_date}</Label>
-              <Input
-                type="date"
-                value={form.estimated_delivery_date}
-                onChange={(e) =>
-                  update("estimated_delivery_date", e.target.value)
                 }
               />
             </div>
