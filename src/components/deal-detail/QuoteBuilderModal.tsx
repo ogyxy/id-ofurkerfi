@@ -245,12 +245,13 @@ export function QuoteBuilderModal({
 
       const { bytes, skipped } = await mergeQuotePdf(baseBuf, fetched);
       const allSkipped = [...fetchSkipped, ...skipped];
+      const pdfBlob = new Blob([bytes as BlobPart], { type: "application/pdf" });
 
       // 4. Upload to storage + insert deal_files row
       let uploadOk = true;
       const { error: upErr } = await supabase.storage
         .from("quote_pdfs")
-        .upload(filePath, bytes, {
+        .upload(filePath, pdfBlob, {
           contentType: "application/pdf",
           upsert: false,
         });
