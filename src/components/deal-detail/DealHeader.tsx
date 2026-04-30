@@ -140,11 +140,25 @@ export function DealHeader({
             </div>
           )}
           <div className="flex flex-wrap gap-2 md:justify-end">
-            {deal.stage !== "delivered" && deal.stage !== "cancelled" && (
-              <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700">
-                {t.deal.notDelivered}
-              </span>
-            )}
+            {deal.stage !== "delivered" &&
+              deal.stage !== "cancelled" &&
+              deal.promised_delivery_date &&
+              (() => {
+                const promised = new Date(deal.promised_delivery_date);
+                const estimated = deal.estimated_delivery_date
+                  ? new Date(deal.estimated_delivery_date)
+                  : null;
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const willMiss = estimated
+                  ? estimated > promised
+                  : promised < today;
+                return willMiss ? (
+                  <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700">
+                    {t.deal.notDelivered}
+                  </span>
+                ) : null;
+              })()}
             <span
               className={cn(
                 "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
