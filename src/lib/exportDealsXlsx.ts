@@ -56,12 +56,16 @@ function contactName(c: ExportableDeal["contact"]): string {
   return [c.first_name, c.last_name].filter(Boolean).join(" ").trim();
 }
 
-export function exportDealsToXlsx(deals: ExportableDeal[]) {
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, "0");
-  const dd = String(today.getDate()).padStart(2, "0");
-  const dateStr = `${yyyy}-${mm}-${dd}`;
+export interface ExportFilenameParts {
+  stageLabel?: string | null;
+  year?: number | null;
+  ownerName?: string | null;
+}
+
+export function exportDealsToXlsx(
+  deals: ExportableDeal[],
+  filenameParts: ExportFilenameParts = {},
+) {
 
   const rows = deals.map((d) => {
     const price = d.amount_isk != null ? Number(d.amount_isk) : null;
