@@ -244,16 +244,6 @@ export function EditDealDrawer({
               />
             </div>
             <div>
-              <Label>{t.deal.estimated_delivery_date}</Label>
-              <Input
-                type="date"
-                value={form.estimated_delivery_date}
-                onChange={(e) =>
-                  update("estimated_delivery_date", e.target.value)
-                }
-              />
-            </div>
-            <div>
               <Label>{t.deal.invoice_status}</Label>
               <Select
                 value={form.invoice_status}
