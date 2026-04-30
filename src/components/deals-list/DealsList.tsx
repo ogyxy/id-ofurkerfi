@@ -611,22 +611,64 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
         </div>
       )}
 
-      {/* Stage filter pills */}
+      {/* Stage filter pills (3-step + extras) with sub-pills for tilboð / pöntun */}
       <div className="mb-4">
         <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
           {t.deal.stage}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {STAGE_ORDER.map((s) => (
-            <StagePill
-              key={s}
-              label={t.dealStage[s]}
-              count={stageCounts[s]}
-              active={activeStage === s}
-              onClick={() => setActiveStage((prev) => (prev === s ? null : s))}
-              showClose={activeStage === s}
-            />
-          ))}
+          {STEP_PILLS.map((step) => {
+            const isActive = activeStep === step;
+            // When a step is active, hide the other top-level pills
+            if (activeStep && !isActive) return null;
+            return (
+              <StagePill
+                key={step}
+                label={stepLabel(step)}
+                count={stepCounts.steps[step]}
+                active={isActive}
+                onClick={() => {
+                  if (isActive) {
+                    setActiveStep(null);
+                    setActiveSubstage(null);
+                  } else {
+                    setActiveStep(step);
+                    setActiveSubstage(null);
+                  }
+                }}
+                showClose={isActive}
+              />
+            );
+          })}
+          {/* Sub-pills for tilboð / pöntun */}
+          {activeStep === "tilbod" &&
+            TILBOD_SUB.map((s) => (
+              <StagePill
+                key={s}
+                label={t.dealStage[s]}
+                count={stepCounts.sub[s]}
+                active={activeSubstage === s}
+                onClick={() =>
+                  setActiveSubstage((prev) => (prev === s ? null : s))
+                }
+                showClose={activeSubstage === s}
+                variant="sub"
+              />
+            ))}
+          {activeStep === "pontun" &&
+            PONTUN_SUB.map((s) => (
+              <StagePill
+                key={s}
+                label={t.dealStage[s]}
+                count={stepCounts.sub[s]}
+                active={activeSubstage === s}
+                onClick={() =>
+                  setActiveSubstage((prev) => (prev === s ? null : s))
+                }
+                showClose={activeSubstage === s}
+                variant="sub"
+              />
+            ))}
         </div>
       </div>
 
