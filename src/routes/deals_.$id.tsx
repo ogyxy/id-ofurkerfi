@@ -92,6 +92,8 @@ function DealDetailContent() {
   const [rates, setRates] = useState<Record<string, number>>({});
   const [ratesError, setRatesError] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [quoteBuilderOpen, setQuoteBuilderOpen] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [defectModalOpen, setDefectModalOpen] = useState(false);
   const [defectBusy, setDefectBusy] = useState(false);
   const [parentDeal, setParentDeal] = useState<{
