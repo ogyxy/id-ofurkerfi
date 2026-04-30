@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, MoreHorizontal } from "lucide-react";
+import { Check, MoreHorizontal, Send, Package } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { cn } from "@/lib/utils";
@@ -15,11 +15,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -28,16 +23,35 @@ import {
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
 
-const HAPPY_PATH: DealStage[] = [
-  "inquiry",
-  "quote_in_progress",
-  "quote_sent",
-  "order_confirmed",
-  "delivered",
-];
-
 const NAVY = "#1a2540";
 const FUTURE_BORDER = "#d1d5db";
+
+// Map stage → which of the 3 main steps it belongs to (0,1,2). -1 = pre-stepper (inquiry).
+function stageToStepIdx(stage: DealStage): number {
+  switch (stage) {
+    case "inquiry":
+      return -1;
+    case "quote_in_progress":
+    case "quote_sent":
+      return 0;
+    case "order_confirmed":
+    case "ready_for_pickup":
+      return 1;
+    case "delivered":
+      return 2;
+    default:
+      return -1;
+  }
+}
+
+const STEPS: Array<{
+  key: string;
+  label: string;
+}> = [
+  { key: "tilbod", label: t.deal.step1Tilbod },
+  { key: "pontun", label: t.deal.step2Pontun },
+  { key: "afhent", label: t.deal.step3Afhent },
+];
 
 interface Props {
   stage: DealStage;
@@ -45,88 +59,69 @@ interface Props {
 }
 
 export function StageStepper({ stage, onChange }: Props) {
-  const [confirmIdx, setConfirmIdx] = useState<number | null>(null);
   const [confirmBackStage, setConfirmBackStage] = useState<DealStage | null>(null);
 
-  if (stage === "cancelled" || stage === "defect_reorder") {
-    const tone =
-      stage === "cancelled"
-        ? "bg-red-100 text-red-800 border-red-300"
-        : "bg-orange-100 text-orange-800 border-orange-300";
+  if (stage === "cancelled") {
     return (
-      <div
-        className={cn(
-          "flex flex-col items-center justify-between gap-3 rounded-md border p-4 sm:flex-row",
-          tone,
-        )}
-      >
-        <div className="text-lg font-semibold">{t.dealStage[stage]}</div>
-        <Button
-          variant="outline"
-          onClick={() => onChange("inquiry")}
-          className="bg-white"
-        >
+      <div className="flex flex-col items-center justify-between gap-3 rounded-md border border-red-300 bg-red-100 p-4 text-red-800 sm:flex-row">
+        <div className="text-lg font-semibold">{t.dealStage.cancelled}</div>
+        <Button variant="outline" onClick={() => onChange("inquiry")} className="bg-white">
           Endurvirkja
         </Button>
       </div>
     );
   }
 
-  const currentIdx = HAPPY_PATH.indexOf(stage);
+  // defect_reorder is handled by DefectBar in the parent — stepper not rendered.
+  // delivered is handled by DeliveredBar in the parent — stepper not rendered.
+
+  const currentIdx = stageToStepIdx(stage);
+  const isInquiry = stage === "inquiry";
+
+  // Substep label under the active step
+  let substepLabel: string | null = null;
+  let SubstepIcon: typeof Send | null = null;
+  if (stage === "quote_sent") {
+    substepLabel = t.deal.substepSent;
+    SubstepIcon = Send;
+  } else if (stage === "ready_for_pickup") {
+    substepLabel = t.deal.substepInHouse;
+    SubstepIcon = Package;
+  }
+
+  // Click handler for circles. Circles allow:
+  // - clicking step 0 from inquiry to advance to quote_in_progress
+  // - clicking a previous step (with confirm) to revert
+  // Forward jumps within stepper happen via the action buttons below the lines table.
+  const handleStepClick = (idx: number) => {
+    if (isInquiry && idx === 0) {
+      onChange("quote_in_progress");
+      return;
+    }
+    if (idx < currentIdx) {
+      // revert to first stage of that step
+      const target: DealStage =
+        idx === 0 ? "quote_in_progress" : idx === 1 ? "order_confirmed" : "delivered";
+      setConfirmBackStage(target);
+    }
+  };
 
   return (
     <div className="rounded-md border border-border bg-card p-4 shadow-sm">
       <div className="flex items-start gap-2">
-        {/* Mobile: collapsed view */}
-        <div className="flex flex-1 items-center justify-between md:hidden">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={currentIdx <= 0}
-            onClick={() =>
-              currentIdx > 0 && setConfirmBackStage(HAPPY_PATH[currentIdx - 1])
-            }
-          >
-            ←
-          </Button>
-          <div className="text-center">
-            <div className="text-xs text-muted-foreground">
-              {currentIdx + 1} / {HAPPY_PATH.length}
-            </div>
-            <div className="font-semibold" style={{ color: NAVY }}>
-              {t.dealStage[stage]}
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={currentIdx >= HAPPY_PATH.length - 1}
-            onClick={() =>
-              currentIdx < HAPPY_PATH.length - 1 &&
-              setConfirmIdx(currentIdx + 1)
-            }
-          >
-            →
-          </Button>
-        </div>
+        <ol className="flex flex-1 items-start">
+          {STEPS.map((step, idx) => {
+            const isCompleted = !isInquiry && idx < currentIdx;
+            const isCurrent = !isInquiry && idx === currentIdx;
+            const isFuture = isInquiry || idx > currentIdx;
+            const isClickablePrev = !isInquiry && idx < currentIdx;
+            const isInquiryEntry = isInquiry && idx === 0;
 
-        {/* Desktop: full stepper */}
-        <ol className="hidden flex-1 items-center md:flex">
-          {HAPPY_PATH.map((s, idx) => {
-            const isCompleted = idx < currentIdx;
-            const isCurrent = idx === currentIdx;
-            const isNext = idx === currentIdx + 1;
-            const isPrev = idx === currentIdx - 1;
-            const isFuture = idx > currentIdx;
-
-            // Sizes: current larger (36px) vs others (28px)
             const sizeClass = isCurrent ? "h-9 w-9 text-sm" : "h-7 w-7 text-xs";
-
             const baseCircle =
               "relative flex items-center justify-center rounded-full font-semibold transition-all";
 
             let circleStyle: React.CSSProperties = {};
-            let circleExtra = "";
             if (isCompleted) {
               circleStyle = { backgroundColor: NAVY, color: "white" };
             } else if (isCurrent) {
@@ -135,18 +130,20 @@ export function StageStepper({ stage, onChange }: Props) {
                 color: "white",
                 boxShadow: `0 0 0 2px white, 0 0 0 4px ${NAVY}`,
               };
-            } else if (isFuture) {
+            } else {
               circleStyle = {
                 backgroundColor: "white",
                 color: "#9ca3af",
                 border: `1px solid ${FUTURE_BORDER}`,
               };
             }
-            if (isNext || isPrev) {
-              circleExtra = "cursor-pointer hover:opacity-80";
-            }
 
-            const circleClassName = cn(baseCircle, sizeClass, circleExtra);
+            const clickable = isClickablePrev || isInquiryEntry;
+            const circleClassName = cn(
+              baseCircle,
+              sizeClass,
+              clickable && "cursor-pointer hover:opacity-80",
+            );
 
             const circleContent = isCompleted ? (
               <Check className="h-4 w-4" />
@@ -154,107 +151,50 @@ export function StageStepper({ stage, onChange }: Props) {
               <span>{idx + 1}</span>
             );
 
-            // Label styles
-            let labelClass = "max-w-[8rem] text-center text-xs leading-tight";
-            let labelStyle: React.CSSProperties = {};
-            if (isCompleted) {
-              labelClass = cn(labelClass, "text-muted-foreground");
-            } else if (isCurrent) {
-              labelClass = cn(labelClass, "font-bold");
-              labelStyle = { color: NAVY };
-            } else {
-              labelClass = cn(labelClass, "text-muted-foreground");
-            }
+            const labelClass = cn(
+              "max-w-[10rem] text-center text-xs leading-tight",
+              isCurrent ? "font-bold" : "text-muted-foreground",
+            );
+            const labelStyle: React.CSSProperties = isCurrent ? { color: NAVY } : {};
 
             return (
               <li
-                key={s}
+                key={step.key}
                 className={cn(
-                  "flex flex-1 items-center",
-                  idx === HAPPY_PATH.length - 1 && "flex-none",
+                  "flex flex-1 items-start",
+                  idx === STEPS.length - 1 && "flex-none",
                 )}
               >
                 <div className="flex flex-col items-center gap-2">
-                  {isNext ? (
-                    <Popover
-                      open={confirmIdx === idx}
-                      onOpenChange={(o) =>
-                        setConfirmIdx(o ? idx : null)
-                      }
-                    >
-                      <PopoverTrigger asChild>
-                        <button
-                          type="button"
-                          className={circleClassName}
-                          style={circleStyle}
-                        >
-                          {circleContent}
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-64">
-                        <div className="space-y-3">
-                          <p className="text-sm">
-                            Færa í{" "}
-                            <span className="font-semibold">
-                              {t.dealStage[s]}
-                            </span>
-                            ?
-                          </p>
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setConfirmIdx(null)}
-                            >
-                              {t.actions.cancel}
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-                              onClick={() => {
-                                onChange(s);
-                                setConfirmIdx(null);
-                              }}
-                            >
-                              {t.actions.confirm}
-                            </Button>
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  ) : isPrev ? (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmBackStage(s)}
-                      className={circleClassName}
-                      style={circleStyle}
-                    >
-                      {circleContent}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled
-                      className={circleClassName}
-                      style={circleStyle}
-                    >
-                      {circleContent}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    disabled={!clickable}
+                    onClick={() => handleStepClick(idx)}
+                    className={circleClassName}
+                    style={circleStyle}
+                  >
+                    {circleContent}
+                  </button>
                   <span className={labelClass} style={labelStyle}>
-                    {t.dealStage[s]}
+                    {step.label}
                   </span>
+                  {isCurrent && substepLabel && SubstepIcon && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      <SubstepIcon className="h-3 w-3" />
+                      {substepLabel}
+                    </span>
+                  )}
                 </div>
-                {idx < HAPPY_PATH.length - 1 && (
+                {idx < STEPS.length - 1 && (
                   <div
                     className={cn(
-                      "mx-2 -mt-6 h-0.5 flex-1",
-                      idx < currentIdx
+                      "mx-2 mt-3.5 h-0.5 flex-1",
+                      !isInquiry && idx < currentIdx
                         ? ""
                         : "border-t-2 border-dashed bg-transparent",
                     )}
                     style={
-                      idx < currentIdx
+                      !isInquiry && idx < currentIdx
                         ? { backgroundColor: NAVY }
                         : { borderColor: FUTURE_BORDER }
                     }
@@ -286,40 +226,46 @@ export function StageStepper({ stage, onChange }: Props) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        <AlertDialog
-          open={Boolean(confirmBackStage)}
-          onOpenChange={(open) => !open && setConfirmBackStage(null)}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Færa til baka?</AlertDialogTitle>
-              <AlertDialogDescription>
-                {confirmBackStage ? (
-                  <>
-                    Færa í <span className="font-semibold">{t.dealStage[confirmBackStage]}</span>?
-                  </>
-                ) : null}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setConfirmBackStage(null)}>
-                {t.actions.cancel}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  if (!confirmBackStage) return;
-                  onChange(confirmBackStage);
-                  setConfirmBackStage(null);
-                }}
-                className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-              >
-                {t.actions.confirm}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
+
+      {isInquiry && (
+        <p className="mt-3 text-center text-xs italic text-muted-foreground">
+          {t.deal.inquiryStepperNote}
+        </p>
+      )}
+
+      <AlertDialog
+        open={Boolean(confirmBackStage)}
+        onOpenChange={(open) => !open && setConfirmBackStage(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Færa til baka?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmBackStage ? (
+                <>
+                  Færa í <span className="font-semibold">{t.dealStage[confirmBackStage]}</span>?
+                </>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmBackStage(null)}>
+              {t.actions.cancel}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!confirmBackStage) return;
+                onChange(confirmBackStage);
+                setConfirmBackStage(null);
+              }}
+              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+            >
+              {t.actions.confirm}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
