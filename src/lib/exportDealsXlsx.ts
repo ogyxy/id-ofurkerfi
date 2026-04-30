@@ -99,13 +99,10 @@ export function exportDealsToXlsx(
   });
 
   const dataRowCount = rows.length;
-  const totalRowIndex = dataRowCount + 1; // 0-based row index for totals (header is row 0)
-  const firstDataExcelRow = 2; // Excel 1-based: header=1, first data=2
+  const firstDataExcelRow = 2; // header=1, first data=2
   const lastDataExcelRow = dataRowCount + 1;
+  const totalExcelRow = dataRowCount + 2; // 1-based Excel row for totals
 
-  // Build totals row using formulas so it stays accurate
-  const sumRange = (colLetter: string) =>
-    `SUM(${colLetter}${firstDataExcelRow}:${colLetter}${lastDataExcelRow})`;
   const totalsRow: (string | number | Date | null)[] = [
     "Samtals",
     null,
@@ -113,12 +110,10 @@ export function exportDealsToXlsx(
     "",
     "",
     "",
-    dataRowCount > 0 ? { f: sumRange("G") } as unknown as string : 0,
-    dataRowCount > 0 ? { f: sumRange("H") } as unknown as string : 0,
-    dataRowCount > 0 ? { f: sumRange("I") } as unknown as string : 0,
-    dataRowCount > 0
-      ? ({ f: `IF(G${totalRowIndex + 1}=0,0,I${totalRowIndex + 1}/G${totalRowIndex + 1})` } as unknown as string)
-      : 0,
+    0,
+    0,
+    0,
+    0,
     "",
     "",
     "",
@@ -134,15 +129,19 @@ export function exportDealsToXlsx(
   ];
   const ws = XLSX.utils.aoa_to_sheet(aoa, { cellDates: true });
 
-  // Convert formula placeholders into proper formula cells
-  for (const col of ["G", "H", "I", "J"]) {
-    const addr = `${col}${totalRowIndex + 1}`;
-    const cell = ws[addr] as { v?: unknown; f?: string; t?: string } | undefined;
-    if (cell && cell.v && typeof cell.v === "object" && "f" in (cell.v as object)) {
-      const f = (cell.v as { f: string }).f;
+  // Replace totals numeric cells with formulas (only when there are data rows)
+  if (dataRowCount > 0) {
+    const formulas: Record<string, string> = {
+      [`G${totalExcelRow}`]: `SUM(G${firstDataExcelRow}:G${lastDataExcelRow})`,
+      [`H${totalExcelRow}`]: `SUM(H${firstDataExcelRow}:H${lastDataExcelRow})`,
+      [`I${totalExcelRow}`]: `SUM(I${firstDataExcelRow}:I${lastDataExcelRow})`,
+      [`J${totalExcelRow}`]: `IF(G${totalExcelRow}=0,0,I${totalExcelRow}/G${totalExcelRow})`,
+    };
+    for (const [addr, f] of Object.entries(formulas)) {
       ws[addr] = { t: "n", f };
     }
   }
+
 
   // ISK number format: 123.456 kr.   (dot as thousands separator)
   const iskFmt = '#,##0" kr."';
