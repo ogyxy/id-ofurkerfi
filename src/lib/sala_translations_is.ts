@@ -330,7 +330,7 @@ export const t = {
     estimated_delivery_date: 'Áætluð móttaka',
     actual_close_date:       'Raunveruleg lokadagsetning',
     tracking_numbers:        'Tracking númer',
-    notDelivered:            'Ekki afhent',
+    notDelivered:            'Deadline',
     margin_isk:              'Framlegð',
     invoice_status:          'Reikningsstaða',
     payment_status:          'Greiðslustaða',
