@@ -338,30 +338,50 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     };
   }, [debouncedSearch, selectedYear]);
 
-  // Apply remaining client-side filters (stage, owner)
+  // Apply remaining client-side filters (step + substep, owner)
   const visibleDeals = useMemo(() => {
     let list = deals;
-    if (activeStage === "defect_reorder") {
+    if (activeStep === "defect_reorder") {
       list = list.filter(
         (d) => d.stage === "defect_reorder" && !isDefectResolved(d),
       );
-    } else if (activeStage === "delivered") {
+    } else if (activeStep === "afhent") {
       list = list.filter(
         (d) =>
           d.stage === "delivered" ||
           (d.stage === "defect_reorder" && isDefectResolved(d)),
       );
-    } else if (activeStage) {
-      list = list.filter((d) => d.stage === activeStage);
+    } else if (activeStep === "cancelled") {
+      list = list.filter((d) => d.stage === "cancelled");
+    } else if (activeStep === "inquiry") {
+      list = list.filter((d) => d.stage === "inquiry");
+    } else if (activeStep === "tilbod") {
+      const sub = activeSubstage ?? null;
+      list = list.filter((d) =>
+        sub ? d.stage === sub : TILBOD_SUB.includes(d.stage),
+      );
+    } else if (activeStep === "pontun") {
+      const sub = activeSubstage ?? null;
+      list = list.filter((d) =>
+        sub ? d.stage === sub : PONTUN_SUB.includes(d.stage),
+      );
     }
     if (selectedOwners.size > 0) {
       list = list.filter((d) => d.owner && selectedOwners.has(d.owner.id));
     }
     return list;
-  }, [deals, activeStage, selectedOwners]);
+  }, [deals, activeStep, activeSubstage, selectedOwners]);
 
-  const stageCounts = useMemo(() => {
-    const counts: Record<DealStage, number> = {
+  const stepCounts = useMemo(() => {
+    const c: Record<StepKey, number> = {
+      inquiry: 0,
+      tilbod: 0,
+      pontun: 0,
+      afhent: 0,
+      defect_reorder: 0,
+      cancelled: 0,
+    };
+    const subC: Record<DealStage, number> = {
       inquiry: 0,
       quote_in_progress: 0,
       quote_sent: 0,
@@ -372,14 +392,15 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
       cancelled: 0,
     };
     deals.forEach((d) => {
+      subC[d.stage]++;
       if (d.stage === "defect_reorder") {
-        if (isDefectResolved(d)) counts.delivered++;
-        else counts.defect_reorder++;
+        if (isDefectResolved(d)) c.afhent++;
+        else c.defect_reorder++;
       } else {
-        counts[d.stage]++;
+        c[stageToStep(d.stage)]++;
       }
     });
-    return counts;
+    return { steps: c, sub: subC };
   }, [deals]);
 
   const ownersWithDeals = useMemo(() => {
