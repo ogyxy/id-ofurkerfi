@@ -47,16 +47,6 @@ interface Props {
   currentUserId: string;
 }
 
-const dealStageOptions: DealStage[] = [
-  "inquiry",
-  "quote_in_progress",
-  "quote_sent",
-  "order_confirmed",
-  "delivered",
-  "cancelled",
-  "defect_reorder",
-];
-
 const stageColors: Record<DealStage, string> = {
   inquiry: "bg-gray-100 text-gray-700",
   quote_in_progress: "bg-blue-100 text-blue-700",
