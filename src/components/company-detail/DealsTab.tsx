@@ -1,27 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Copy, Check, X, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Copy, Check, ArrowUp, ArrowDown, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t, formatIsk, formatDate } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from "@/components/ui/sheet";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -32,6 +15,9 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "./EmptyState";
+import { CreateCompanyDealDrawer } from "./CreateCompanyDealDrawer";
+
+type Profile = { id: string; name: string | null; email: string };
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
 type DefectResolution = Database["public"]["Enums"]["defect_resolution"];
