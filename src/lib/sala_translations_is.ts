@@ -387,7 +387,7 @@ export const t = {
     step3Afhent:              'Afhent',
     substepSent:              'Sent',
     substepInHouse:           'Komin í hús',
-    markAsSent:               'Merkja sem sent',
+    markAsSent:               'Tilboð sent',
     markAsSentConfirm:        "Þegar tilboð er sett í 'sent' verða sölulínur læstar. Halda áfram?",
     markAsSentConfirmYes:     'Já, senda',
     reactivateQuote:          'Lagfæra tilboð',
