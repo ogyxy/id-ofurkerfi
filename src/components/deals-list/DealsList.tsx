@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, X, AlertTriangle, Check, Plus, ChevronDown, Clock, AlertCircle } from "lucide-react";
+import { Search, X, AlertTriangle, Check, Plus, ChevronDown, Clock, AlertCircle, Copy } from "lucide-react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
