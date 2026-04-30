@@ -304,8 +304,8 @@ export function CompaniesTable() {
               )}
             </TableBody>
             {!loading && !loadError && sorted.length > 0 && (
-              <TableFooter className="bg-muted/95">
-                <TableRow className="hover:bg-muted/95">
+              <TableFooter className="[&_tr]:border-t [&_tr]:border-border">
+                <TableRow className="hover:bg-muted/95 [&>td]:sticky [&>td]:bottom-0 [&>td]:z-10 [&>td]:bg-muted/95 [&>td]:backdrop-blur [&>td]:shadow-[0_-1px_0_0_hsl(var(--border))]">
                   <TableCell className="font-semibold">
                     {"Samtals"} ({sorted.length})
                   </TableCell>
