@@ -825,7 +825,7 @@ function PulseTile({
       <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="mt-2 text-2xl font-semibold text-foreground tabular-nums">{value}</p>
       <p className={`mt-1 text-xs ${color}`}>
-        {arrow} {deltaPrefix ?? ""}{num}{deltaSuffix ?? ""} {t.yfirlit.pulseVsPrevious}
+        {arrow} {deltaPrefix ?? ""}{num}{deltaSuffix ?? ""}
       </p>
     </div>
   );

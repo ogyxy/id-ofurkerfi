@@ -759,7 +759,7 @@ export const t = {
     pulseDeals:          'Sölur kláraðar',
     pulseAvgDeal:        'Meðalsala',
     pulseMargin:         'Framlegð',
-    pulseVsPrevious:     'vs. fyrri 30',
+    pulseVsPrevious:     '',
 
     pipelineTitle:       'Opnar sölur',
     pipelineTotal:       'Heildarverðmæti opinna sala',
