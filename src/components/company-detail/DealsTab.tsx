@@ -44,6 +44,7 @@ interface Props {
   contacts: Contact[];
   onChanged: () => void;
   onOpenDeal: (id: string) => void;
+  currentUserId: string;
 }
 
 const dealStageOptions: DealStage[] = [
@@ -98,36 +99,34 @@ function isOverdue(date: string | null, stage: DealStage, resolved: boolean): bo
   return d < today;
 }
 
-type FormState = {
-  name: string;
-  stage: DealStage;
-  amount_isk: string;
-  promised_delivery_date: string;
-  contact_id: string;
-  notes: string;
-};
-
-const emptyForm: FormState = {
-  name: "",
-  stage: "inquiry",
-  amount_isk: "",
-  promised_delivery_date: "",
-  contact_id: "",
-  notes: "",
-};
-
 type FilterKey = "open" | "delivered" | "defect" | "cancelled";
 type SortKey = "created_at" | "amount_isk";
 type SortDir = "asc" | "desc";
 
-export function DealsTab({ companyId, deals, contacts, onChanged, onOpenDeal }: Props) {
+export function DealsTab({
+  companyId,
+  deals,
+  contacts: _contacts,
+  onChanged,
+  onOpenDeal,
+  currentUserId,
+}: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [form, setForm] = useState<FormState>(emptyForm);
-  const [saving, setSaving] = useState(false);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterKey | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, name, email")
+        .eq("active", true);
+      setProfiles((data ?? []) as Profile[]);
+    })();
+  }, []);
 
   const handleCopySo = async (e: React.MouseEvent, id: string, soNumber: string) => {
     e.stopPropagation();
@@ -142,33 +141,7 @@ export function DealsTab({ companyId, deals, contacts, onChanged, onOpenDeal }: 
   };
 
   const openCreate = () => {
-    setForm(emptyForm);
     setDrawerOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!form.name.trim()) {
-      toast.error(t.status.somethingWentWrong);
-      return;
-    }
-    setSaving(true);
-    const { error } = await supabase.from("deals").insert({
-      company_id: companyId,
-      name: form.name.trim(),
-      stage: form.stage,
-      amount_isk: form.amount_isk ? Number(form.amount_isk) : 0,
-      promised_delivery_date: form.promised_delivery_date || null,
-      contact_id: form.contact_id || null,
-      notes: form.notes.trim() || null,
-    });
-    setSaving(false);
-    if (error) {
-      toast.error(t.status.somethingWentWrong);
-      return;
-    }
-    toast.success(t.status.savedSuccessfully);
-    setDrawerOpen(false);
-    onChanged();
   };
 
   // Counts — always reflect full unarchived dataset
