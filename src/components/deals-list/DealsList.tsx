@@ -516,7 +516,26 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
             onClick={async () => {
               setExporting(true);
               try {
-                exportDealsToXlsx(visibleDeals);
+                const stageLabelMap: Record<StepKey, string> = {
+                  inquiry: "Fyrirspurnir",
+                  tilbod: "Tilboð",
+                  pontun: "Í pöntun",
+                  afhent: "Afhentar",
+                  defect_reorder: "Gallar",
+                  cancelled: "Hætt við",
+                };
+                let ownerName: string | null = null;
+                if (selectedOwners.size === 1) {
+                  const id = [...selectedOwners][0];
+                  const p = profiles.find((x) => x.id === id);
+                  const full = p?.name?.trim() || p?.email || "";
+                  ownerName = full.split(/\s+/)[0] || null;
+                }
+                exportDealsToXlsx(visibleDeals, {
+                  stageLabel: activeStep ? stageLabelMap[activeStep] : null,
+                  year: selectedYear,
+                  ownerName,
+                });
                 toast.success(`${visibleDeals.length} sölur fluttar út`);
               } catch {
                 toast.error(t.status.somethingWentWrong);
