@@ -117,13 +117,6 @@ export function exportDealsToXlsx(deals: ExportableDeal[]) {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Sölur");
 
-  // Add as a real Excel table for filtering UX
-  // SheetJS Table support
-  // @ts-expect-error tables added at workbook level in newer versions
-  wb.Workbook = wb.Workbook ?? {};
-  // @ts-expect-error
-  wb.Workbook.Sheets = wb.Workbook.Sheets ?? [{}];
-
   const filename = `IDE_Sölur_${dateStr}.xlsx`;
   XLSX.writeFile(wb, filename, { bookType: "xlsx", compression: true });
 }
