@@ -133,7 +133,6 @@ export async function exportDealsToXlsx(
       } else if (c.key === "margin_pct") {
         // Weighted margin %: SUM(Framlegð) / SUM(Söluverð)
         col.totalsRowFormula = `IFERROR(Solur[[#Totals],[Framlegð]]/Solur[[#Totals],[Söluverð]],0)`;
-        col.totalsRowResult = 0;
       }
       return col;
     }),
