@@ -223,6 +223,7 @@ function YfirlitContent({
         .select(
           `id, so_number, name, stage, amount_isk,
            promised_delivery_date, delivered_at,
+           estimated_delivery_date,
            invoice_status, payment_status,
            defect_resolution, invoice_date,
            company:companies(id, name, payment_terms_days)`
@@ -251,6 +252,16 @@ function YfirlitContent({
         // excluded from this review section.
         if (d.stage === "defect_reorder" && d.defect_resolution === "pending") {
           out.push({ type: "defect_pending", deal: dealRef });
+        }
+        // Estimated receipt later than promised delivery → flag (not delivered)
+        if (
+          d.stage !== "delivered" &&
+          d.stage !== "cancelled" &&
+          d.promised_delivery_date &&
+          d.estimated_delivery_date &&
+          d.estimated_delivery_date > d.promised_delivery_date
+        ) {
+          out.push({ type: "delivery_mismatch", deal: dealRef });
         }
         const invDate = d.invoice_date;
         if (
