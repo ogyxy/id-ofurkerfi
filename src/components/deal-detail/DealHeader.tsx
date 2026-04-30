@@ -123,7 +123,22 @@ export function DealHeader({
               {formatDate(deal.promised_delivery_date) || "—"}
             </span>
           </div>
+          {deal.estimated_delivery_date && (
+            <div className="text-sm">
+              <span className="text-muted-foreground">
+                {t.deal.estimated_delivery_date}:{" "}
+              </span>
+              <span className="font-medium">
+                {formatDate(deal.estimated_delivery_date)}
+              </span>
+            </div>
+          )}
           <div className="flex flex-wrap gap-2 md:justify-end">
+            {deal.stage !== "delivered" && deal.stage !== "cancelled" && (
+              <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700">
+                {t.deal.notDelivered}
+              </span>
+            )}
             <span
               className={cn(
                 "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
