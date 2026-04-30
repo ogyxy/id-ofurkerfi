@@ -50,7 +50,7 @@ interface Profile {
 }
 
 interface TaskItem {
-  type: "overdue" | "defect_pending" | "unpaid_old";
+  type: "overdue" | "defect_pending" | "unpaid_old" | "delivery_mismatch";
   deal: {
     id: string;
     so_number: string;
