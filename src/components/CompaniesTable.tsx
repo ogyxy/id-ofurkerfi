@@ -237,9 +237,9 @@ export function CompaniesTable() {
 
       {/* Desktop / tablet table */}
       <div className="hidden rounded-md border border-border bg-card md:block">
-        <div className="max-h-[calc(100vh-16rem)] overflow-auto">
+        <div>
           <Table>
-            <TableHeader className="sticky top-0 z-10 bg-card shadow-[0_1px_0_0_hsl(var(--border))]">
+            <TableHeader className="sticky top-[var(--app-header-offset,0px)] z-10 bg-card shadow-[0_1px_0_0_hsl(var(--border))]">
               <TableRow>
                 {sortableHead(t.company.name, "name", "left")}
                 {sortableHead("Sölur í vinnslu", "dealsInProgress", "right")}
