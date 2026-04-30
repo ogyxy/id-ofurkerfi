@@ -128,7 +128,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
   const [createOpen, setCreateOpen] = useState(false);
   const [lineMatchedDealIds, setLineMatchedDealIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
-  const scrollRef = useRef<HTMLDivElement | null>(null);
+  
 
   // Debounce search
   useEffect(() => {
