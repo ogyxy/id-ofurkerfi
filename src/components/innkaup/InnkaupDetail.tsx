@@ -80,6 +80,7 @@ import {
   logPoReceived,
   logPoStatusChanged,
 } from "@/lib/poActivityLog";
+import { PoTrackingNumbersInline } from "./PoTrackingNumbersInline";
 
 type PO = Database["public"]["Tables"]["purchase_orders"]["Row"];
 type Supplier = Database["public"]["Tables"]["suppliers"]["Row"];
