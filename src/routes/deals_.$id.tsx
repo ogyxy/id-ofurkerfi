@@ -395,7 +395,11 @@ function DealDetailContent() {
         readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
       />
 
-      <StepperActions stage={deal.stage} onChange={updateStage} />
+      <StepperActions
+        stage={deal.stage}
+        onChange={updateStage}
+        onOpenQuoteBuilder={() => setQuoteBuilderOpen(true)}
+      />
 
       <DealSummary
         dealId={deal.id}
