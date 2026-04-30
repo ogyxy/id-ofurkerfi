@@ -326,7 +326,7 @@ export const t = {
     name:                    'Heiti',
     stage:                   'Staða',
     amount_isk:              'Upphæð án vsk',
-    promised_delivery_date:  'Áætluð afhending',
+    promised_delivery_date:  'Deadline',
     estimated_delivery_date: 'Áætluð móttaka',
     actual_close_date:       'Raunveruleg lokadagsetning',
     tracking_numbers:        'Tracking númer',
