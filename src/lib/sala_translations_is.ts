@@ -783,7 +783,7 @@ export const t = {
     taskUninvoiced:      'Reikningur ekki gefinn út',
     taskDefectPending:   'Galli án viðbragða',
     taskUnpaidOld:       'Greiðsla á gjalddaga',
-    taskDeliveryMismatch:'Áætluð móttaka eftir afhendingu',
+    taskDeliveryMismatch:'Áætluð móttaka eftir áætlaða afhendingu',
     showMore:            '{count} fleiri',
 
     pulseTitle:          'Síðustu 30 dagar',
