@@ -49,8 +49,8 @@ export function CompaniesTable() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [sortKey, setSortKey] = useState<SortKey>("totalInProgressIsk");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const navigate = useNavigate();
 
   // Track table position + column widths so the fixed totals bar can mirror them
