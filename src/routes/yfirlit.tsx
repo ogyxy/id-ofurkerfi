@@ -172,6 +172,20 @@ function YfirlitContent({
   const [viewedUserId, setViewedUserId] = useState<string>(currentUserId);
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [showAllTasks, setShowAllTasks] = useState(false);
+  const tasksSectionRef = useRef<HTMLElement | null>(null);
+
+  // Collapse expanded task list when clicking outside the section
+  useEffect(() => {
+    if (!showAllTasks) return;
+    const onDown = (e: MouseEvent) => {
+      const node = tasksSectionRef.current;
+      if (node && !node.contains(e.target as Node)) {
+        setShowAllTasks(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [showAllTasks]);
 
   const [pulse, setPulse] = useState<PulseStats>({ revenue: 0, count: 0, avgDeal: 0, marginPct: 0 });
   const [prevPulse, setPrevPulse] = useState<PulseStats>({ revenue: 0, count: 0, avgDeal: 0, marginPct: 0 });
