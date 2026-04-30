@@ -766,19 +766,24 @@ function StagePill({
   active,
   onClick,
   showClose = false,
+  variant = "main",
 }: {
   label: string;
   count: number;
   active: boolean;
   onClick: () => void;
   showClose?: boolean;
+  variant?: "main" | "sub";
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs transition",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border transition",
+        variant === "sub"
+          ? "border-dashed px-2.5 py-0.5 text-[11px]"
+          : "px-3 py-1 text-xs",
         active
           ? "border-ide-navy bg-ide-navy text-white"
           : "border-border bg-white text-muted-foreground hover:text-foreground",
