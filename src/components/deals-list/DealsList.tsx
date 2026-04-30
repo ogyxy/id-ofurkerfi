@@ -565,7 +565,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
           <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
             {t.deal.owner}
           </div>
-          <div className="flex flex-wrap items-center gap-2 overflow-x-auto">
+          <div className="flex flex-wrap items-center gap-2 py-1">
             {ownersWithDeals.map((p) => {
               const noneSelected = selectedOwners.size === 0;
               const active = selectedOwners.has(p.id);
