@@ -770,12 +770,6 @@ const TASK_META: Record<
     bg: "bg-red-100",
     fg: "text-red-600",
   },
-  uninvoiced: {
-    label: t.yfirlit.taskUninvoiced,
-    icon: ClipboardList,
-    bg: "bg-amber-100",
-    fg: "text-amber-700",
-  },
   defect_pending: {
     label: t.yfirlit.taskDefectPending,
     icon: AlertTriangle,
