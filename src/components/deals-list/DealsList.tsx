@@ -547,18 +547,24 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
         </div>
       )}
 
-      {/* Active stage indicator (from URL param) */}
-      {activeStage && (
-        <div className="mb-4">
-          <StagePill
-            label={t.dealStage[activeStage]}
-            count={visibleDeals.length}
-            active
-            onClick={() => setActiveStage(null)}
-            showClose
-          />
+      {/* Stage filter pills */}
+      <div className="mb-4">
+        <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+          {t.deal.stage}
         </div>
-      )}
+        <div className="flex flex-wrap items-center gap-2">
+          {STAGE_ORDER.map((s) => (
+            <StagePill
+              key={s}
+              label={t.dealStage[s]}
+              count={stageCounts[s]}
+              active={activeStage === s}
+              onClick={() => setActiveStage((prev) => (prev === s ? null : s))}
+              showClose={activeStage === s}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Flat virtualized list */}
       {loading ? (
