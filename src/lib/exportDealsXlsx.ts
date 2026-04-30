@@ -56,12 +56,16 @@ function contactName(c: ExportableDeal["contact"]): string {
   return [c.first_name, c.last_name].filter(Boolean).join(" ").trim();
 }
 
-export function exportDealsToXlsx(deals: ExportableDeal[]) {
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, "0");
-  const dd = String(today.getDate()).padStart(2, "0");
-  const dateStr = `${yyyy}-${mm}-${dd}`;
+export interface ExportFilenameParts {
+  stageLabel?: string | null;
+  year?: number | null;
+  ownerName?: string | null;
+}
+
+export function exportDealsToXlsx(
+  deals: ExportableDeal[],
+  filenameParts: ExportFilenameParts = {},
+) {
 
   const rows = deals.map((d) => {
     const price = d.amount_isk != null ? Number(d.amount_isk) : null;
@@ -153,6 +157,16 @@ export function exportDealsToXlsx(deals: ExportableDeal[]) {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Sölur");
 
-  const filename = `IDE_Sölur_${dateStr}.xlsx`;
+  const parts: string[] = [];
+  const stageYear = [
+    filenameParts.stageLabel?.trim() || null,
+    filenameParts.year != null ? String(filenameParts.year) : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  if (stageYear) parts.push(stageYear);
+  if (filenameParts.ownerName?.trim()) parts.push(filenameParts.ownerName.trim());
+  const suffix = parts.length ? ` - ${parts.join(" - ")}` : "";
+  const filename = `IDÉ Sölur${suffix}.xlsx`;
   XLSX.writeFile(wb, filename, { bookType: "xlsx", compression: true });
 }
