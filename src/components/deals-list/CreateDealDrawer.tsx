@@ -82,7 +82,7 @@ export function CreateDealDrawer({
   const [name, setName] = useState("");
   const [ownerId, setOwnerId] = useState(currentUserId);
   // Stage is hardcoded to quote_in_progress for new deals — no UI control.
-  const [markup, setMarkup] = useState("30");
+  // Default markup is hardcoded to 50% for new deals — no UI control.
   const [promisedDate, setPromisedDate] = useState("");
   const [firstNote, setFirstNote] = useState("");
   const [saving, setSaving] = useState(false);
@@ -149,8 +149,7 @@ export function CreateDealDrawer({
     setCompanyId("");
     setContactId("");
     setName("");
-    // stage is fixed at quote_in_progress; nothing to reset
-    setMarkup("30");
+    // stage is fixed at quote_in_progress; markup defaults to 50% — nothing to reset
     setPromisedDate("");
     setFirstNote("");
     setCompanySearch("");
@@ -265,7 +264,7 @@ export function CreateDealDrawer({
         owner_id: ownerId || null,
         name: name.trim(),
         stage: "quote_in_progress",
-        default_markup_pct: Number(markup) || 30,
+        default_markup_pct: 50,
         promised_delivery_date: promisedDate || null,
       })
       .select("id, company_id")
@@ -541,14 +540,7 @@ export function CreateDealDrawer({
 
           {/* Stage is hardcoded to "Tilboð í vinnslu" — not user-editable. */}
 
-          <div>
-            <Label>{t.deal.default_markup_pct}</Label>
-            <Input
-              type="number"
-              value={markup}
-              onChange={(e) => setMarkup(e.target.value)}
-            />
-          </div>
+          {/* Default markup removed — defaults to 50% in code. */}
 
           <div>
             <Label>{t.deal.promised_delivery_date}</Label>
