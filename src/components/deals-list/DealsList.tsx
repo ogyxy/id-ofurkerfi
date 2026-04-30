@@ -567,7 +567,9 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
           </div>
           <div className="flex flex-wrap items-center gap-2 overflow-x-auto">
             {ownersWithDeals.map((p) => {
+              const noneSelected = selectedOwners.size === 0;
               const active = selectedOwners.has(p.id);
+              const filled = noneSelected || active;
               return (
                 <button
                   key={p.id}
@@ -575,8 +577,10 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                   onClick={() => toggleOwner(p.id)}
                   title={p.name ?? p.email}
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-full bg-ide-navy text-xs font-medium text-white transition hover:scale-105",
-                    active && "ring-2 ring-ide-navy ring-offset-2",
+                    "flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition hover:scale-105",
+                    filled
+                      ? "bg-ide-navy text-white"
+                      : "bg-muted text-muted-foreground",
                   )}
                 >
                   {initials(p.name ?? p.email)}
