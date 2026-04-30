@@ -367,6 +367,19 @@ export function CreateDealDrawer({
     navigate({ to: "/deals/$id", params: { id: data.id } });
   };
 
+  // Wrapper that prompts when a newly-created customer has no contact (#6).
+  const handleSave = async () => {
+    if (
+      newCompanyNeedsContactConfirm &&
+      !contactId &&
+      contacts.length === 0
+    ) {
+      setConfirmNoContactOpen(true);
+      return;
+    }
+    await performSave();
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
