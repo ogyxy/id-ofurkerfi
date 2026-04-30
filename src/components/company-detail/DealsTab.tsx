@@ -220,14 +220,13 @@ export function DealsTab({
     return (
       <>
         <EmptyState label={t.nav.deals} onAdd={openCreate} />
-        <DealDrawer
+        <CreateCompanyDealDrawer
           open={drawerOpen}
           onOpenChange={setDrawerOpen}
-          form={form}
-          setForm={setForm}
-          contacts={contacts}
-          saving={saving}
-          onSave={handleSave}
+          companyId={companyId}
+          currentUserId={currentUserId}
+          profiles={profiles}
+          onSaved={onChanged}
         />
       </>
     );
@@ -394,127 +393,14 @@ export function DealsTab({
         </div>
       </div>
 
-      <DealDrawer
+      <CreateCompanyDealDrawer
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
-        form={form}
-        setForm={setForm}
-        contacts={contacts}
-        saving={saving}
-        onSave={handleSave}
+        companyId={companyId}
+        currentUserId={currentUserId}
+        profiles={profiles}
+        onSaved={onChanged}
       />
     </div>
-  );
-}
-
-interface DrawerProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  form: FormState;
-  setForm: (form: FormState) => void;
-  contacts: Contact[];
-  saving: boolean;
-  onSave: () => void;
-}
-
-function DealDrawer({ open, onOpenChange, form, setForm, contacts, saving, onSave }: DrawerProps) {
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>
-            {t.actions.create} {t.nav.dealSingle.toLowerCase()}
-          </SheetTitle>
-        </SheetHeader>
-        <div className="space-y-3 py-4">
-          <div>
-            <Label>
-              {t.deal.name} <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          </div>
-          <div>
-            <Label>{t.deal.stage}</Label>
-            <Select
-              value={form.stage}
-              onValueChange={(v) => setForm({ ...form, stage: v as DealStage })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {dealStageOptions.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {t.dealStage[s]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>{t.deal.amount_isk}</Label>
-            <Input
-              type="number"
-              value={form.amount_isk}
-              onChange={(e) => setForm({ ...form, amount_isk: e.target.value })}
-            />
-          </div>
-          <div>
-            <Label>{t.deal.promised_delivery_date}</Label>
-            <Input
-              type="date"
-              value={form.promised_delivery_date}
-              onChange={(e) =>
-                setForm({ ...form, promised_delivery_date: e.target.value })
-              }
-            />
-          </div>
-          <div>
-            <Label>{t.nav.contacts}</Label>
-            <Select
-              value={form.contact_id || "__none"}
-              onValueChange={(v) =>
-                setForm({ ...form, contact_id: v === "__none" ? "" : v })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="—" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none">—</SelectItem>
-                {contacts.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {[c.first_name, c.last_name].filter(Boolean).join(" ") || c.email || c.id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>{t.deal.notes}</Label>
-            <Textarea
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              rows={4}
-            />
-          </div>
-        </div>
-        <SheetFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>
-            {t.actions.cancel}
-          </Button>
-          <Button
-            onClick={onSave}
-            disabled={saving}
-            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-          >
-            {saving ? t.status.saving : t.actions.save}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
   );
 }
