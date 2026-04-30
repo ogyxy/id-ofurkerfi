@@ -810,6 +810,12 @@ const TASK_META: Record<
     bg: "bg-red-100",
     fg: "text-red-600",
   },
+  delivery_mismatch: {
+    label: t.yfirlit.taskDeliveryMismatch,
+    icon: AlertTriangle,
+    bg: "bg-red-100",
+    fg: "text-red-600",
+  },
 };
 
 function PulseTile({
