@@ -17,6 +17,8 @@ export interface ExportableDeal {
   name: string;
   stage: DealStage;
   amount_isk: number | null;
+  total_cost_isk?: number | null;
+  shipping_cost_isk?: number | null;
   margin_isk?: number | null;
   total_margin_isk?: number | null;
   promised_delivery_date: string | null;
@@ -37,8 +39,10 @@ const HEADERS = [
   "Viðskiptavinur",
   "Tengiliður",
   "Staða",
-  "Upphæð án vsk",
+  "Söluverð",
+  "Kostnaðarverð",
   "Framlegð",
+  "Framlegð %",
   "Deadline",
   "Afhent",
   "Reikningsstaða",
@@ -59,37 +63,48 @@ export function exportDealsToXlsx(deals: ExportableDeal[]) {
   const dd = String(today.getDate()).padStart(2, "0");
   const dateStr = `${yyyy}-${mm}-${dd}`;
 
-  const rows = deals.map((d) => [
-    d.so_number,
-    toDate(d.created_at),
-    d.name,
-    d.company?.name ?? "",
-    contactName(d.contact),
-    t.dealStage[d.stage] ?? d.stage,
-    d.amount_isk != null ? Number(d.amount_isk) : null,
-    d.total_margin_isk != null
-      ? Number(d.total_margin_isk)
-      : d.margin_isk != null
-        ? Number(d.margin_isk)
-        : null,
-    toDate(d.promised_delivery_date),
-    toDate(d.delivered_at),
-    t.invoiceStatus[d.invoice_status] ?? d.invoice_status,
-    t.paymentStatus[d.payment_status] ?? d.payment_status,
-    d.owner?.name ?? "",
-    (d.tracking_numbers ?? []).join(", "),
-  ]);
+  const rows = deals.map((d) => {
+    const price = d.amount_isk != null ? Number(d.amount_isk) : null;
+    const cost =
+      d.total_cost_isk != null
+        ? Number(d.total_cost_isk) + Number(d.shipping_cost_isk ?? 0)
+        : null;
+    const margin =
+      price != null && cost != null ? price - cost : null;
+    const marginPct =
+      margin != null && price != null && price !== 0 ? margin / price : null;
+
+    return [
+      d.so_number,
+      toDate(d.created_at),
+      d.name,
+      d.company?.name ?? "",
+      contactName(d.contact),
+      t.dealStage[d.stage] ?? d.stage,
+      price,
+      cost,
+      margin,
+      marginPct,
+      toDate(d.promised_delivery_date),
+      toDate(d.delivered_at),
+      t.invoiceStatus[d.invoice_status] ?? d.invoice_status,
+      t.paymentStatus[d.payment_status] ?? d.payment_status,
+      d.owner?.name ?? "",
+      (d.tracking_numbers ?? []).join(", "),
+    ];
+  });
 
   const aoa: (string | number | Date | null)[][] = [HEADERS as unknown as string[], ...rows];
   const ws = XLSX.utils.aoa_to_sheet(aoa, { cellDates: true });
 
   // ISK number format: 123.456 kr.   (dot as thousands separator)
-  // Excel format string with locale-style "kr." suffix
   const iskFmt = '#,##0" kr."';
+  const pctFmt = "0.0%";
   const dateFmt = "dd.mm.yyyy";
   const range = XLSX.utils.decode_range(ws["!ref"]!);
   for (let r = 1; r <= range.e.r; r++) {
-    for (const col of [6, 7]) {
+    // ISK columns: Söluverð (6), Kostnaðarverð (7), Framlegð (8)
+    for (const col of [6, 7, 8]) {
       const addr = XLSX.utils.encode_cell({ r, c: col });
       const cell = ws[addr];
       if (cell && typeof cell.v === "number") {
@@ -97,7 +112,17 @@ export function exportDealsToXlsx(deals: ExportableDeal[]) {
         cell.z = iskFmt;
       }
     }
-    for (const col of [1, 8, 9]) {
+    // Percentage column: Framlegð % (9)
+    {
+      const addr = XLSX.utils.encode_cell({ r, c: 9 });
+      const cell = ws[addr];
+      if (cell && typeof cell.v === "number") {
+        cell.t = "n";
+        cell.z = pctFmt;
+      }
+    }
+    // Date columns: Stofnað (1), Deadline (10), Afhent (11)
+    for (const col of [1, 10, 11]) {
       const addr = XLSX.utils.encode_cell({ r, c: col });
       const cell = ws[addr];
       if (cell && cell.v instanceof Date) {
@@ -107,12 +132,9 @@ export function exportDealsToXlsx(deals: ExportableDeal[]) {
     }
   }
 
-  // Header styling (note: SheetJS community build limited styling support;
-  // fall back gracefully — bold/colors require pro build, but column widths
-  // and number formats are honored.)
   const headerStyle = {
     font: { bold: true, color: { rgb: "FFFFFF" } },
-    fill: { fgColor: { rgb: "1A2540" } }, // ide-navy
+    fill: { fgColor: { rgb: "1A2540" } },
     alignment: { vertical: "center", horizontal: "left" },
   };
   for (let c = 0; c <= range.e.c; c++) {
@@ -123,10 +145,9 @@ export function exportDealsToXlsx(deals: ExportableDeal[]) {
   }
 
   // Column widths
-  const widths = [12, 12, 32, 28, 22, 18, 16, 14, 12, 12, 18, 16, 18, 24];
+  const widths = [12, 12, 32, 28, 22, 18, 16, 16, 14, 12, 12, 12, 18, 16, 18, 24];
   ws["!cols"] = widths.map((w) => ({ wch: w }));
 
-  // Convert range to an Excel Table for filtering/sorting
   ws["!autofilter"] = { ref: ws["!ref"]! };
 
   const wb = XLSX.utils.book_new();

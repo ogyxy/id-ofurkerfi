@@ -25,6 +25,9 @@ type DealRow = {
   name: string;
   stage: DealStage;
   amount_isk: number | null;
+  total_cost_isk: number | null;
+  shipping_cost_isk: number | null;
+  total_margin_isk: number | null;
   refund_amount_isk: number | null;
   promised_delivery_date: string | null;
   estimated_delivery_date: string | null;
@@ -112,6 +115,9 @@ const SELECT = `
   name,
   stage,
   amount_isk,
+  total_cost_isk,
+  shipping_cost_isk,
+  total_margin_isk,
   refund_amount_isk,
   promised_delivery_date,
   estimated_delivery_date,
