@@ -396,7 +396,6 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
               )}
             </div>
             <div className="pt-2">
-              <div className="mb-1 text-xs text-muted-foreground">{t.deal.tracking_numbers}</div>
               <PoTrackingNumbersInline
                 poId={po.id}
                 dealId={po.deal_id}
