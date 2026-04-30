@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
-import { consumeDealReturnPath } from "@/lib/dealReturn";
+import { goBack } from "@/lib/dealReturn";
 import { StageStepper } from "@/components/deal-detail/StageStepper";
 import { DeliveredBar } from "@/components/deal-detail/DeliveredBar";
 import { DefectBar } from "@/components/deal-detail/DefectBar";
@@ -344,10 +344,7 @@ function DealDetailContent() {
     <div className="space-y-6">
       <button
         type="button"
-        onClick={() => {
-          const returnPath = consumeDealReturnPath();
-          navigate({ to: returnPath });
-        }}
+        onClick={() => goBack("/deals")}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />

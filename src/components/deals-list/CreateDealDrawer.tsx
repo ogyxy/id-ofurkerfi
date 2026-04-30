@@ -27,6 +27,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
 type Company = { id: string; name: string; billing_company_id: string | null };
@@ -78,14 +88,32 @@ export function CreateDealDrawer({
   const [newContactPhoneCountry, setNewContactPhoneCountry] = useState("+354");
   const [newContactPhoneLocal, setNewContactPhoneLocal] = useState("");
 
+  // Inline new-contact form for an existing customer
+  const [inlineContactOpen, setInlineContactOpen] = useState(false);
+  const [inlineContactFirst, setInlineContactFirst] = useState("");
+  const [inlineContactLast, setInlineContactLast] = useState("");
+  const [inlineContactTitle, setInlineContactTitle] = useState("");
+  const [inlineContactEmail, setInlineContactEmail] = useState("");
+  const [inlineContactPhoneCountry, setInlineContactPhoneCountry] = useState("+354");
+  const [inlineContactPhoneLocal, setInlineContactPhoneLocal] = useState("");
+  const [creatingContact, setCreatingContact] = useState(false);
+
+  // Confirm dialog when saving deal for a new customer with no contact
+  const [confirmNoContactOpen, setConfirmNoContactOpen] = useState(false);
+
   const [contactId, setContactId] = useState("");
   const [name, setName] = useState("");
   const [ownerId, setOwnerId] = useState(currentUserId);
   // Stage is hardcoded to quote_in_progress for new deals — no UI control.
-  const [markup, setMarkup] = useState("30");
+  // Default markup is hardcoded to 50% for new deals — no UI control.
   const [promisedDate, setPromisedDate] = useState("");
   const [firstNote, setFirstNote] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Track whether the currently-selected company was just created in this
+  // session AND no contact was added during creation. Used to gate the
+  // confirm-no-contact dialog (#6).
+  const [newCompanyNeedsContactConfirm, setNewCompanyNeedsContactConfirm] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -149,8 +177,7 @@ export function CreateDealDrawer({
     setCompanyId("");
     setContactId("");
     setName("");
-    // stage is fixed at quote_in_progress; nothing to reset
-    setMarkup("30");
+    // stage is fixed at quote_in_progress; markup defaults to 50% — nothing to reset
     setPromisedDate("");
     setFirstNote("");
     setCompanySearch("");
@@ -167,6 +194,14 @@ export function CreateDealDrawer({
     setNewContactPhoneCountry("+354");
     setNewContactPhoneLocal("");
     setNewBillingCompanyId(null);
+    setInlineContactOpen(false);
+    setInlineContactFirst("");
+    setInlineContactLast("");
+    setInlineContactTitle("");
+    setInlineContactEmail("");
+    setInlineContactPhoneCountry("+354");
+    setInlineContactPhoneLocal("");
+    setNewCompanyNeedsContactConfirm(false);
   };
 
   const selectCompany = (c: Company) => {
@@ -215,6 +250,7 @@ export function CreateDealDrawer({
     );
 
     // Optional contact creation
+    let createdContact = false;
     if (addContact && newContactFirst.trim()) {
       const { data: newContact } = await supabase
         .from("contacts")
@@ -232,8 +268,12 @@ export function CreateDealDrawer({
       if (newContact) {
         setContacts([newContact as Contact]);
         setContactId(newContact.id);
+        createdContact = true;
       }
     }
+    // Track that this newly-created customer has no contact yet, so we can
+    // prompt the user when they try to save the deal (#6).
+    setNewCompanyNeedsContactConfirm(!createdContact);
 
     selectCompany(newCompany);
     setCreatingCompany(false);
@@ -251,7 +291,40 @@ export function CreateDealDrawer({
     setNewBillingCompanyId(null);
   };
 
-  const handleSave = async () => {
+  const createInlineContact = async () => {
+    if (!companyId || !inlineContactFirst.trim()) return;
+    setCreatingContact(true);
+    const { data, error } = await supabase
+      .from("contacts")
+      .insert({
+        company_id: companyId,
+        first_name: inlineContactFirst.trim(),
+        last_name: inlineContactLast.trim() || null,
+        title: inlineContactTitle.trim() || null,
+        email: inlineContactEmail.trim() || null,
+        phone: stripPhone(inlineContactPhoneCountry, inlineContactPhoneLocal) || null,
+        is_primary: contacts.length === 0,
+      })
+      .select("id, first_name, last_name, company_id")
+      .single();
+    setCreatingContact(false);
+    if (error || !data) {
+      toast.error(t.status.somethingWentWrong);
+      return;
+    }
+    const c = data as Contact;
+    setContacts((prev) => [...prev, c]);
+    setContactId(c.id);
+    setInlineContactOpen(false);
+    setInlineContactFirst("");
+    setInlineContactLast("");
+    setInlineContactTitle("");
+    setInlineContactEmail("");
+    setInlineContactPhoneCountry("+354");
+    setInlineContactPhoneLocal("");
+  };
+
+  const performSave = async () => {
     if (!companyId || !name.trim()) {
       toast.error(t.status.somethingWentWrong);
       return;
@@ -265,7 +338,7 @@ export function CreateDealDrawer({
         owner_id: ownerId || null,
         name: name.trim(),
         stage: "quote_in_progress",
-        default_markup_pct: Number(markup) || 30,
+        default_markup_pct: 50,
         promised_delivery_date: promisedDate || null,
       })
       .select("id, company_id")
@@ -292,6 +365,19 @@ export function CreateDealDrawer({
     onOpenChange(false);
     rememberDealReturnPath("/deals");
     navigate({ to: "/deals/$id", params: { id: data.id } });
+  };
+
+  // Wrapper that prompts when a newly-created customer has no contact (#6).
+  const handleSave = async () => {
+    if (
+      newCompanyNeedsContactConfirm &&
+      !contactId &&
+      contacts.length === 0
+    ) {
+      setConfirmNoContactOpen(true);
+      return;
+    }
+    await performSave();
   };
 
   return (
@@ -503,7 +589,18 @@ export function CreateDealDrawer({
           </div>
 
           <div>
-            <Label>{t.nav.contactSingle}</Label>
+            <div className="mb-1 flex items-center justify-between">
+              <Label>{t.nav.contactSingle}</Label>
+              {companyId && (
+                <button
+                  type="button"
+                  onClick={() => setInlineContactOpen((v) => !v)}
+                  className="text-xs font-medium text-ide-navy hover:underline"
+                >
+                  {t.deal.addNewContact}
+                </button>
+              )}
+            </div>
             <Select
               value={contactId}
               onValueChange={setContactId}
@@ -521,6 +618,78 @@ export function CreateDealDrawer({
                 ))}
               </SelectContent>
             </Select>
+
+            {inlineContactOpen && companyId && (
+              <div className="mt-2 space-y-2 rounded-md border border-dashed border-border bg-muted/20 p-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">{t.contact.first_name}</Label>
+                    <Input
+                      value={inlineContactFirst}
+                      onChange={(e) => setInlineContactFirst(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{t.contact.last_name}</Label>
+                    <Input
+                      value={inlineContactLast}
+                      onChange={(e) => setInlineContactLast(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">{t.contact.title}</Label>
+                  <Input
+                    value={inlineContactTitle}
+                    onChange={(e) => setInlineContactTitle(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{t.contact.email}</Label>
+                  <Input
+                    type="email"
+                    value={inlineContactEmail}
+                    onChange={(e) => setInlineContactEmail(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{t.contact.phone}</Label>
+                  <PhoneInput
+                    countryCode={inlineContactPhoneCountry}
+                    localNumber={inlineContactPhoneLocal}
+                    onCountryCodeChange={setInlineContactPhoneCountry}
+                    onLocalNumberChange={setInlineContactPhoneLocal}
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setInlineContactOpen(false);
+                      setInlineContactFirst("");
+                      setInlineContactLast("");
+                      setInlineContactTitle("");
+                      setInlineContactEmail("");
+                      setInlineContactPhoneCountry("+354");
+                      setInlineContactPhoneLocal("");
+                    }}
+                  >
+                    {t.actions.cancel}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={createInlineContact}
+                    disabled={creatingContact || !inlineContactFirst.trim()}
+                    className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    {creatingContact ? t.status.saving : t.actions.create}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
@@ -541,14 +710,7 @@ export function CreateDealDrawer({
 
           {/* Stage is hardcoded to "Tilboð í vinnslu" — not user-editable. */}
 
-          <div>
-            <Label>{t.deal.default_markup_pct}</Label>
-            <Input
-              type="number"
-              value={markup}
-              onChange={(e) => setMarkup(e.target.value)}
-            />
-          </div>
+          {/* Default markup removed — defaults to 50% in code. */}
 
           <div>
             <Label>{t.deal.promised_delivery_date}</Label>
@@ -583,6 +745,37 @@ export function CreateDealDrawer({
           </Button>
         </SheetFooter>
       </SheetContent>
+
+      <AlertDialog open={confirmNoContactOpen} onOpenChange={setConfirmNoContactOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.deal.confirmNoContactTitle}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.deal.confirmNoContactBody}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setConfirmNoContactOpen(false);
+                setInlineContactOpen(true);
+              }}
+            >
+              {t.deal.confirmNoContactNo}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setConfirmNoContactOpen(false);
+                setNewCompanyNeedsContactConfirm(false);
+                await performSave();
+              }}
+              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+            >
+              {t.deal.confirmNoContactYes}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }

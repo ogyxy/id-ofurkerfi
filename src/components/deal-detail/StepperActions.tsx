@@ -49,7 +49,7 @@ export function StepperActions({ stage, onChange, onOpenQuoteBuilder }: Props) {
             <Check className="h-3.5 w-3.5" />
             {t.deal.quoteSent}
           </span>
-          <Button variant="outline" onClick={() => onOpenQuoteBuilder?.()}>
+          <Button variant="outline" onClick={() => onChange("quote_in_progress")}>
             <FileText className="mr-1.5 h-4 w-4" />
             {t.deal.quoteRefine}
           </Button>

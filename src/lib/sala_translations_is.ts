@@ -207,6 +207,7 @@ export const t = {
     duplicate: 'Afrita',
     archive:   'Geyma',
     restore:   'Endurheimta',
+    showLess:  'Sýna minna',
   },
 
   // ---------------------------------------------------------------------------
@@ -427,6 +428,14 @@ export const t = {
     quoteLineCount:         'Fjöldi vörulína',
     quoteTotalExVat:        'Samtals án VSK',
     quoteCancel:            'Hætta við',
+    quoteRefineRevert:      'Lagfæra tilboð',
+    soCopiedToast:          'Sölunúmer afritað',
+    confirmNoContactTitle:  'Engin tengiliður skráður',
+    confirmNoContactBody:   'Ertu viss um að þú viljir ekki stofna nýjan tengilið?',
+    confirmNoContactYes:    'Já, halda áfram',
+    confirmNoContactNo:     'Bæta við tengilið',
+    addNewContact:          '+ Nýr tengiliður',
+    supplierRefAdd:         '+ Bæta við tilvísun birgis',
   },
 
   // ---------------------------------------------------------------------------

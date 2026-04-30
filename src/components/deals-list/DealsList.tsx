@@ -797,30 +797,33 @@ function StagePill({
   );
 }
 
-function CopySoButton({ soNumber }: { soNumber: string }) {
+function CopySoButton({ soNumber, companyName }: { soNumber: string; companyName?: string | null }) {
   const [copied, setCopied] = useState(false);
+  const text = companyName ? `${soNumber} ${companyName}` : soNumber;
   return (
     <button
       type="button"
       onClick={async (e) => {
         e.stopPropagation();
         try {
-          await navigator.clipboard.writeText(soNumber);
+          await navigator.clipboard.writeText(text);
           setCopied(true);
-          toast.success(`${soNumber} afritað`);
+          toast.success(`${text} ${t.deal.soCopiedToast}`);
           setTimeout(() => setCopied(false), 1500);
         } catch {
           toast.error(t.status.somethingWentWrong);
         }
       }}
       className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      aria-label={`Afrita ${soNumber}`}
+      aria-label={`Afrita ${text}`}
       title="Afrita sölunúmer"
     >
       {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
     </button>
   );
 }
+
+export { CopySoButton };
 
 // Stages selectable from the deal-card popover, grouped under their step.
 const POPOVER_GROUPS: Array<{ step: StepKey; stages: DealStage[] }> = [
@@ -1003,7 +1006,7 @@ function DealCard({
       <div className="min-w-0 space-y-1">
         <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
           <span>{deal.so_number}</span>
-          <CopySoButton soNumber={deal.so_number} />
+          <CopySoButton soNumber={deal.so_number} companyName={deal.company?.name} />
         </div>
         <div onClick={(e) => e.stopPropagation()}>
           <StagePopover current={deal.stage} onChange={onStageChange} />

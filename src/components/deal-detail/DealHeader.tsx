@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatPhone } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { TrackingNumbersInline } from "./TrackingNumbersInline";
+import { CopySoButton } from "@/components/deals-list/DealsList";
 
 type Deal = Database["public"]["Tables"]["deals"]["Row"];
 type Company = Pick<
@@ -70,8 +71,9 @@ export function DealHeader({
     <div className="rounded-md border border-border bg-card p-6 shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-2 min-w-0">
-          <div className="font-mono text-xs text-muted-foreground">
-            {deal.so_number}
+          <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
+            <span>{deal.so_number}</span>
+            <CopySoButton soNumber={deal.so_number} companyName={company.name} />
           </div>
           <h1 className="text-2xl font-semibold text-foreground md:text-3xl">
             {deal.name}

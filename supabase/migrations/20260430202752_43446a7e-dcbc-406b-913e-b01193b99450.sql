@@ -1,0 +1,1 @@
+ALTER TABLE public.purchase_orders ADD COLUMN IF NOT EXISTS tracking_numbers text[] NOT NULL DEFAULT '{}';

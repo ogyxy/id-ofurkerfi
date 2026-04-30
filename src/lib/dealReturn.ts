@@ -1,66 +1,40 @@
-// Persist where the user came from before opening a detail screen,
-// so the "Til baka" button can return to that exact screen.
+// Back-navigation helpers.
+//
+// Original design used sessionStorage to remember an explicit return path.
+// New behavior: just use the browser's history (history.back()) so "Til baka"
+// always returns to the exact previous screen the user was on.
+//
+// We keep the remember*/consume* exports so existing callsites continue to
+// compile — they're now no-ops with safe fallback values.
 
-const DEAL_KEY = "dealReturnPath";
-const COMPANY_KEY = "companyReturnPath";
-
-function readPath(path?: string): string {
-  return (
-    path ??
-    (typeof window !== "undefined" && typeof window.location !== "undefined"
-      ? window.location.pathname
-      : "")
-  );
+export function goBack(fallback: string = "/") {
+  if (typeof window === "undefined") return;
+  // history.length > 1 means we have somewhere to go back to within this tab.
+  if (window.history.length > 1) {
+    window.history.back();
+    return;
+  }
+  // No history available (e.g. opened in a new tab) — fall back to a sane default.
+  window.location.assign(fallback);
 }
 
-export function rememberDealReturnPath(path?: string) {
-  if (typeof window === "undefined") return;
-  const p = readPath(path);
-  if (!p) return;
-  try {
-    window.sessionStorage.setItem(DEAL_KEY, p);
-  } catch {
-    // ignore
-  }
+// ---------------------------------------------------------------------------
+// Legacy no-op helpers — kept so existing imports don't break.
+// ---------------------------------------------------------------------------
+export function rememberDealReturnPath(_path?: string) {
+  // no-op
+  void _path;
 }
 
 export function consumeDealReturnPath(): string {
-  if (typeof window === "undefined") return "/deals";
-  try {
-    const v = window.sessionStorage.getItem(DEAL_KEY);
-    if (v) {
-      window.sessionStorage.removeItem(DEAL_KEY);
-      return v;
-    }
-  } catch {
-    // ignore
-  }
   return "/deals";
 }
 
-export function rememberCompanyReturnPath(path?: string) {
-  if (typeof window === "undefined") return;
-  const p = readPath(path);
-  if (!p) return;
-  // Don't store the company detail page itself as a return path.
-  if (p.startsWith("/companies/")) return;
-  try {
-    window.sessionStorage.setItem(COMPANY_KEY, p);
-  } catch {
-    // ignore
-  }
+export function rememberCompanyReturnPath(_path?: string) {
+  // no-op
+  void _path;
 }
 
 export function consumeCompanyReturnPath(): string {
-  if (typeof window === "undefined") return "/companies";
-  try {
-    const v = window.sessionStorage.getItem(COMPANY_KEY);
-    if (v) {
-      window.sessionStorage.removeItem(COMPANY_KEY);
-      return v;
-    }
-  } catch {
-    // ignore
-  }
   return "/companies";
 }

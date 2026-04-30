@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -50,7 +50,7 @@ interface Profile {
 }
 
 interface TaskItem {
-  type: "overdue" | "uninvoiced" | "defect_pending" | "unpaid_old";
+  type: "overdue" | "defect_pending" | "unpaid_old";
   deal: {
     id: string;
     so_number: string;
@@ -172,6 +172,20 @@ function YfirlitContent({
   const [viewedUserId, setViewedUserId] = useState<string>(currentUserId);
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [showAllTasks, setShowAllTasks] = useState(false);
+  const tasksSectionRef = useRef<HTMLElement | null>(null);
+
+  // Collapse expanded task list when clicking outside the section
+  useEffect(() => {
+    if (!showAllTasks) return;
+    const onDown = (e: MouseEvent) => {
+      const node = tasksSectionRef.current;
+      if (node && !node.contains(e.target as Node)) {
+        setShowAllTasks(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [showAllTasks]);
 
   const [pulse, setPulse] = useState<PulseStats>({ revenue: 0, count: 0, avgDeal: 0, marginPct: 0 });
   const [prevPulse, setPrevPulse] = useState<PulseStats>({ revenue: 0, count: 0, avgDeal: 0, marginPct: 0 });
@@ -233,9 +247,8 @@ function YfirlitContent({
         ) {
           out.push({ type: "overdue", deal: dealRef });
         }
-        if (d.stage === "delivered" && d.invoice_status === "not_invoiced") {
-          out.push({ type: "uninvoiced", deal: dealRef });
-        }
+        // Note: deals delivered but not yet invoiced are intentionally
+        // excluded from this review section.
         if (d.stage === "defect_reorder" && d.defect_resolution === "pending") {
           out.push({ type: "defect_pending", deal: dealRef });
         }
@@ -449,6 +462,7 @@ function YfirlitContent({
 
       {/* My tasks */}
       <section
+        ref={tasksSectionRef}
         className={`rounded-lg border bg-card p-5 shadow-sm ${
           isViewingOther ? "border-ide-navy/40" : "border-border"
         }`}
@@ -470,13 +484,15 @@ function YfirlitContent({
                 <TaskRow key={`${task.deal.id}-${task.type}-${i}`} task={task} />
               ))}
             </ul>
-            {tasks.length > 5 && !showAllTasks && (
+            {tasks.length > 5 && (
               <button
                 type="button"
-                onClick={() => setShowAllTasks(true)}
+                onClick={() => setShowAllTasks((v) => !v)}
                 className="mt-3 text-sm text-ide-navy hover:underline"
               >
-                + {t.yfirlit.showMore.replace("{count}", String(tasks.length - 5))}
+                {showAllTasks
+                  ? t.actions.showLess
+                  : `+ ${t.yfirlit.showMore.replace("{count}", String(tasks.length - 5))}`}
               </button>
             )}
           </>
@@ -770,12 +786,6 @@ const TASK_META: Record<
     icon: AlertTriangle,
     bg: "bg-red-100",
     fg: "text-red-600",
-  },
-  uninvoiced: {
-    label: t.yfirlit.taskUninvoiced,
-    icon: ClipboardList,
-    bg: "bg-amber-100",
-    fg: "text-amber-700",
   },
   defect_pending: {
     label: t.yfirlit.taskDefectPending,
