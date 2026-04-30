@@ -319,6 +319,28 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     return list;
   }, [deals, activeStage, selectedOwners]);
 
+  const stageCounts = useMemo(() => {
+    const counts: Record<DealStage, number> = {
+      inquiry: 0,
+      quote_in_progress: 0,
+      quote_sent: 0,
+      order_confirmed: 0,
+      ready_for_pickup: 0,
+      delivered: 0,
+      defect_reorder: 0,
+      cancelled: 0,
+    };
+    deals.forEach((d) => {
+      if (d.stage === "defect_reorder") {
+        if (isDefectResolved(d)) counts.delivered++;
+        else counts.defect_reorder++;
+      } else {
+        counts[d.stage]++;
+      }
+    });
+    return counts;
+  }, [deals]);
+
   const ownersWithDeals = useMemo(() => {
     const ids = new Set<string>();
     deals.forEach((d) => {
@@ -525,18 +547,24 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
         </div>
       )}
 
-      {/* Active stage indicator (from URL param) */}
-      {activeStage && (
-        <div className="mb-4">
-          <StagePill
-            label={t.dealStage[activeStage]}
-            count={visibleDeals.length}
-            active
-            onClick={() => setActiveStage(null)}
-            showClose
-          />
+      {/* Stage filter pills */}
+      <div className="mb-4">
+        <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+          {t.deal.stage}
         </div>
-      )}
+        <div className="flex flex-wrap items-center gap-2">
+          {STAGE_ORDER.map((s) => (
+            <StagePill
+              key={s}
+              label={t.dealStage[s]}
+              count={stageCounts[s]}
+              active={activeStage === s}
+              onClick={() => setActiveStage((prev) => (prev === s ? null : s))}
+              showClose={activeStage === s}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Flat virtualized list */}
       {loading ? (
