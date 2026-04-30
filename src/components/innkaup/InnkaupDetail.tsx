@@ -80,6 +80,7 @@ import {
   logPoReceived,
   logPoStatusChanged,
 } from "@/lib/poActivityLog";
+import { PoTrackingNumbersInline } from "./PoTrackingNumbersInline";
 
 type PO = Database["public"]["Tables"]["purchase_orders"]["Row"];
 type Supplier = Database["public"]["Tables"]["suppliers"]["Row"];
@@ -204,6 +205,17 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
       toast.error(t.status.somethingWentWrong);
       return;
     }
+    // Sync expected_delivery_date → linked deal estimated_delivery_date
+    if (
+      "expected_delivery_date" in patch &&
+      po.deal_id &&
+      patch.expected_delivery_date !== undefined
+    ) {
+      await supabase
+        .from("deals")
+        .update({ estimated_delivery_date: patch.expected_delivery_date ?? null })
+        .eq("id", po.deal_id);
+    }
     await load();
   };
 
@@ -219,6 +231,24 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
       return null;
     }
   };
+
+  // Auto-fetch exchange rate when missing
+  useEffect(() => {
+    if (!po) return;
+    if (po.currency === "ISK") return;
+    if (po.exchange_rate) return;
+    void (async () => {
+      const rate = await fetchExchangeRate(po.currency);
+      if (rate) {
+        await supabase
+          .from("purchase_orders")
+          .update({ exchange_rate: rate })
+          .eq("id", po.id);
+        await load();
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [po?.id, po?.currency, po?.exchange_rate]);
 
   const handleStatusChange = async (next: POStatus) => {
     if (!po) return;
@@ -340,11 +370,14 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
           <div className="space-y-1 min-w-0">
             <div className="font-mono text-xs text-muted-foreground">{po.po_number}</div>
             <h1 className="text-2xl font-semibold md:text-3xl">{supplierName}</h1>
-            {po.supplier_reference && (
-              <div className="text-sm text-muted-foreground">
-                {t.purchaseOrder.supplier_reference}: {po.supplier_reference}
-              </div>
-            )}
+            <div className="text-sm text-muted-foreground">
+              <span>{t.purchaseOrder.supplier_reference}: </span>
+              <InlineText
+                value={po.supplier_reference}
+                placeholder="—"
+                onSave={(v) => void updatePo({ supplier_reference: v })}
+              />
+            </div>
             <div className="pt-1">
               <span className="text-xs text-muted-foreground">{t.purchaseOrder.linked_deal}: </span>
               {linkedDeal ? (
@@ -361,6 +394,14 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
               ) : (
                 <span className="text-sm text-muted-foreground">—</span>
               )}
+            </div>
+            <div className="pt-2">
+              <div className="mb-1 text-xs text-muted-foreground">{t.deal.tracking_numbers}</div>
+              <PoTrackingNumbersInline
+                poId={po.id}
+                dealId={po.deal_id}
+                initial={(po.tracking_numbers ?? []) as string[]}
+              />
             </div>
           </div>
 
@@ -679,6 +720,58 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         }}
       />
     </div>
+  );
+}
+
+function InlineText({
+  value,
+  placeholder,
+  onSave,
+}: {
+  value: string | null;
+  placeholder?: string;
+  onSave: (v: string | null) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? "");
+  useEffect(() => setDraft(value ?? ""), [value]);
+
+  if (editing) {
+    return (
+      <span className="inline-flex items-center gap-1">
+        <Input
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              onSave(draft.trim() || null);
+              setEditing(false);
+            } else if (e.key === "Escape") {
+              setDraft(value ?? "");
+              setEditing(false);
+            }
+          }}
+          onBlur={() => {
+            onSave(draft.trim() || null);
+            setEditing(false);
+          }}
+          className="h-7 w-48 px-2 py-0 text-sm"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      className="inline-flex items-center gap-1 rounded px-1 text-sm text-foreground hover:bg-muted"
+    >
+      {value || <span className="text-muted-foreground">{placeholder ?? "—"}</span>}
+      <Pencil className="h-3 w-3 text-muted-foreground" />
+    </button>
   );
 }
 
