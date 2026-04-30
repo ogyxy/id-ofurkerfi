@@ -451,6 +451,33 @@ function DealDetailContent() {
         onConfirm={confirmDefectTransition}
         busy={defectBusy}
       />
+
+      <QuoteBuilderModal
+        open={quoteBuilderOpen}
+        onOpenChange={setQuoteBuilderOpen}
+        deal={{
+          id: deal.id,
+          so_number: deal.so_number,
+          name: deal.name,
+          stage: deal.stage,
+          total_price_isk: Number(deal.total_price_isk),
+        }}
+        company={{
+          id: company.id,
+          name: company.name,
+          kennitala: company.kennitala,
+          address_line_1: company.address_line_1,
+          address_line_2: company.address_line_2,
+          postcode: company.postcode,
+          city: company.city,
+        }}
+        contact={contact ? { first_name: contact.first_name, last_name: contact.last_name } : null}
+        currentProfile={currentProfile}
+        currentUserEmail={currentUserEmail}
+        onGenerated={() => {
+          void load();
+        }}
+      />
     </div>
   );
 }
