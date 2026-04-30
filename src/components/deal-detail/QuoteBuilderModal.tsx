@@ -291,8 +291,7 @@ export function QuoteBuilderModal({
       }
 
       // 6. Trigger browser download
-      const blob = new Blob([bytes], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
+      const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
