@@ -582,11 +582,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
           </button>
         </div>
       ) : (
-        <div
-          ref={scrollRef}
-          className="relative overflow-auto"
-          style={{ height: "calc(100vh - 320px)" }}
-        >
+        <div ref={listRef} className="relative">
           <div
             style={{
               height: `${rowVirtualizer.getTotalSize()}px`,
@@ -606,8 +602,8 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                     top: 0,
                     left: 0,
                     width: "100%",
-                    transform: `translateY(${vItem.start}px)`,
-                    paddingBottom: 8,
+                    transform: `translateY(${vItem.start - (listRef.current?.offsetTop ?? 0)}px)`,
+                    paddingBottom: 6,
                   }}
                 >
                   <DealCard
