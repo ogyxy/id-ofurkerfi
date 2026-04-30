@@ -109,6 +109,7 @@ function DealDetailContent() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
+      setCurrentUserEmail(user.email ?? "");
       const { data } = await supabase
         .from("profiles")
         .select("id, name")
