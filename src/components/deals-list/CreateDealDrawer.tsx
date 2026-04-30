@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-type DealStage = Database["public"]["Enums"]["deal_stage"];
 type Company = { id: string; name: string; billing_company_id: string | null };
 type Contact = {
   id: string;
@@ -38,16 +37,6 @@ type Contact = {
   company_id: string;
 };
 type Profile = { id: string; name: string | null; email: string };
-
-const STAGES: DealStage[] = [
-  "inquiry",
-  "quote_in_progress",
-  "quote_sent",
-  "order_confirmed",
-  "delivered",
-  "defect_reorder",
-  "cancelled",
-];
 
 interface Props {
   open: boolean;
