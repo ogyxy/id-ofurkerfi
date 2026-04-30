@@ -319,6 +319,28 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     return list;
   }, [deals, activeStage, selectedOwners]);
 
+  const stageCounts = useMemo(() => {
+    const counts: Record<DealStage, number> = {
+      inquiry: 0,
+      quote_in_progress: 0,
+      quote_sent: 0,
+      order_confirmed: 0,
+      ready_for_pickup: 0,
+      delivered: 0,
+      defect_reorder: 0,
+      cancelled: 0,
+    };
+    deals.forEach((d) => {
+      if (d.stage === "defect_reorder") {
+        if (isDefectResolved(d)) counts.delivered++;
+        else counts.defect_reorder++;
+      } else {
+        counts[d.stage]++;
+      }
+    });
+    return counts;
+  }, [deals]);
+
   const ownersWithDeals = useMemo(() => {
     const ids = new Set<string>();
     deals.forEach((d) => {
