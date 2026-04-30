@@ -1,5 +1,11 @@
 import * as XLSX from "xlsx";
-import { t, formatDate } from "@/lib/sala_translations_is";
+import { t } from "@/lib/sala_translations_is";
+
+function toDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
 import type { Database } from "@/integrations/supabase/types";
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
@@ -55,7 +61,7 @@ export function exportDealsToXlsx(deals: ExportableDeal[]) {
 
   const rows = deals.map((d) => [
     d.so_number,
-    d.created_at ? formatDate(d.created_at) : "",
+    toDate(d.created_at),
     d.name,
     d.company?.name ?? "",
     contactName(d.contact),
@@ -66,20 +72,21 @@ export function exportDealsToXlsx(deals: ExportableDeal[]) {
       : d.margin_isk != null
         ? Number(d.margin_isk)
         : null,
-    d.promised_delivery_date ? formatDate(d.promised_delivery_date) : "",
-    d.delivered_at ? formatDate(d.delivered_at) : "",
+    toDate(d.promised_delivery_date),
+    toDate(d.delivered_at),
     t.invoiceStatus[d.invoice_status] ?? d.invoice_status,
     t.paymentStatus[d.payment_status] ?? d.payment_status,
     d.owner?.name ?? "",
     (d.tracking_numbers ?? []).join(", "),
   ]);
 
-  const aoa: (string | number | null)[][] = [HEADERS as unknown as string[], ...rows];
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const aoa: (string | number | Date | null)[][] = [HEADERS as unknown as string[], ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(aoa, { cellDates: true });
 
   // ISK number format: 123.456 kr.   (dot as thousands separator)
   // Excel format string with locale-style "kr." suffix
   const iskFmt = '#,##0" kr."';
+  const dateFmt = "dd.mm.yyyy";
   const range = XLSX.utils.decode_range(ws["!ref"]!);
   for (let r = 1; r <= range.e.r; r++) {
     for (const col of [6, 7]) {
@@ -88,6 +95,14 @@ export function exportDealsToXlsx(deals: ExportableDeal[]) {
       if (cell && typeof cell.v === "number") {
         cell.t = "n";
         cell.z = iskFmt;
+      }
+    }
+    for (const col of [1, 8, 9]) {
+      const addr = XLSX.utils.encode_cell({ r, c: col });
+      const cell = ws[addr];
+      if (cell && cell.v instanceof Date) {
+        cell.t = "d";
+        cell.z = dateFmt;
       }
     }
   }
