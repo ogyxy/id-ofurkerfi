@@ -47,14 +47,52 @@ interface Props {
   initialStage?: DealStage | null;
 }
 
-const STAGE_ORDER: DealStage[] = [
+// 3-step stepper grouping (mirrors /deals/:id stepper)
+type StepKey = "inquiry" | "tilbod" | "pontun" | "afhent" | "defect_reorder" | "cancelled";
+
+const STEP_PILLS: StepKey[] = [
   "inquiry",
-  "quote_in_progress",
-  "quote_sent",
-  "order_confirmed",
-  "delivered",
+  "tilbod",
+  "pontun",
+  "afhent",
   "defect_reorder",
+  "cancelled",
 ];
+
+// Sub-pills for the two grouped steps
+const TILBOD_SUB: DealStage[] = ["quote_in_progress", "quote_sent"];
+const PONTUN_SUB: DealStage[] = ["order_confirmed", "ready_for_pickup"];
+
+function stageToStep(stage: DealStage): StepKey {
+  switch (stage) {
+    case "inquiry": return "inquiry";
+    case "quote_in_progress":
+    case "quote_sent": return "tilbod";
+    case "order_confirmed":
+    case "ready_for_pickup": return "pontun";
+    case "delivered": return "afhent";
+    case "defect_reorder": return "defect_reorder";
+    case "cancelled": return "cancelled";
+  }
+}
+
+function stepLabel(step: StepKey): string {
+  switch (step) {
+    case "inquiry": return t.dealStage.inquiry;
+    case "tilbod": return t.deal.step1Tilbod;
+    case "pontun": return t.deal.step2Pontun;
+    case "afhent": return t.deal.step3Afhent;
+    case "defect_reorder": return t.dealStage.defect_reorder;
+    case "cancelled": return t.dealStage.cancelled;
+  }
+}
+
+// Substep badge for a stage (shown inside the deal card stage button)
+function stageSubstepLabel(stage: DealStage): string | null {
+  if (stage === "quote_sent") return t.deal.substepSent;
+  if (stage === "ready_for_pickup") return t.deal.substepInHouse;
+  return null;
+}
 
 const STAGE_STYLES: Record<DealStage, { border: string; bg: string }> = {
   inquiry: { border: "border-l-gray-400", bg: "bg-white" },
