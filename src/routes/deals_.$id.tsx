@@ -24,6 +24,7 @@ import {
 import { DealSummary } from "@/components/deal-detail/DealSummary";
 import { PurchaseOrdersSection } from "@/components/deal-detail/PurchaseOrdersSection";
 import { DealFilesSection } from "@/components/deal-detail/DealFilesSection";
+import { QuoteBuilderModal } from "@/components/deal-detail/QuoteBuilderModal";
 
 import { DealLog, type LogEntry } from "@/components/deal-detail/DealLog";
 import { EditDealDrawer } from "@/components/deal-detail/EditDealDrawer";
@@ -33,7 +34,7 @@ type Deal = Database["public"]["Tables"]["deals"]["Row"];
 type DealStage = Database["public"]["Enums"]["deal_stage"];
 type Company = Pick<
   Database["public"]["Tables"]["companies"]["Row"],
-  "id" | "name" | "vsk_status" | "payment_terms_days"
+  "id" | "name" | "vsk_status" | "payment_terms_days" | "kennitala" | "address_line_1" | "address_line_2" | "postcode" | "city"
 > & {
   billing_company?: { id: string; name: string } | null;
 };
@@ -91,6 +92,8 @@ function DealDetailContent() {
   const [rates, setRates] = useState<Record<string, number>>({});
   const [ratesError, setRatesError] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [quoteBuilderOpen, setQuoteBuilderOpen] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [defectModalOpen, setDefectModalOpen] = useState(false);
   const [defectBusy, setDefectBusy] = useState(false);
   const [parentDeal, setParentDeal] = useState<{
@@ -106,6 +109,7 @@ function DealDetailContent() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
+      setCurrentUserEmail(user.email ?? "");
       const { data } = await supabase
         .from("profiles")
         .select("id, name")
@@ -120,7 +124,7 @@ function DealDetailContent() {
       supabase
         .from("deals")
         .select(
-          `*, company:companies!deals_company_id_fkey(id, name, vsk_status, payment_terms_days, billing_company:companies!billing_company_id(id, name)), contact:contacts(id, first_name, last_name, email, phone)`,
+          `*, company:companies!deals_company_id_fkey(id, name, vsk_status, payment_terms_days, kennitala, address_line_1, address_line_2, postcode, city, billing_company:companies!billing_company_id(id, name)), contact:contacts(id, first_name, last_name, email, phone)`,
         )
         .eq("id", id)
         .maybeSingle(),
@@ -391,7 +395,11 @@ function DealDetailContent() {
         readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
       />
 
-      <StepperActions stage={deal.stage} onChange={updateStage} />
+      <StepperActions
+        stage={deal.stage}
+        onChange={updateStage}
+        onOpenQuoteBuilder={() => setQuoteBuilderOpen(true)}
+      />
 
       <DealSummary
         dealId={deal.id}
@@ -442,6 +450,33 @@ function DealDetailContent() {
         onOpenChange={setDefectModalOpen}
         onConfirm={confirmDefectTransition}
         busy={defectBusy}
+      />
+
+      <QuoteBuilderModal
+        open={quoteBuilderOpen}
+        onOpenChange={setQuoteBuilderOpen}
+        deal={{
+          id: deal.id,
+          so_number: deal.so_number,
+          name: deal.name,
+          stage: deal.stage,
+          total_price_isk: Number(deal.total_price_isk),
+        }}
+        company={{
+          id: company.id,
+          name: company.name,
+          kennitala: company.kennitala,
+          address_line_1: company.address_line_1,
+          address_line_2: company.address_line_2,
+          postcode: company.postcode,
+          city: company.city,
+        }}
+        contact={contact ? { first_name: contact.first_name, last_name: contact.last_name } : null}
+        currentProfile={currentProfile}
+        currentUserEmail={currentUserEmail}
+        onGenerated={() => {
+          void load();
+        }}
       />
     </div>
   );

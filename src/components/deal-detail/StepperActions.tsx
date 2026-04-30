@@ -1,39 +1,27 @@
-import { useState } from "react";
-import { Send, Package, PackageOpen, Pencil, CheckCircle2 } from "lucide-react";
+import { Package, PackageOpen, FileText, CheckCircle2, Check } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
 
 interface Props {
   stage: DealStage;
   onChange: (next: DealStage) => void;
+  onOpenQuoteBuilder?: () => void;
 }
 
 /**
  * Action buttons that sit below the deal lines editor and drive the
  * substep / next-step transitions for the 3-step stepper.
  *
- * - quote_in_progress: [Merkja sem sent] (with confirm modal)
- * - quote_sent       : [Lagfæra tilboð]  [Staðfesta pöntun]
- * - order_confirmed  : [Vörur komnar í hús (toggle)] [Merkja sem afhent]
- * - ready_for_pickup : [Skila í pöntunarstöðu]      [Merkja sem afhent]
+ * - quote_in_progress: [Útbúa tilboð] (opens quote builder)
+ * - quote_sent       : [Tilboð sent ✓ chip] [Lagfæra tilboð] [Staðfesta pöntun]
+ * - order_confirmed  : [Vörur komnar í hús] [Merkja sem afhent]
+ * - ready_for_pickup : [Skila í pöntunarstöðu] [Merkja sem afhent]
  * - inquiry / delivered / defect_reorder / cancelled: nothing
  */
-export function StepperActions({ stage, onChange }: Props) {
-  const [confirmSendOpen, setConfirmSendOpen] = useState(false);
-
+export function StepperActions({ stage, onChange, onOpenQuoteBuilder }: Props) {
   if (
     stage === "inquiry" ||
     stage === "delivered" ||
@@ -47,19 +35,23 @@ export function StepperActions({ stage, onChange }: Props) {
     <div className="flex flex-wrap items-center justify-end gap-2 rounded-md border border-border bg-muted/30 p-3">
       {stage === "quote_in_progress" && (
         <Button
-          onClick={() => setConfirmSendOpen(true)}
+          onClick={() => onOpenQuoteBuilder?.()}
           className="bg-ide-navy text-white hover:bg-ide-navy-hover"
         >
-          <Send className="mr-1.5 h-4 w-4" />
-          {t.deal.markAsSent}
+          <FileText className="mr-1.5 h-4 w-4" />
+          {t.deal.quoteBuilder}
         </Button>
       )}
 
       {stage === "quote_sent" && (
         <>
-          <Button variant="outline" onClick={() => onChange("quote_in_progress")}>
-            <Pencil className="mr-1.5 h-4 w-4" />
-            {t.deal.reactivateQuote}
+          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
+            <Check className="h-3.5 w-3.5" />
+            {t.deal.quoteSent}
+          </span>
+          <Button variant="outline" onClick={() => onOpenQuoteBuilder?.()}>
+            <FileText className="mr-1.5 h-4 w-4" />
+            {t.deal.quoteRefine}
           </Button>
           <Button
             onClick={() => onChange("order_confirmed")}
@@ -102,29 +94,6 @@ export function StepperActions({ stage, onChange }: Props) {
           </Button>
         </>
       )}
-
-      <AlertDialog open={confirmSendOpen} onOpenChange={setConfirmSendOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t.deal.markAsSent}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t.deal.markAsSentConfirm}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setConfirmSendOpen(false);
-                onChange("quote_sent");
-              }}
-              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-            >
-              {t.deal.markAsSentConfirmYes}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
