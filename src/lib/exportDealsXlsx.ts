@@ -26,6 +26,7 @@ export interface ExportableDeal {
 
 const HEADERS = [
   "Sölunúmer",
+  "Stofnað",
   "Heiti",
   "Viðskiptavinur",
   "Tengiliður",
@@ -37,7 +38,6 @@ const HEADERS = [
   "Reikningsstaða",
   "Greiðslustaða",
   "Söluaðili",
-  "Stofnað",
   "Tracking númer",
 ] as const;
 
@@ -55,6 +55,7 @@ export function exportDealsToXlsx(deals: ExportableDeal[]) {
 
   const rows = deals.map((d) => [
     d.so_number,
+    d.created_at ? formatDate(d.created_at) : "",
     d.name,
     d.company?.name ?? "",
     contactName(d.contact),
@@ -70,7 +71,6 @@ export function exportDealsToXlsx(deals: ExportableDeal[]) {
     t.invoiceStatus[d.invoice_status] ?? d.invoice_status,
     t.paymentStatus[d.payment_status] ?? d.payment_status,
     d.owner?.name ?? "",
-    d.created_at ? formatDate(d.created_at) : "",
     (d.tracking_numbers ?? []).join(", "),
   ]);
 
