@@ -88,6 +88,19 @@ export function CreateDealDrawer({
   const [newContactPhoneCountry, setNewContactPhoneCountry] = useState("+354");
   const [newContactPhoneLocal, setNewContactPhoneLocal] = useState("");
 
+  // Inline new-contact form for an existing customer
+  const [inlineContactOpen, setInlineContactOpen] = useState(false);
+  const [inlineContactFirst, setInlineContactFirst] = useState("");
+  const [inlineContactLast, setInlineContactLast] = useState("");
+  const [inlineContactTitle, setInlineContactTitle] = useState("");
+  const [inlineContactEmail, setInlineContactEmail] = useState("");
+  const [inlineContactPhoneCountry, setInlineContactPhoneCountry] = useState("+354");
+  const [inlineContactPhoneLocal, setInlineContactPhoneLocal] = useState("");
+  const [creatingContact, setCreatingContact] = useState(false);
+
+  // Confirm dialog when saving deal for a new customer with no contact
+  const [confirmNoContactOpen, setConfirmNoContactOpen] = useState(false);
+
   const [contactId, setContactId] = useState("");
   const [name, setName] = useState("");
   const [ownerId, setOwnerId] = useState(currentUserId);
@@ -96,6 +109,11 @@ export function CreateDealDrawer({
   const [promisedDate, setPromisedDate] = useState("");
   const [firstNote, setFirstNote] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Track whether the currently-selected company was just created in this
+  // session AND no contact was added during creation. Used to gate the
+  // confirm-no-contact dialog (#6).
+  const [newCompanyNeedsContactConfirm, setNewCompanyNeedsContactConfirm] = useState(false);
 
   useEffect(() => {
     if (!open) return;
