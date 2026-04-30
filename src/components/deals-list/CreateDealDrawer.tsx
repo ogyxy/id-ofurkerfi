@@ -194,6 +194,14 @@ export function CreateDealDrawer({
     setNewContactPhoneCountry("+354");
     setNewContactPhoneLocal("");
     setNewBillingCompanyId(null);
+    setInlineContactOpen(false);
+    setInlineContactFirst("");
+    setInlineContactLast("");
+    setInlineContactTitle("");
+    setInlineContactEmail("");
+    setInlineContactPhoneCountry("+354");
+    setInlineContactPhoneLocal("");
+    setNewCompanyNeedsContactConfirm(false);
   };
 
   const selectCompany = (c: Company) => {
@@ -242,6 +250,7 @@ export function CreateDealDrawer({
     );
 
     // Optional contact creation
+    let createdContact = false;
     if (addContact && newContactFirst.trim()) {
       const { data: newContact } = await supabase
         .from("contacts")
@@ -259,8 +268,12 @@ export function CreateDealDrawer({
       if (newContact) {
         setContacts([newContact as Contact]);
         setContactId(newContact.id);
+        createdContact = true;
       }
     }
+    // Track that this newly-created customer has no contact yet, so we can
+    // prompt the user when they try to save the deal (#6).
+    setNewCompanyNeedsContactConfirm(!createdContact);
 
     selectCompany(newCompany);
     setCreatingCompany(false);
