@@ -77,7 +77,7 @@ export function DealHeader({
           </div>
           {deal.payday_invoice_number && (
             <div className="-mt-1 flex items-center gap-1 font-mono text-xs text-muted-foreground">
-              <span>Payday rkn númer: {deal.payday_invoice_number}</span>
+              <span>Payday Reikningsnúmer - {deal.payday_invoice_number}</span>
               <CopyTextButton text={deal.payday_invoice_number} label="Payday-reikningsnúmer" />
             </div>
           )}
