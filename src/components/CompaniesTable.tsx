@@ -351,28 +351,28 @@ export function CompaniesTable() {
           className="fixed bottom-0 z-30 hidden md:block"
           style={{ left: barMetrics.left, width: barMetrics.width }}
         >
-          <div className="rounded-b-md border-x border-b border-border bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/80 shadow-[0_-1px_0_0_hsl(var(--border))]">
-            <table className="w-full" style={{ tableLayout: "fixed" }}>
+          <div className="border-x border-b border-border rounded-b-md bg-muted/50 backdrop-blur supports-[backdrop-filter]:bg-muted/40 font-medium text-sm">
+            <table className="w-full caption-bottom" style={{ tableLayout: "fixed" }}>
               <colgroup>
                 {barMetrics.cols.map((w, i) => (
                   <col key={i} style={{ width: w }} />
                 ))}
               </colgroup>
               <tbody>
-                <tr className="[&>td]:px-4 [&>td]:py-3 [&>td]:align-middle">
-                  <td className="font-semibold">
+                <tr className="border-t">
+                  <td className="p-2 align-middle font-semibold">
                     {"Samtals"} ({sorted.length})
                   </td>
-                  <td className="text-right font-semibold tabular-nums">
+                  <td className="p-2 align-middle text-right font-semibold tabular-nums">
                     {totals.dealsInProgress}
                   </td>
-                  <td className="text-right font-semibold tabular-nums">
+                  <td className="p-2 align-middle text-right font-semibold tabular-nums">
                     {formatIsk(totals.totalInProgressIsk)}
                   </td>
-                  <td className="text-right font-semibold tabular-nums">
+                  <td className="p-2 align-middle text-right font-semibold tabular-nums">
                     {totals.dealsDelivered}
                   </td>
-                  <td className="text-right font-semibold tabular-nums">
+                  <td className="p-2 align-middle text-right font-semibold tabular-nums">
                     {formatIsk(totals.totalDeliveredIsk)}
                   </td>
                 </tr>
