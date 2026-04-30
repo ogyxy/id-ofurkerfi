@@ -687,6 +687,31 @@ function StagePill({
   );
 }
 
+function CopySoButton({ soNumber }: { soNumber: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async (e) => {
+        e.stopPropagation();
+        try {
+          await navigator.clipboard.writeText(soNumber);
+          setCopied(true);
+          toast.success(`${soNumber} afritað`);
+          setTimeout(() => setCopied(false), 1500);
+        } catch {
+          toast.error(t.status.somethingWentWrong);
+        }
+      }}
+      className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      aria-label={`Afrita ${soNumber}`}
+      title="Afrita sölunúmer"
+    >
+      {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+    </button>
+  );
+}
+
 const POPOVER_STAGES: DealStage[] = [
   "inquiry",
   "quote_in_progress",
