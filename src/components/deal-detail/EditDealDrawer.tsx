@@ -145,7 +145,7 @@ export function EditDealDrawer({
         contact_id: form.contact_id || null,
         owner_id: form.owner_id || null,
         promised_delivery_date: form.promised_delivery_date || null,
-        estimated_delivery_date: form.estimated_delivery_date || null,
+        
         invoice_status: form.invoice_status,
         payment_status: form.payment_status,
         invoice_date: form.invoice_date || null,
