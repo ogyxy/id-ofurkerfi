@@ -825,6 +825,33 @@ function CopySoButton({ soNumber, companyName }: { soNumber: string; companyName
 
 export { CopySoButton };
 
+function CopyTextButton({ text, label }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async (e) => {
+        e.stopPropagation();
+        try {
+          await navigator.clipboard.writeText(text);
+          setCopied(true);
+          toast.success(`${text} ${t.deal.soCopiedToast}`);
+          setTimeout(() => setCopied(false), 1500);
+        } catch {
+          toast.error(t.status.somethingWentWrong);
+        }
+      }}
+      className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      aria-label={label ? `Afrita ${label}` : `Afrita ${text}`}
+      title={label ?? "Afrita"}
+    >
+      {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+    </button>
+  );
+}
+
+export { CopyTextButton };
+
 // Stages selectable from the deal-card popover, grouped under their step.
 const POPOVER_GROUPS: Array<{ step: StepKey; stages: DealStage[] }> = [
   { step: "inquiry", stages: ["inquiry"] },
