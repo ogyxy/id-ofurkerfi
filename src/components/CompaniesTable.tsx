@@ -53,6 +53,39 @@ export function CompaniesTable() {
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const navigate = useNavigate();
 
+  // Track table position + column widths so the fixed totals bar can mirror them
+  const tableWrapperRef = useRef<HTMLDivElement | null>(null);
+  const headerRowRef = useRef<HTMLTableRowElement | null>(null);
+  const [barMetrics, setBarMetrics] = useState<{
+    left: number;
+    width: number;
+    cols: number[];
+  } | null>(null);
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const wrapper = tableWrapperRef.current;
+      const headerRow = headerRowRef.current;
+      if (!wrapper || !headerRow) return;
+      const rect = wrapper.getBoundingClientRect();
+      const cols = Array.from(headerRow.children).map(
+        (cell) => (cell as HTMLElement).getBoundingClientRect().width,
+      );
+      setBarMetrics({ left: rect.left, width: rect.width, cols });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (tableWrapperRef.current) ro.observe(tableWrapperRef.current);
+    if (headerRowRef.current) ro.observe(headerRowRef.current);
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
