@@ -33,7 +33,7 @@ type Deal = Database["public"]["Tables"]["deals"]["Row"];
 type DealStage = Database["public"]["Enums"]["deal_stage"];
 type Company = Pick<
   Database["public"]["Tables"]["companies"]["Row"],
-  "id" | "name" | "vsk_status" | "payment_terms_days"
+  "id" | "name" | "vsk_status" | "payment_terms_days" | "kennitala" | "address_line_1" | "address_line_2" | "postcode" | "city"
 > & {
   billing_company?: { id: string; name: string } | null;
 };
