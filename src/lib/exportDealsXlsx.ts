@@ -157,6 +157,16 @@ export function exportDealsToXlsx(
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Sölur");
 
-  const filename = `IDE_Sölur_${dateStr}.xlsx`;
+  const parts: string[] = [];
+  const stageYear = [
+    filenameParts.stageLabel?.trim() || null,
+    filenameParts.year != null ? String(filenameParts.year) : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  if (stageYear) parts.push(stageYear);
+  if (filenameParts.ownerName?.trim()) parts.push(filenameParts.ownerName.trim());
+  const suffix = parts.length ? ` - ${parts.join(" - ")}` : "";
+  const filename = `IDÉ Sölur${suffix}.xlsx`;
   XLSX.writeFile(wb, filename, { bookType: "xlsx", compression: true });
 }
