@@ -589,7 +589,18 @@ export function CreateDealDrawer({
           </div>
 
           <div>
-            <Label>{t.nav.contactSingle}</Label>
+            <div className="mb-1 flex items-center justify-between">
+              <Label>{t.nav.contactSingle}</Label>
+              {companyId && (
+                <button
+                  type="button"
+                  onClick={() => setInlineContactOpen((v) => !v)}
+                  className="text-xs font-medium text-ide-navy hover:underline"
+                >
+                  {t.deal.addNewContact}
+                </button>
+              )}
+            </div>
             <Select
               value={contactId}
               onValueChange={setContactId}
@@ -607,6 +618,78 @@ export function CreateDealDrawer({
                 ))}
               </SelectContent>
             </Select>
+
+            {inlineContactOpen && companyId && (
+              <div className="mt-2 space-y-2 rounded-md border border-dashed border-border bg-muted/20 p-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">{t.contact.first_name}</Label>
+                    <Input
+                      value={inlineContactFirst}
+                      onChange={(e) => setInlineContactFirst(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{t.contact.last_name}</Label>
+                    <Input
+                      value={inlineContactLast}
+                      onChange={(e) => setInlineContactLast(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">{t.contact.title}</Label>
+                  <Input
+                    value={inlineContactTitle}
+                    onChange={(e) => setInlineContactTitle(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{t.contact.email}</Label>
+                  <Input
+                    type="email"
+                    value={inlineContactEmail}
+                    onChange={(e) => setInlineContactEmail(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{t.contact.phone}</Label>
+                  <PhoneInput
+                    countryCode={inlineContactPhoneCountry}
+                    localNumber={inlineContactPhoneLocal}
+                    onCountryCodeChange={setInlineContactPhoneCountry}
+                    onLocalNumberChange={setInlineContactPhoneLocal}
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setInlineContactOpen(false);
+                      setInlineContactFirst("");
+                      setInlineContactLast("");
+                      setInlineContactTitle("");
+                      setInlineContactEmail("");
+                      setInlineContactPhoneCountry("+354");
+                      setInlineContactPhoneLocal("");
+                    }}
+                  >
+                    {t.actions.cancel}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={createInlineContact}
+                    disabled={creatingContact || !inlineContactFirst.trim()}
+                    className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+                  >
+                    <Plus className="mr-1 h-3 w-3" />
+                    {creatingContact ? t.status.saving : t.actions.create}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
