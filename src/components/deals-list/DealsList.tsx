@@ -822,12 +822,12 @@ function CopySoButton({ soNumber }: { soNumber: string }) {
   );
 }
 
-const POPOVER_STAGES: DealStage[] = [
-  "inquiry",
-  "quote_in_progress",
-  "quote_sent",
-  "order_confirmed",
-  "delivered",
+// Stages selectable from the deal-card popover, grouped under their step.
+const POPOVER_GROUPS: Array<{ step: StepKey; stages: DealStage[] }> = [
+  { step: "inquiry", stages: ["inquiry"] },
+  { step: "tilbod", stages: ["quote_in_progress", "quote_sent"] },
+  { step: "pontun", stages: ["order_confirmed", "ready_for_pickup"] },
+  { step: "afhent", stages: ["delivered"] },
 ];
 
 function StagePopover({
@@ -842,6 +842,8 @@ function StagePopover({
   const [busy, setBusy] = useState(false);
 
   const styles = STAGE_STYLES[current];
+  const sub = stageSubstepLabel(current);
+  const triggerLabel = stepLabel(stageToStep(current));
 
   const close = () => {
     setOpen(false);
@@ -872,74 +874,83 @@ function StagePopover({
             setOpen(true);
           }}
           className={cn(
-            "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium transition hover:opacity-80",
+            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition hover:opacity-80",
             styles.border.replace("border-l-", "border-"),
             styles.bg,
           )}
         >
-          {t.dealStage[current]}
+          <span>{triggerLabel}</span>
+          {sub && (
+            <span className="rounded-full bg-white/70 px-1.5 py-px text-[9px] font-normal text-muted-foreground">
+              {sub}
+            </span>
+          )}
         </button>
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-56 p-2"
+        className="w-60 p-2"
         onClick={(e) => e.stopPropagation()}
       >
         {pending ? (
-          pending === "defect_reorder" ? null : (
-            <div className="space-y-3 px-1 py-2">
-              <p className="text-sm">
-                {t.deal.moveToStage} {t.dealStage[pending]}?
-              </p>
-              <div className="flex justify-end gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={close}
-                  disabled={busy}
-                >
-                  {t.actions.cancel}
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={confirm}
-                  disabled={busy}
-                  className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-                >
-                  {t.status.yes}
-                </Button>
-              </div>
+          <div className="space-y-3 px-1 py-2">
+            <p className="text-sm">
+              {t.deal.moveToStage} {t.dealStage[pending]}?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="ghost" onClick={close} disabled={busy}>
+                {t.actions.cancel}
+              </Button>
+              <Button
+                size="sm"
+                onClick={confirm}
+                disabled={busy}
+                className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+              >
+                {t.status.yes}
+              </Button>
             </div>
-          )
+          </div>
         ) : (
-          <ul className="space-y-1">
-            {POPOVER_STAGES.map((s) => {
-              const active = s === current;
-              return (
-                <li key={s}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (active) return;
-                      setPending(s);
-                    }}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm transition hover:bg-muted",
-                      active && "font-medium",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "inline-block h-2.5 w-2.5 rounded-full border",
-                        active ? "bg-ide-navy border-ide-navy" : "border-gray-400",
-                      )}
-                    />
-                    {t.dealStage[s]}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="space-y-2">
+            {POPOVER_GROUPS.map((group) => (
+              <div key={group.step}>
+                <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {stepLabel(group.step)}
+                </div>
+                <ul className="space-y-0.5">
+                  {group.stages.map((s) => {
+                    const active = s === current;
+                    return (
+                      <li key={s}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (active) return;
+                            setPending(s);
+                          }}
+                          className={cn(
+                            "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm transition hover:bg-muted",
+                            active && "font-medium",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "inline-block h-2.5 w-2.5 rounded-full border",
+                              active
+                                ? "bg-ide-navy border-ide-navy"
+                                : "border-gray-400",
+                            )}
+                          />
+                          {t.dealStage[s]}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
         )}
       </PopoverContent>
     </Popover>
