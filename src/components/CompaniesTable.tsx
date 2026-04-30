@@ -304,8 +304,8 @@ export function CompaniesTable() {
               )}
             </TableBody>
             {!loading && !loadError && sorted.length > 0 && (
-              <TableFooter className="bg-muted/95">
-                <TableRow className="hover:bg-muted/95">
+              <TableFooter className="[&_tr]:border-t [&_tr]:border-border">
+                <TableRow className="hover:bg-muted/95 [&>td]:sticky [&>td]:bottom-0 [&>td]:z-10 [&>td]:bg-muted/95 [&>td]:backdrop-blur [&>td]:shadow-[0_-1px_0_0_hsl(var(--border))]">
                   <TableCell className="font-semibold">
                     {"Samtals"} ({sorted.length})
                   </TableCell>
@@ -369,28 +369,6 @@ export function CompaniesTable() {
           </>
         )}
       </div>
-
-      {/* Spacer so fixed bar doesn't overlap last row */}
-      {!loading && !loadError && sorted.length > 0 && (
-        <div className="hidden h-16 md:block" aria-hidden />
-      )}
-
-      {/* Always-visible totals bar (desktop) */}
-      {!loading && !loadError && sorted.length > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-30 hidden border-t border-border bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/80 md:block">
-          <div className="flex items-center justify-between gap-6 px-6 py-3 text-sm">
-            <span className="font-semibold">
-              {"Samtals"} ({sorted.length})
-            </span>
-            <div className="flex items-center gap-6 tabular-nums">
-              <span><span className="text-muted-foreground">Sölur í vinnslu: </span><span className="font-semibold">{totals.dealsInProgress}</span></span>
-              <span><span className="text-muted-foreground">Upphæð í vinnslu: </span><span className="font-semibold">{formatIsk(totals.totalInProgressIsk)}</span></span>
-              <span><span className="text-muted-foreground">Sölur afhentar: </span><span className="font-semibold">{totals.dealsDelivered}</span></span>
-              <span><span className="text-muted-foreground">Samtals sala: </span><span className="font-semibold">{formatIsk(totals.totalDeliveredIsk)}</span></span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
