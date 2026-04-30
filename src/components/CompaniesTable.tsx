@@ -304,7 +304,7 @@ export function CompaniesTable() {
               )}
             </TableBody>
             {!loading && !loadError && sorted.length > 0 && (
-              <TableFooter className="sticky bottom-0 z-10 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/80">
+              <TableFooter className="bg-muted/95">
                 <TableRow className="hover:bg-muted/95">
                   <TableCell className="font-semibold">
                     {"Samtals"} ({sorted.length})
