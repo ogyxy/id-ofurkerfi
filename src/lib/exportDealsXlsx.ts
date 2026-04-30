@@ -98,8 +98,51 @@ export function exportDealsToXlsx(
     ];
   });
 
-  const aoa: (string | number | Date | null)[][] = [HEADERS as unknown as string[], ...rows];
+  const dataRowCount = rows.length;
+  const totalRowIndex = dataRowCount + 1; // 0-based row index for totals (header is row 0)
+  const firstDataExcelRow = 2; // Excel 1-based: header=1, first data=2
+  const lastDataExcelRow = dataRowCount + 1;
+
+  // Build totals row using formulas so it stays accurate
+  const sumRange = (colLetter: string) =>
+    `SUM(${colLetter}${firstDataExcelRow}:${colLetter}${lastDataExcelRow})`;
+  const totalsRow: (string | number | Date | null)[] = [
+    "Samtals",
+    null,
+    `${dataRowCount.toLocaleString("is-IS")} sölur`,
+    "",
+    "",
+    "",
+    dataRowCount > 0 ? { f: sumRange("G") } as unknown as string : 0,
+    dataRowCount > 0 ? { f: sumRange("H") } as unknown as string : 0,
+    dataRowCount > 0 ? { f: sumRange("I") } as unknown as string : 0,
+    dataRowCount > 0
+      ? ({ f: `IF(G${totalRowIndex + 1}=0,0,I${totalRowIndex + 1}/G${totalRowIndex + 1})` } as unknown as string)
+      : 0,
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ];
+
+  const aoa: (string | number | Date | null)[][] = [
+    HEADERS as unknown as string[],
+    ...rows,
+    totalsRow,
+  ];
   const ws = XLSX.utils.aoa_to_sheet(aoa, { cellDates: true });
+
+  // Convert formula placeholders into proper formula cells
+  for (const col of ["G", "H", "I", "J"]) {
+    const addr = `${col}${totalRowIndex + 1}`;
+    const cell = ws[addr] as { v?: unknown; f?: string; t?: string } | undefined;
+    if (cell && cell.v && typeof cell.v === "object" && "f" in (cell.v as object)) {
+      const f = (cell.v as { f: string }).f;
+      ws[addr] = { t: "n", f };
+    }
+  }
 
   // ISK number format: 123.456 kr.   (dot as thousands separator)
   const iskFmt = '#,##0" kr."';
