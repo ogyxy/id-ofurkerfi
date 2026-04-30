@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
 import { AppMain } from "@/components/AppMain";
-import { rememberDealReturnPath, consumeCompanyReturnPath, rememberCompanyReturnPath } from "@/lib/dealReturn";
+import { rememberDealReturnPath, goBack, rememberCompanyReturnPath } from "@/lib/dealReturn";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
@@ -216,10 +216,7 @@ function CompanyDetailContent({ currentProfileId }: { currentProfileId: string |
     <div className="space-y-6">
       <button
         type="button"
-        onClick={() => {
-          const returnPath = consumeCompanyReturnPath();
-          navigate({ to: returnPath });
-        }}
+        onClick={() => goBack("/companies")}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />

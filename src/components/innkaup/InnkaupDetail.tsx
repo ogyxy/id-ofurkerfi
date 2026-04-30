@@ -65,7 +65,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { pathSafe, formatFileSize } from "@/lib/formatters";
-import { consumeDealReturnPath } from "@/lib/dealReturn";
+import { goBack } from "@/lib/dealReturn";
 import {
   HAPPY_PATH_PO_STATUSES,
   PO_CURRENCIES,
@@ -319,10 +319,7 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
     <div className="space-y-6">
       <button
         type="button"
-        onClick={() => {
-          const ret = consumeDealReturnPath();
-          navigate({ to: ret || "/innkaup" });
-        }}
+        onClick={() => goBack("/innkaup")}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
