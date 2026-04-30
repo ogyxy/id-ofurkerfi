@@ -844,7 +844,7 @@ function DealCard({
         if (e.key === "Enter") onOpen();
       }}
       className={cn(
-        "grid cursor-pointer items-center gap-4 rounded-md border border-border border-l-4 px-4 py-3 transition hover:bg-muted/50",
+        "grid cursor-pointer items-center gap-3 rounded-md border border-border border-l-4 px-3 py-2 transition hover:bg-muted/50",
         "grid-cols-[160px_1fr] md:grid-cols-[160px_minmax(0,1.5fr)_minmax(0,1.5fr)_180px_140px_120px]",
         styles.border,
         styles.bg,
@@ -855,7 +855,10 @@ function DealCard({
     >
       {/* SO number + stage + defect badge */}
       <div className="min-w-0 space-y-1">
-        <div className="font-mono text-xs text-muted-foreground">{deal.so_number}</div>
+        <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
+          <span>{deal.so_number}</span>
+          <CopySoButton soNumber={deal.so_number} />
+        </div>
         <div onClick={(e) => e.stopPropagation()}>
           <StagePopover current={deal.stage} onChange={onStageChange} />
         </div>
