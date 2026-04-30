@@ -269,11 +269,11 @@ export function CompaniesTable() {
       />
 
       {/* Desktop / tablet table */}
-      <div className="hidden rounded-md border border-border bg-card md:block">
+      <div ref={tableWrapperRef} className="hidden rounded-md border border-border bg-card md:block">
         <div>
           <Table>
             <TableHeader className="sticky top-[var(--app-header-offset,0px)] z-10 bg-card shadow-[0_1px_0_0_hsl(var(--border))]">
-              <TableRow>
+              <TableRow ref={headerRowRef}>
                 {sortableHead(t.company.name, "name", "left")}
                 {sortableHead("Sölur í vinnslu", "dealsInProgress", "right")}
                 {sortableHead("Upphæð í vinnslu", "totalInProgressIsk", "right")}
@@ -336,30 +336,51 @@ export function CompaniesTable() {
                 ))
               )}
             </TableBody>
-            {!loading && !loadError && sorted.length > 0 && (
-              <TableFooter className="[&_tr]:border-t [&_tr]:border-border">
-                <TableRow className="hover:bg-muted/95 [&>td]:sticky [&>td]:bottom-0 [&>td]:z-10 [&>td]:bg-muted/95 [&>td]:backdrop-blur [&>td]:shadow-[0_-1px_0_0_hsl(var(--border))]">
-                  <TableCell className="font-semibold">
-                    {"Samtals"} ({sorted.length})
-                  </TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums">
-                    {totals.dealsInProgress}
-                  </TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums">
-                    {formatIsk(totals.totalInProgressIsk)}
-                  </TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums">
-                    {totals.dealsDelivered}
-                  </TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums">
-                    {formatIsk(totals.totalDeliveredIsk)}
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
-            )}
           </Table>
         </div>
       </div>
+
+      {/* Spacer so the fixed totals bar doesn't cover the last data row */}
+      {!loading && !loadError && sorted.length > 0 && (
+        <div className="hidden h-14 md:block" aria-hidden />
+      )}
+
+      {/* Fixed totals bar — mirrors the table columns and stays at viewport bottom */}
+      {!loading && !loadError && sorted.length > 0 && barMetrics && (
+        <div
+          className="fixed bottom-0 z-30 hidden md:block"
+          style={{ left: barMetrics.left, width: barMetrics.width }}
+        >
+          <div className="rounded-b-md border-x border-b border-border bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/80 shadow-[0_-1px_0_0_hsl(var(--border))]">
+            <table className="w-full" style={{ tableLayout: "fixed" }}>
+              <colgroup>
+                {barMetrics.cols.map((w, i) => (
+                  <col key={i} style={{ width: w }} />
+                ))}
+              </colgroup>
+              <tbody>
+                <tr className="[&>td]:px-4 [&>td]:py-3 [&>td]:align-middle">
+                  <td className="font-semibold">
+                    {"Samtals"} ({sorted.length})
+                  </td>
+                  <td className="text-right font-semibold tabular-nums">
+                    {totals.dealsInProgress}
+                  </td>
+                  <td className="text-right font-semibold tabular-nums">
+                    {formatIsk(totals.totalInProgressIsk)}
+                  </td>
+                  <td className="text-right font-semibold tabular-nums">
+                    {totals.dealsDelivered}
+                  </td>
+                  <td className="text-right font-semibold tabular-nums">
+                    {formatIsk(totals.totalDeliveredIsk)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Mobile list */}
       <div className="md:hidden">
