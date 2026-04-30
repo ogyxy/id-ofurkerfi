@@ -370,11 +370,14 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
           <div className="space-y-1 min-w-0">
             <div className="font-mono text-xs text-muted-foreground">{po.po_number}</div>
             <h1 className="text-2xl font-semibold md:text-3xl">{supplierName}</h1>
-            {po.supplier_reference && (
-              <div className="text-sm text-muted-foreground">
-                {t.purchaseOrder.supplier_reference}: {po.supplier_reference}
-              </div>
-            )}
+            <div className="text-sm text-muted-foreground">
+              <span>{t.purchaseOrder.supplier_reference}: </span>
+              <InlineText
+                value={po.supplier_reference}
+                placeholder="—"
+                onSave={(v) => void updatePo({ supplier_reference: v })}
+              />
+            </div>
             <div className="pt-1">
               <span className="text-xs text-muted-foreground">{t.purchaseOrder.linked_deal}: </span>
               {linkedDeal ? (
@@ -391,6 +394,14 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
               ) : (
                 <span className="text-sm text-muted-foreground">—</span>
               )}
+            </div>
+            <div className="pt-2">
+              <div className="mb-1 text-xs text-muted-foreground">{t.deal.tracking_numbers}</div>
+              <PoTrackingNumbersInline
+                poId={po.id}
+                dealId={po.deal_id}
+                initial={(po.tracking_numbers ?? []) as string[]}
+              />
             </div>
           </div>
 
