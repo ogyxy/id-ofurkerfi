@@ -422,7 +422,8 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
 
   const clearAll = () => {
     setSearch("");
-    setActiveStage(null);
+    setActiveStep(null);
+    setActiveSubstage(null);
     setSelectedOwners(new Set());
     setSelectedYear(null);
   };
