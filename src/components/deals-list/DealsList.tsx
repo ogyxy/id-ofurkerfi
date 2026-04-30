@@ -47,14 +47,52 @@ interface Props {
   initialStage?: DealStage | null;
 }
 
-const STAGE_ORDER: DealStage[] = [
+// 3-step stepper grouping (mirrors /deals/:id stepper)
+type StepKey = "inquiry" | "tilbod" | "pontun" | "afhent" | "defect_reorder" | "cancelled";
+
+const STEP_PILLS: StepKey[] = [
   "inquiry",
-  "quote_in_progress",
-  "quote_sent",
-  "order_confirmed",
-  "delivered",
+  "tilbod",
+  "pontun",
+  "afhent",
   "defect_reorder",
+  "cancelled",
 ];
+
+// Sub-pills for the two grouped steps
+const TILBOD_SUB: DealStage[] = ["quote_in_progress", "quote_sent"];
+const PONTUN_SUB: DealStage[] = ["order_confirmed", "ready_for_pickup"];
+
+function stageToStep(stage: DealStage): StepKey {
+  switch (stage) {
+    case "inquiry": return "inquiry";
+    case "quote_in_progress":
+    case "quote_sent": return "tilbod";
+    case "order_confirmed":
+    case "ready_for_pickup": return "pontun";
+    case "delivered": return "afhent";
+    case "defect_reorder": return "defect_reorder";
+    case "cancelled": return "cancelled";
+  }
+}
+
+function stepLabel(step: StepKey): string {
+  switch (step) {
+    case "inquiry": return t.dealStage.inquiry;
+    case "tilbod": return t.deal.step1Tilbod;
+    case "pontun": return t.deal.step2Pontun;
+    case "afhent": return t.deal.step3Afhent;
+    case "defect_reorder": return t.dealStage.defect_reorder;
+    case "cancelled": return t.dealStage.cancelled;
+  }
+}
+
+// Substep badge for a stage (shown inside the deal card stage button)
+function stageSubstepLabel(stage: DealStage): string | null {
+  if (stage === "quote_sent") return t.deal.substepSent;
+  if (stage === "ready_for_pickup") return t.deal.substepInHouse;
+  return null;
+}
 
 const STAGE_STYLES: Record<DealStage, { border: string; bg: string }> = {
   inquiry: { border: "border-l-gray-400", bg: "bg-white" },
@@ -120,7 +158,10 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [activeStage, setActiveStage] = useState<DealStage | null>(initialStage);
+  const [activeStep, setActiveStep] = useState<StepKey | null>(
+    initialStage ? stageToStep(initialStage) : null,
+  );
+  const [activeSubstage, setActiveSubstage] = useState<DealStage | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set());
@@ -297,30 +338,50 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     };
   }, [debouncedSearch, selectedYear]);
 
-  // Apply remaining client-side filters (stage, owner)
+  // Apply remaining client-side filters (step + substep, owner)
   const visibleDeals = useMemo(() => {
     let list = deals;
-    if (activeStage === "defect_reorder") {
+    if (activeStep === "defect_reorder") {
       list = list.filter(
         (d) => d.stage === "defect_reorder" && !isDefectResolved(d),
       );
-    } else if (activeStage === "delivered") {
+    } else if (activeStep === "afhent") {
       list = list.filter(
         (d) =>
           d.stage === "delivered" ||
           (d.stage === "defect_reorder" && isDefectResolved(d)),
       );
-    } else if (activeStage) {
-      list = list.filter((d) => d.stage === activeStage);
+    } else if (activeStep === "cancelled") {
+      list = list.filter((d) => d.stage === "cancelled");
+    } else if (activeStep === "inquiry") {
+      list = list.filter((d) => d.stage === "inquiry");
+    } else if (activeStep === "tilbod") {
+      const sub = activeSubstage ?? null;
+      list = list.filter((d) =>
+        sub ? d.stage === sub : TILBOD_SUB.includes(d.stage),
+      );
+    } else if (activeStep === "pontun") {
+      const sub = activeSubstage ?? null;
+      list = list.filter((d) =>
+        sub ? d.stage === sub : PONTUN_SUB.includes(d.stage),
+      );
     }
     if (selectedOwners.size > 0) {
       list = list.filter((d) => d.owner && selectedOwners.has(d.owner.id));
     }
     return list;
-  }, [deals, activeStage, selectedOwners]);
+  }, [deals, activeStep, activeSubstage, selectedOwners]);
 
-  const stageCounts = useMemo(() => {
-    const counts: Record<DealStage, number> = {
+  const stepCounts = useMemo(() => {
+    const c: Record<StepKey, number> = {
+      inquiry: 0,
+      tilbod: 0,
+      pontun: 0,
+      afhent: 0,
+      defect_reorder: 0,
+      cancelled: 0,
+    };
+    const subC: Record<DealStage, number> = {
       inquiry: 0,
       quote_in_progress: 0,
       quote_sent: 0,
@@ -331,14 +392,15 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
       cancelled: 0,
     };
     deals.forEach((d) => {
+      subC[d.stage]++;
       if (d.stage === "defect_reorder") {
-        if (isDefectResolved(d)) counts.delivered++;
-        else counts.defect_reorder++;
+        if (isDefectResolved(d)) c.afhent++;
+        else c.defect_reorder++;
       } else {
-        counts[d.stage]++;
+        c[stageToStep(d.stage)]++;
       }
     });
-    return counts;
+    return { steps: c, sub: subC };
   }, [deals]);
 
   const ownersWithDeals = useMemo(() => {
@@ -360,7 +422,8 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
 
   const clearAll = () => {
     setSearch("");
-    setActiveStage(null);
+    setActiveStep(null);
+    setActiveSubstage(null);
     setSelectedOwners(new Set());
     setSelectedYear(null);
   };
@@ -548,22 +611,64 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
         </div>
       )}
 
-      {/* Stage filter pills */}
+      {/* Stage filter pills (3-step + extras) with sub-pills for tilboð / pöntun */}
       <div className="mb-4">
         <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
           {t.deal.stage}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {STAGE_ORDER.map((s) => (
-            <StagePill
-              key={s}
-              label={t.dealStage[s]}
-              count={stageCounts[s]}
-              active={activeStage === s}
-              onClick={() => setActiveStage((prev) => (prev === s ? null : s))}
-              showClose={activeStage === s}
-            />
-          ))}
+          {STEP_PILLS.map((step) => {
+            const isActive = activeStep === step;
+            // When a step is active, hide the other top-level pills
+            if (activeStep && !isActive) return null;
+            return (
+              <StagePill
+                key={step}
+                label={stepLabel(step)}
+                count={stepCounts.steps[step]}
+                active={isActive}
+                onClick={() => {
+                  if (isActive) {
+                    setActiveStep(null);
+                    setActiveSubstage(null);
+                  } else {
+                    setActiveStep(step);
+                    setActiveSubstage(null);
+                  }
+                }}
+                showClose={isActive}
+              />
+            );
+          })}
+          {/* Sub-pills for tilboð / pöntun */}
+          {activeStep === "tilbod" &&
+            TILBOD_SUB.map((s) => (
+              <StagePill
+                key={s}
+                label={t.dealStage[s]}
+                count={stepCounts.sub[s]}
+                active={activeSubstage === s}
+                onClick={() =>
+                  setActiveSubstage((prev) => (prev === s ? null : s))
+                }
+                showClose={activeSubstage === s}
+                variant="sub"
+              />
+            ))}
+          {activeStep === "pontun" &&
+            PONTUN_SUB.map((s) => (
+              <StagePill
+                key={s}
+                label={t.dealStage[s]}
+                count={stepCounts.sub[s]}
+                active={activeSubstage === s}
+                onClick={() =>
+                  setActiveSubstage((prev) => (prev === s ? null : s))
+                }
+                showClose={activeSubstage === s}
+                variant="sub"
+              />
+            ))}
         </div>
       </div>
 
@@ -661,19 +766,24 @@ function StagePill({
   active,
   onClick,
   showClose = false,
+  variant = "main",
 }: {
   label: string;
   count: number;
   active: boolean;
   onClick: () => void;
   showClose?: boolean;
+  variant?: "main" | "sub";
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs transition",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border transition",
+        variant === "sub"
+          ? "border-dashed px-2.5 py-0.5 text-[11px]"
+          : "px-3 py-1 text-xs",
         active
           ? "border-ide-navy bg-ide-navy text-white"
           : "border-border bg-white text-muted-foreground hover:text-foreground",
@@ -712,12 +822,12 @@ function CopySoButton({ soNumber }: { soNumber: string }) {
   );
 }
 
-const POPOVER_STAGES: DealStage[] = [
-  "inquiry",
-  "quote_in_progress",
-  "quote_sent",
-  "order_confirmed",
-  "delivered",
+// Stages selectable from the deal-card popover, grouped under their step.
+const POPOVER_GROUPS: Array<{ step: StepKey; stages: DealStage[] }> = [
+  { step: "inquiry", stages: ["inquiry"] },
+  { step: "tilbod", stages: ["quote_in_progress", "quote_sent"] },
+  { step: "pontun", stages: ["order_confirmed", "ready_for_pickup"] },
+  { step: "afhent", stages: ["delivered"] },
 ];
 
 function StagePopover({
@@ -732,6 +842,8 @@ function StagePopover({
   const [busy, setBusy] = useState(false);
 
   const styles = STAGE_STYLES[current];
+  const sub = stageSubstepLabel(current);
+  const triggerLabel = stepLabel(stageToStep(current));
 
   const close = () => {
     setOpen(false);
@@ -762,74 +874,83 @@ function StagePopover({
             setOpen(true);
           }}
           className={cn(
-            "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium transition hover:opacity-80",
+            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition hover:opacity-80",
             styles.border.replace("border-l-", "border-"),
             styles.bg,
           )}
         >
-          {t.dealStage[current]}
+          <span>{triggerLabel}</span>
+          {sub && (
+            <span className="rounded-full bg-white/70 px-1.5 py-px text-[9px] font-normal text-muted-foreground">
+              {sub}
+            </span>
+          )}
         </button>
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-56 p-2"
+        className="w-60 p-2"
         onClick={(e) => e.stopPropagation()}
       >
         {pending ? (
-          pending === "defect_reorder" ? null : (
-            <div className="space-y-3 px-1 py-2">
-              <p className="text-sm">
-                {t.deal.moveToStage} {t.dealStage[pending]}?
-              </p>
-              <div className="flex justify-end gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={close}
-                  disabled={busy}
-                >
-                  {t.actions.cancel}
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={confirm}
-                  disabled={busy}
-                  className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-                >
-                  {t.status.yes}
-                </Button>
-              </div>
+          <div className="space-y-3 px-1 py-2">
+            <p className="text-sm">
+              {t.deal.moveToStage} {t.dealStage[pending]}?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="ghost" onClick={close} disabled={busy}>
+                {t.actions.cancel}
+              </Button>
+              <Button
+                size="sm"
+                onClick={confirm}
+                disabled={busy}
+                className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+              >
+                {t.status.yes}
+              </Button>
             </div>
-          )
+          </div>
         ) : (
-          <ul className="space-y-1">
-            {POPOVER_STAGES.map((s) => {
-              const active = s === current;
-              return (
-                <li key={s}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (active) return;
-                      setPending(s);
-                    }}
-                    className={cn(
-                      "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm transition hover:bg-muted",
-                      active && "font-medium",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "inline-block h-2.5 w-2.5 rounded-full border",
-                        active ? "bg-ide-navy border-ide-navy" : "border-gray-400",
-                      )}
-                    />
-                    {t.dealStage[s]}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="space-y-2">
+            {POPOVER_GROUPS.map((group) => (
+              <div key={group.step}>
+                <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {stepLabel(group.step)}
+                </div>
+                <ul className="space-y-0.5">
+                  {group.stages.map((s) => {
+                    const active = s === current;
+                    return (
+                      <li key={s}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (active) return;
+                            setPending(s);
+                          }}
+                          className={cn(
+                            "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm transition hover:bg-muted",
+                            active && "font-medium",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "inline-block h-2.5 w-2.5 rounded-full border",
+                              active
+                                ? "bg-ide-navy border-ide-navy"
+                                : "border-gray-400",
+                            )}
+                          />
+                          {t.dealStage[s]}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
         )}
       </PopoverContent>
     </Popover>

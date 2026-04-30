@@ -1,27 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Copy, Check, X, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Copy, Check, ArrowUp, ArrowDown, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t, formatIsk, formatDate } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from "@/components/ui/sheet";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -32,6 +15,9 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "./EmptyState";
+import { CreateCompanyDealDrawer } from "./CreateCompanyDealDrawer";
+
+type Profile = { id: string; name: string | null; email: string };
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
 type DefectResolution = Database["public"]["Enums"]["defect_resolution"];
@@ -58,17 +44,8 @@ interface Props {
   contacts: Contact[];
   onChanged: () => void;
   onOpenDeal: (id: string) => void;
+  currentUserId: string;
 }
-
-const dealStageOptions: DealStage[] = [
-  "inquiry",
-  "quote_in_progress",
-  "quote_sent",
-  "order_confirmed",
-  "delivered",
-  "cancelled",
-  "defect_reorder",
-];
 
 const stageColors: Record<DealStage, string> = {
   inquiry: "bg-gray-100 text-gray-700",
@@ -112,36 +89,34 @@ function isOverdue(date: string | null, stage: DealStage, resolved: boolean): bo
   return d < today;
 }
 
-type FormState = {
-  name: string;
-  stage: DealStage;
-  amount_isk: string;
-  promised_delivery_date: string;
-  contact_id: string;
-  notes: string;
-};
-
-const emptyForm: FormState = {
-  name: "",
-  stage: "inquiry",
-  amount_isk: "",
-  promised_delivery_date: "",
-  contact_id: "",
-  notes: "",
-};
-
 type FilterKey = "open" | "delivered" | "defect" | "cancelled";
 type SortKey = "created_at" | "amount_isk";
 type SortDir = "asc" | "desc";
 
-export function DealsTab({ companyId, deals, contacts, onChanged, onOpenDeal }: Props) {
+export function DealsTab({
+  companyId,
+  deals,
+  contacts: _contacts,
+  onChanged,
+  onOpenDeal,
+  currentUserId,
+}: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [form, setForm] = useState<FormState>(emptyForm);
-  const [saving, setSaving] = useState(false);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterKey | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, name, email")
+        .eq("active", true);
+      setProfiles((data ?? []) as Profile[]);
+    })();
+  }, []);
 
   const handleCopySo = async (e: React.MouseEvent, id: string, soNumber: string) => {
     e.stopPropagation();
@@ -156,33 +131,7 @@ export function DealsTab({ companyId, deals, contacts, onChanged, onOpenDeal }: 
   };
 
   const openCreate = () => {
-    setForm(emptyForm);
     setDrawerOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!form.name.trim()) {
-      toast.error(t.status.somethingWentWrong);
-      return;
-    }
-    setSaving(true);
-    const { error } = await supabase.from("deals").insert({
-      company_id: companyId,
-      name: form.name.trim(),
-      stage: form.stage,
-      amount_isk: form.amount_isk ? Number(form.amount_isk) : 0,
-      promised_delivery_date: form.promised_delivery_date || null,
-      contact_id: form.contact_id || null,
-      notes: form.notes.trim() || null,
-    });
-    setSaving(false);
-    if (error) {
-      toast.error(t.status.somethingWentWrong);
-      return;
-    }
-    toast.success(t.status.savedSuccessfully);
-    setDrawerOpen(false);
-    onChanged();
   };
 
   // Counts — always reflect full unarchived dataset
@@ -261,14 +210,13 @@ export function DealsTab({ companyId, deals, contacts, onChanged, onOpenDeal }: 
     return (
       <>
         <EmptyState label={t.nav.deals} onAdd={openCreate} />
-        <DealDrawer
+        <CreateCompanyDealDrawer
           open={drawerOpen}
           onOpenChange={setDrawerOpen}
-          form={form}
-          setForm={setForm}
-          contacts={contacts}
-          saving={saving}
-          onSave={handleSave}
+          companyId={companyId}
+          currentUserId={currentUserId}
+          profiles={profiles}
+          onSaved={onChanged}
         />
       </>
     );
@@ -435,127 +383,14 @@ export function DealsTab({ companyId, deals, contacts, onChanged, onOpenDeal }: 
         </div>
       </div>
 
-      <DealDrawer
+      <CreateCompanyDealDrawer
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
-        form={form}
-        setForm={setForm}
-        contacts={contacts}
-        saving={saving}
-        onSave={handleSave}
+        companyId={companyId}
+        currentUserId={currentUserId}
+        profiles={profiles}
+        onSaved={onChanged}
       />
     </div>
-  );
-}
-
-interface DrawerProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  form: FormState;
-  setForm: (form: FormState) => void;
-  contacts: Contact[];
-  saving: boolean;
-  onSave: () => void;
-}
-
-function DealDrawer({ open, onOpenChange, form, setForm, contacts, saving, onSave }: DrawerProps) {
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>
-            {t.actions.create} {t.nav.dealSingle.toLowerCase()}
-          </SheetTitle>
-        </SheetHeader>
-        <div className="space-y-3 py-4">
-          <div>
-            <Label>
-              {t.deal.name} <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          </div>
-          <div>
-            <Label>{t.deal.stage}</Label>
-            <Select
-              value={form.stage}
-              onValueChange={(v) => setForm({ ...form, stage: v as DealStage })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {dealStageOptions.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {t.dealStage[s]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>{t.deal.amount_isk}</Label>
-            <Input
-              type="number"
-              value={form.amount_isk}
-              onChange={(e) => setForm({ ...form, amount_isk: e.target.value })}
-            />
-          </div>
-          <div>
-            <Label>{t.deal.promised_delivery_date}</Label>
-            <Input
-              type="date"
-              value={form.promised_delivery_date}
-              onChange={(e) =>
-                setForm({ ...form, promised_delivery_date: e.target.value })
-              }
-            />
-          </div>
-          <div>
-            <Label>{t.nav.contacts}</Label>
-            <Select
-              value={form.contact_id || "__none"}
-              onValueChange={(v) =>
-                setForm({ ...form, contact_id: v === "__none" ? "" : v })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="—" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none">—</SelectItem>
-                {contacts.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {[c.first_name, c.last_name].filter(Boolean).join(" ") || c.email || c.id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>{t.deal.notes}</Label>
-            <Textarea
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              rows={4}
-            />
-          </div>
-        </div>
-        <SheetFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>
-            {t.actions.cancel}
-          </Button>
-          <Button
-            onClick={onSave}
-            disabled={saving}
-            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-          >
-            {saving ? t.status.saving : t.actions.save}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
   );
 }

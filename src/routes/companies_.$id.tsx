@@ -266,6 +266,7 @@ function CompanyDetailContent({ currentProfileId }: { currentProfileId: string |
             deals={deals}
             contacts={contacts}
             onChanged={loadAll}
+            currentUserId={currentProfileId ?? ""}
             onOpenDeal={(dealId) => {
               rememberDealReturnPath();
               navigate({ to: "/deals/$id", params: { id: dealId } });

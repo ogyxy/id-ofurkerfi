@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ChevronDown, Plus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+
 import { t } from "@/lib/sala_translations_is";
 import { rememberDealReturnPath } from "@/lib/dealReturn";
 import { maskKennitalaInput, stripKennitala, isValidKennitala, stripPhone } from "@/lib/formatters";
@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-type DealStage = Database["public"]["Enums"]["deal_stage"];
 type Company = { id: string; name: string; billing_company_id: string | null };
 type Contact = {
   id: string;
@@ -38,16 +37,6 @@ type Contact = {
   company_id: string;
 };
 type Profile = { id: string; name: string | null; email: string };
-
-const STAGES: DealStage[] = [
-  "inquiry",
-  "quote_in_progress",
-  "quote_sent",
-  "order_confirmed",
-  "delivered",
-  "defect_reorder",
-  "cancelled",
-];
 
 interface Props {
   open: boolean;
@@ -92,7 +81,7 @@ export function CreateDealDrawer({
   const [contactId, setContactId] = useState("");
   const [name, setName] = useState("");
   const [ownerId, setOwnerId] = useState(currentUserId);
-  const [stage, setStage] = useState<DealStage>("inquiry");
+  // Stage is hardcoded to quote_in_progress for new deals — no UI control.
   const [markup, setMarkup] = useState("30");
   const [promisedDate, setPromisedDate] = useState("");
   const [firstNote, setFirstNote] = useState("");
@@ -160,7 +149,7 @@ export function CreateDealDrawer({
     setCompanyId("");
     setContactId("");
     setName("");
-    setStage("inquiry");
+    // stage is fixed at quote_in_progress; nothing to reset
     setMarkup("30");
     setPromisedDate("");
     setFirstNote("");
@@ -275,7 +264,7 @@ export function CreateDealDrawer({
         contact_id: contactId || null,
         owner_id: ownerId || null,
         name: name.trim(),
-        stage,
+        stage: "quote_in_progress",
         default_markup_pct: Number(markup) || 30,
         promised_delivery_date: promisedDate || null,
       })
@@ -550,21 +539,7 @@ export function CreateDealDrawer({
             </Select>
           </div>
 
-          <div>
-            <Label>{t.deal.stage}</Label>
-            <Select value={stage} onValueChange={(v) => setStage(v as DealStage)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STAGES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {t.dealStage[s]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Stage is hardcoded to "Tilboð í vinnslu" — not user-editable. */}
 
           <div>
             <Label>{t.deal.default_markup_pct}</Label>
