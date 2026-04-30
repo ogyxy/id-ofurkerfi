@@ -462,6 +462,7 @@ function YfirlitContent({
 
       {/* My tasks */}
       <section
+        ref={tasksSectionRef}
         className={`rounded-lg border bg-card p-5 shadow-sm ${
           isViewingOther ? "border-ide-navy/40" : "border-border"
         }`}
@@ -483,13 +484,15 @@ function YfirlitContent({
                 <TaskRow key={`${task.deal.id}-${task.type}-${i}`} task={task} />
               ))}
             </ul>
-            {tasks.length > 5 && !showAllTasks && (
+            {tasks.length > 5 && (
               <button
                 type="button"
-                onClick={() => setShowAllTasks(true)}
+                onClick={() => setShowAllTasks((v) => !v)}
                 className="mt-3 text-sm text-ide-navy hover:underline"
               >
-                + {t.yfirlit.showMore.replace("{count}", String(tasks.length - 5))}
+                {showAllTasks
+                  ? t.actions.showLess ?? "Sýna minna"
+                  : `+ ${t.yfirlit.showMore.replace("{count}", String(tasks.length - 5))}`}
               </button>
             )}
           </>
