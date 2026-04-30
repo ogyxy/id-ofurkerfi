@@ -951,6 +951,7 @@ export type Database = {
           supplier_invoice_amount: number | null
           supplier_invoice_number: string | null
           supplier_reference: string | null
+          tracking_numbers: string[]
           updated_at: string
         }
         Insert: {
@@ -977,6 +978,7 @@ export type Database = {
           supplier_invoice_amount?: number | null
           supplier_invoice_number?: string | null
           supplier_reference?: string | null
+          tracking_numbers?: string[]
           updated_at?: string
         }
         Update: {
@@ -1003,6 +1005,7 @@ export type Database = {
           supplier_invoice_amount?: number | null
           supplier_invoice_number?: string | null
           supplier_reference?: string | null
+          tracking_numbers?: string[]
           updated_at?: string
         }
         Relationships: [
