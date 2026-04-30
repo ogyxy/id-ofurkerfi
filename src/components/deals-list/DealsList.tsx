@@ -424,12 +424,13 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
 
   const isSearching = debouncedSearch.trim().length > 0;
 
-  // Virtualizer
-  const rowVirtualizer = useVirtualizer({
+  // Window-based virtualizer (scrolls with the page, no inner container)
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const rowVirtualizer = useWindowVirtualizer({
     count: visibleDeals.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => 88,
+    estimateSize: () => 64,
     overscan: 8,
+    scrollMargin: listRef.current?.offsetTop ?? 0,
   });
 
   return (
