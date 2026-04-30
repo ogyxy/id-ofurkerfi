@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Search, X, AlertTriangle, Check, Plus, ChevronDown, Clock, AlertCircle } from "lucide-react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { Search, X, AlertTriangle, Check, Plus, ChevronDown, Clock, AlertCircle, Copy } from "lucide-react";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t, formatIsk, formatDate } from "@/lib/sala_translations_is";
@@ -128,7 +128,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
   const [createOpen, setCreateOpen] = useState(false);
   const [lineMatchedDealIds, setLineMatchedDealIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
-  const scrollRef = useRef<HTMLDivElement | null>(null);
+  
 
   // Debounce search
   useEffect(() => {
@@ -424,12 +424,13 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
 
   const isSearching = debouncedSearch.trim().length > 0;
 
-  // Virtualizer
-  const rowVirtualizer = useVirtualizer({
+  // Window-based virtualizer (scrolls with the page, no inner container)
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const rowVirtualizer = useWindowVirtualizer({
     count: visibleDeals.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => 88,
+    estimateSize: () => 64,
     overscan: 8,
+    scrollMargin: listRef.current?.offsetTop ?? 0,
   });
 
   return (
@@ -581,11 +582,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
           </button>
         </div>
       ) : (
-        <div
-          ref={scrollRef}
-          className="relative overflow-auto"
-          style={{ height: "calc(100vh - 320px)" }}
-        >
+        <div ref={listRef} className="relative">
           <div
             style={{
               height: `${rowVirtualizer.getTotalSize()}px`,
@@ -605,8 +602,8 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                     top: 0,
                     left: 0,
                     width: "100%",
-                    transform: `translateY(${vItem.start}px)`,
-                    paddingBottom: 8,
+                    transform: `translateY(${vItem.start - (listRef.current?.offsetTop ?? 0)}px)`,
+                    paddingBottom: 6,
                   }}
                 >
                   <DealCard
@@ -686,6 +683,31 @@ function StagePill({
         {label} ({count})
       </span>
       {showClose && <X className="h-3 w-3" aria-hidden="true" />}
+    </button>
+  );
+}
+
+function CopySoButton({ soNumber }: { soNumber: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async (e) => {
+        e.stopPropagation();
+        try {
+          await navigator.clipboard.writeText(soNumber);
+          setCopied(true);
+          toast.success(`${soNumber} afritað`);
+          setTimeout(() => setCopied(false), 1500);
+        } catch {
+          toast.error(t.status.somethingWentWrong);
+        }
+      }}
+      className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      aria-label={`Afrita ${soNumber}`}
+      title="Afrita sölunúmer"
+    >
+      {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
     </button>
   );
 }
@@ -847,7 +869,7 @@ function DealCard({
         if (e.key === "Enter") onOpen();
       }}
       className={cn(
-        "grid cursor-pointer items-center gap-4 rounded-md border border-border border-l-4 px-4 py-3 transition hover:bg-muted/50",
+        "grid cursor-pointer items-center gap-3 rounded-md border border-border border-l-4 px-3 py-2 transition hover:bg-muted/50",
         "grid-cols-[160px_1fr] md:grid-cols-[160px_minmax(0,1.5fr)_minmax(0,1.5fr)_180px_140px_120px]",
         styles.border,
         styles.bg,
@@ -858,7 +880,10 @@ function DealCard({
     >
       {/* SO number + stage + defect badge */}
       <div className="min-w-0 space-y-1">
-        <div className="font-mono text-xs text-muted-foreground">{deal.so_number}</div>
+        <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
+          <span>{deal.so_number}</span>
+          <CopySoButton soNumber={deal.so_number} />
+        </div>
         <div onClick={(e) => e.stopPropagation()}>
           <StagePopover current={deal.stage} onChange={onStageChange} />
         </div>
