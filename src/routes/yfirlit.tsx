@@ -491,7 +491,7 @@ function YfirlitContent({
                 className="mt-3 text-sm text-ide-navy hover:underline"
               >
                 {showAllTasks
-                  ? t.actions.showLess ?? "Sýna minna"
+                  ? t.actions.showLess
                   : `+ ${t.yfirlit.showMore.replace("{count}", String(tasks.length - 5))}`}
               </button>
             )}

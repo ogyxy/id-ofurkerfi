@@ -207,6 +207,7 @@ export const t = {
     duplicate: 'Afrita',
     archive:   'Geyma',
     restore:   'Endurheimta',
+    showLess:  'Sýna minna',
   },
 
   // ---------------------------------------------------------------------------
