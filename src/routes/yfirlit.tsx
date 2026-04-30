@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -50,7 +50,7 @@ interface Profile {
 }
 
 interface TaskItem {
-  type: "overdue" | "uninvoiced" | "defect_pending" | "unpaid_old";
+  type: "overdue" | "defect_pending" | "unpaid_old";
   deal: {
     id: string;
     so_number: string;
@@ -233,9 +233,8 @@ function YfirlitContent({
         ) {
           out.push({ type: "overdue", deal: dealRef });
         }
-        if (d.stage === "delivered" && d.invoice_status === "not_invoiced") {
-          out.push({ type: "uninvoiced", deal: dealRef });
-        }
+        // Note: deals delivered but not yet invoiced are intentionally
+        // excluded from this review section.
         if (d.stage === "defect_reorder" && d.defect_resolution === "pending") {
           out.push({ type: "defect_pending", deal: dealRef });
         }
