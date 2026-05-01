@@ -126,6 +126,7 @@ const SELECT = `
   payment_status,
   defect_resolution,
   tracking_numbers,
+  payday_invoice_id,
   archived,
   created_at,
   company:companies(id, name),
