@@ -184,10 +184,10 @@ export function SizeBreakdownModal({
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {t.actions?.cancel ?? "Hætta við"}
+              {t.actions.cancel}
             </Button>
             <Button onClick={handleSave} disabled={!matches}>
-              {t.actions?.save ?? "Vista"}
+              {t.actions.save}
             </Button>
           </div>
         </DialogFooter>
