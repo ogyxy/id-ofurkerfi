@@ -29,6 +29,23 @@ import { QuoteBuilderModal } from "@/components/deal-detail/QuoteBuilderModal";
 import { DealLog, type LogEntry } from "@/components/deal-detail/DealLog";
 import { EditDealDrawer } from "@/components/deal-detail/EditDealDrawer";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  fetchLinkedPos,
+  planSoMarkArrived,
+  type LinkedPo,
+} from "@/lib/poSoSync";
+import { logPoReceived } from "@/lib/poActivityLog";
 
 type Deal = Database["public"]["Tables"]["deals"]["Row"];
 type DealStage = Database["public"]["Enums"]["deal_stage"];
