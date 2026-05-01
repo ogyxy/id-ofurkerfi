@@ -200,8 +200,17 @@ export function QuoteBuilderModal({
         .from("quote_pdfs")
         .list(deal.so_number, { limit: 1000 });
       const version = (existing?.length ?? 0) + 1;
-      const filename = `${deal.so_number}-${version}.pdf`;
-      const filePath = `${deal.so_number}/${filename}`;
+      const storageFilename = `${deal.so_number}-${version}.pdf`;
+      const filePath = `${deal.so_number}/${storageFilename}`;
+
+      // Friendly download filename: "IDÉ Tilboð - {deal.name} {company.name} - {so}-{v}.pdf"
+      const dealNamePart = deal.name?.trim() ?? "";
+      const companyNamePart = company.name?.trim() ?? "";
+      const titleParts = [dealNamePart, companyNamePart].filter(Boolean).join(" ");
+      const suffix = `${deal.so_number}-${version}`;
+      const filename = titleParts
+        ? `IDÉ Tilboð - ${titleParts} - ${suffix}.pdf`
+        : `IDÉ Tilboð - ${suffix}.pdf`;
 
       // 2. Generate base quote
       const quoteLines: QuoteLine[] = lines.map((l) => ({
