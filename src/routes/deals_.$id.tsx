@@ -632,6 +632,15 @@ function DealDetailContent() {
         currentProfile={currentProfile}
         onLinked={load}
       />
+
+      <CreatePoDrawer
+        open={createPoOpen}
+        onOpenChange={setCreatePoOpen}
+        fixedDealId={deal.id}
+        currentProfileId={currentProfile?.id ?? null}
+        onCreated={() => void load()}
+        navigateOnCreate={true}
+      />
     </div>
   );
 }
