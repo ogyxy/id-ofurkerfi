@@ -304,7 +304,9 @@ export function CreatePoDrawer({
 
           {!fixedDealId && (
             <div>
-              <Label>{t.purchaseOrder.linked_deal}</Label>
+              <Label>
+                {t.purchaseOrder.linked_deal} <span className="text-destructive">*</span>
+              </Label>
               <Popover open={dealComboOpen} onOpenChange={setDealComboOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -323,17 +325,6 @@ export function CreatePoDrawer({
                     <CommandList>
                       <CommandEmpty>{t.status.noResults}</CommandEmpty>
                       <CommandGroup>
-                        <CommandItem
-                          value="__none__"
-                          onSelect={() => {
-                            setLinkedDealId("");
-                            setDealComboOpen(false);
-                          }}
-                        >
-                          <span className="text-muted-foreground">
-                            — {t.purchaseOrder.noDeal}
-                          </span>
-                        </CommandItem>
                         {deals.map((d) => (
                           <CommandItem
                             key={d.id}
@@ -359,6 +350,9 @@ export function CreatePoDrawer({
                   </Command>
                 </PopoverContent>
               </Popover>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t.purchaseOrder.requireDealHelp}
+              </p>
             </div>
           )}
         </div>
@@ -373,7 +367,7 @@ export function CreatePoDrawer({
           </Button>
           <Button
             onClick={handleSave}
-            disabled={saving || !supplierId}
+            disabled={saving || !supplierId || (!fixedDealId && !linkedDealId)}
             className={cn("bg-ide-navy text-white hover:bg-ide-navy-hover")}
           >
             {saving ? t.status.saving : t.actions.create}
