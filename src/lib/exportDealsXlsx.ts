@@ -86,9 +86,18 @@ export async function exportDealsToXlsx(
       d.total_cost_isk != null
         ? Number(d.total_cost_isk) + Number(d.shipping_cost_isk ?? 0)
         : null;
-    const margin = price != null && cost != null ? price - cost : null;
+    const refundActive =
+      d.defect_resolution === "refund" &&
+      d.refund_amount_isk != null &&
+      Number(d.refund_amount_isk) > 0;
+    const refund = refundActive ? -Number(d.refund_amount_isk) : null;
+    const margin =
+      price != null && cost != null ? price - cost + (refund ?? 0) : null;
+    const netPrice = price != null ? price + (refund ?? 0) : null;
     const marginPct =
-      margin != null && price != null && price !== 0 ? margin / price : null;
+      margin != null && netPrice != null && netPrice !== 0
+        ? margin / netPrice
+        : null;
 
     return [
       d.so_number,
@@ -99,6 +108,7 @@ export async function exportDealsToXlsx(
       t.dealStage[d.stage] ?? d.stage,
       price,
       cost,
+      refund,
       margin,
       marginPct,
       toDate(d.promised_delivery_date),
