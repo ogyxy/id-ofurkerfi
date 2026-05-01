@@ -799,6 +799,46 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
         </div>
       </div>
 
+      {/* Payday-derived status filter pills (invoice + payment) */}
+      <div className="mb-4">
+        <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+          {t.deal.filterPaydayRowLabel}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {(["not_invoiced", "full"] as InvoiceStatus[]).map((s) => {
+            const isActive = activeInvoiceStatus === s;
+            if (activeInvoiceStatus && !isActive) return null;
+            return (
+              <StagePill
+                key={`inv-${s}`}
+                label={t.invoiceStatus[s]}
+                count={paydayCounts.inv[s]}
+                active={isActive}
+                onClick={() => setActiveInvoiceStatus((prev) => (prev === s ? null : s))}
+                showClose={isActive}
+              />
+            );
+          })}
+          {!activeInvoiceStatus && !activePaymentStatus && (
+            <span className="px-1 text-muted-foreground" aria-hidden>·</span>
+          )}
+          {(["unpaid", "partial", "paid"] as PaymentStatus[]).map((s) => {
+            const isActive = activePaymentStatus === s;
+            if (activePaymentStatus && !isActive) return null;
+            return (
+              <StagePill
+                key={`pay-${s}`}
+                label={t.paymentStatus[s]}
+                count={paydayCounts.pay[s]}
+                active={isActive}
+                onClick={() => setActivePaymentStatus((prev) => (prev === s ? null : s))}
+                showClose={isActive}
+              />
+            );
+          })}
+        </div>
+      </div>
+
       {/* Flat virtualized list */}
       {loading ? (
         <div className="py-12 text-center text-muted-foreground">{t.status.loading}</div>
