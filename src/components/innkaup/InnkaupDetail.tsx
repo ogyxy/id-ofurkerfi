@@ -1068,7 +1068,7 @@ function EditPoDrawer({
         supplier_id: supplierId || null,
         supplier: supplierName,
         supplier_reference: supplierRef.trim() || null,
-        deal_id: dealId || null,
+        deal_id: dealId || po.deal_id,
         notes: notes.trim() || null,
         order_date: orderDate || null,
         expected_delivery_date: expectedDate || null,
