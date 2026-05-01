@@ -120,6 +120,7 @@ function DealDetailContent() {
   const [editOpen, setEditOpen] = useState(false);
   const [quoteBuilderOpen, setQuoteBuilderOpen] = useState(false);
   const [linkPaydayOpen, setLinkPaydayOpen] = useState(false);
+  const [createPoOpen, setCreatePoOpen] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [defectModalOpen, setDefectModalOpen] = useState(false);
   const [defectBusy, setDefectBusy] = useState(false);
