@@ -1,42 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  Download,
-  Pencil,
-  Trash2,
-  Upload,
-} from "lucide-react";
-import { FileThumbnail } from "@/components/FileThumbnail";
-import { MultiFileUploadDialog } from "@/components/MultiFileUploadDialog";
-import { smartGuessPoFileType } from "@/lib/uploadHelpers";
+import { ArrowLeft, ExternalLink, Pencil, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t, formatDate, formatIsk, formatNumber } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,24 +17,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { pathSafe, formatFileSize } from "@/lib/formatters";
+import { formatFileSize } from "@/lib/formatters";
 import { goBack } from "@/lib/dealReturn";
-import {
-  PO_CURRENCIES,
-  PO_FILE_TYPES,
-  poFileTypeLabel,
-  type POStatus,
-  type PoFileType,
-} from "@/lib/poConstants";
+import { PO_STATUS_STYLES, type POStatus } from "@/lib/poConstants";
 import {
   logPoPaid,
   logPoReceived,
@@ -74,10 +30,11 @@ import {
   logPoPaymentRevoked,
   logPoRevertedToOrdered,
 } from "@/lib/poActivityLog";
-import { PoTrackingNumbersInline } from "./PoTrackingNumbersInline";
+import { TrackingCard } from "@/components/tracking/TrackingCard";
 import { POStageStepper } from "@/components/po-detail/POStageStepper";
 import { POStepperActions } from "@/components/po-detail/POStepperActions";
 import { InvoiceDrawer } from "@/components/po-detail/InvoiceDrawer";
+import { CreatePoDrawer } from "@/components/innkaup/CreatePoDrawer";
 import {
   fetchLinkedPos,
   planSoAfterPoReceived,
@@ -88,7 +45,6 @@ type PO = Database["public"]["Tables"]["purchase_orders"]["Row"];
 type Supplier = Database["public"]["Tables"]["suppliers"]["Row"];
 type PoFile = Database["public"]["Tables"]["po_files"]["Row"] & {
   signedUrl?: string | null;
-  signedUrlDownload?: string | null;
 };
 type Activity = {
   id: string;
@@ -99,16 +55,12 @@ type Activity = {
 };
 type ProfileMini = { id: string; name: string | null };
 
-const NAVY = "#1a2540";
-
-
 interface Props {
   poId: string;
   currentProfileId: string;
 }
 
 export function InnkaupDetail({ poId, currentProfileId }: Props) {
-  
   const [po, setPo] = useState<PO | null>(null);
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [linkedDeal, setLinkedDeal] = useState<{
@@ -122,14 +74,11 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
   const [profileNames, setProfileNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [confirmStatus, setConfirmStatus] = useState<POStatus | null>(null);
-  const [uploadOpen, setUploadOpen] = useState(false);
+  const [editCoreOpen, setEditCoreOpen] = useState(false);
   const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
   const [confirmMarkPaid, setConfirmMarkPaid] = useState(false);
   const [confirmRevertWhileDelivered, setConfirmRevertWhileDelivered] = useState(false);
   const [logText, setLogText] = useState("");
-
 
   const load = useCallback(async () => {
     const [poRes, filesRes] = await Promise.all([
@@ -160,25 +109,15 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
     setPo(data);
     setSupplier(data.supplier_record);
     setLinkedDeal(data.deal ?? null);
+
     const rawFiles = (filesRes.data ?? []) as PoFile[];
     const filesWithUrls = await Promise.all(
       rawFiles.map(async (f) => {
-        if (!f.storage_path) {
-          return { ...f, signedUrl: f.file_url ?? null, signedUrlDownload: f.file_url ?? null };
-        }
-        const [view, dl] = await Promise.all([
-          supabase.storage.from("po_files").createSignedUrl(f.storage_path, 3600),
-          supabase.storage
-            .from("po_files")
-            .createSignedUrl(f.storage_path, 3600, {
-              download: f.original_filename ?? true,
-            }),
-        ]);
-        return {
-          ...f,
-          signedUrl: view.data?.signedUrl ?? null,
-          signedUrlDownload: dl.data?.signedUrl ?? null,
-        };
+        if (!f.storage_path) return { ...f, signedUrl: f.file_url ?? null };
+        const { data: view } = await supabase.storage
+          .from("po_files")
+          .createSignedUrl(f.storage_path, 3600);
+        return { ...f, signedUrl: view?.signedUrl ?? null };
       }),
     );
     setFiles(filesWithUrls);
@@ -197,7 +136,6 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
       setActivities([]);
     }
 
-    // Load profile names for invoice_registered_by + invoice_approved_by
     const profileIds = [data.invoice_registered_by, data.invoice_approved_by].filter(
       (x): x is string => Boolean(x),
     );
@@ -232,7 +170,6 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
       toast.error(t.status.somethingWentWrong);
       return;
     }
-    // Sync expected_delivery_date → linked deal estimated_delivery_date
     if (
       "expected_delivery_date" in patch &&
       po.deal_id &&
@@ -244,69 +181,6 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         .eq("id", po.deal_id);
     }
     await load();
-  };
-
-  const fetchExchangeRate = async (currency: string) => {
-    if (currency === "ISK") return 1;
-    try {
-      const res = await fetch(
-        `https://api.frankfurter.dev/v1/latest?base=${currency}&symbols=ISK`,
-      );
-      const json = await res.json();
-      return Number(json?.rates?.ISK) || null;
-    } catch {
-      return null;
-    }
-  };
-
-  // Auto-fetch exchange rate when missing
-  useEffect(() => {
-    if (!po) return;
-    if (po.currency === "ISK") return;
-    if (po.exchange_rate) return;
-    void (async () => {
-      const rate = await fetchExchangeRate(po.currency);
-      if (rate) {
-        await supabase
-          .from("purchase_orders")
-          .update({ exchange_rate: rate })
-          .eq("id", po.id);
-        await load();
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [po?.id, po?.currency, po?.exchange_rate]);
-
-  const handleStatusChange = async (next: POStatus) => {
-    if (!po) return;
-    const today = new Date().toISOString().split("T")[0];
-    const patch: Partial<PO> = { status: next };
-    if (next === "received" && !po.received_date) patch.received_date = today;
-    if (next === "paid" && !po.paid_date) patch.paid_date = today;
-    await updatePo(patch);
-    await logPoStatusChanged({
-      dealId: po.deal_id,
-      poNumber: po.po_number,
-      newStatus: next,
-      createdBy: currentProfileId,
-    });
-    if (next === "received" && !po.received_date) {
-      await logPoReceived({
-        dealId: po.deal_id,
-        poNumber: po.po_number,
-        receivedDate: today,
-        createdBy: currentProfileId,
-      });
-    }
-    if (next === "paid" && !po.paid_date) {
-      await logPoPaid({
-        dealId: po.deal_id,
-        poNumber: po.po_number,
-        paidDate: today,
-        createdBy: currentProfileId,
-      });
-    }
-    setConfirmStatus(null);
   };
 
   const handleCancel = async () => {
@@ -333,7 +207,6 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
     }
   };
 
-  // ---- New action handlers (3-step stepper) ----
   const today = () => new Date().toISOString().split("T")[0];
 
   const handleMarkReceived = async () => {
@@ -346,7 +219,6 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
       receivedDate: d,
       createdBy: currentProfileId,
     });
-    // Sync SO: advance to ready_for_pickup if ALL active POs are now received.
     if (po.deal_id) {
       const { data: dealRow } = await supabase
         .from("deals")
@@ -355,7 +227,6 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         .maybeSingle();
       if (dealRow?.stage) {
         const linked = await fetchLinkedPos(supabase, po.deal_id);
-        // Reflect this PO's just-set received_date in the in-memory list
         const adjusted = linked.map((p) =>
           p.id === po.id ? { ...p, received_date: d, status: "received" as const } : p,
         );
@@ -373,10 +244,7 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
           });
         } else if (plan.action === "wait" && plan.outstanding) {
           toast.info(
-            t.purchaseOrder.awaitingOtherPos.replace(
-              "{count}",
-              String(plan.outstanding),
-            ),
+            t.purchaseOrder.awaitingOtherPos.replace("{count}", String(plan.outstanding)),
           );
         }
       }
@@ -447,7 +315,6 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
       poNumber: po.po_number,
       createdBy: currentProfileId,
     });
-    // SO sync: if SO is at ready_for_pickup, revert it back to order_confirmed.
     if (po.deal_id) {
       const { data: dealRow } = await supabase
         .from("deals")
@@ -500,7 +367,11 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
   };
 
   if (loading) {
-    return <div className="py-20 text-center text-sm text-muted-foreground">{t.status.loading}</div>;
+    return (
+      <div className="py-20 text-center text-sm text-muted-foreground">
+        {t.status.loading}
+      </div>
+    );
   }
   if (notFound || !po) {
     return (
@@ -511,19 +382,23 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
   }
 
   const supplierName = supplier?.name ?? po.supplier;
-  const totalOriginal = Number(po.amount ?? 0) + Number(po.shipping_cost ?? 0);
   const exchangeRate = po.exchange_rate ? Number(po.exchange_rate) : null;
   const amountIsk = exchangeRate ? Number(po.amount ?? 0) * exchangeRate : null;
   const shippingIsk = exchangeRate ? Number(po.shipping_cost ?? 0) * exchangeRate : null;
+  const totalOriginal = Number(po.amount ?? 0) + Number(po.shipping_cost ?? 0);
   const totalIsk = exchangeRate ? totalOriginal * exchangeRate : null;
 
-  const filesByType = new Map<PoFileType, PoFile[]>();
-  PO_FILE_TYPES.forEach((ft) => filesByType.set(ft, []));
-  files.forEach((f) => {
-    const ft = (f.file_type as PoFileType) ?? "other";
-    if (!filesByType.has(ft)) filesByType.set(ft, []);
-    filesByType.get(ft)!.push(f);
-  });
+  const orderConfirmFile = files.find((f) => f.file_type === "order_confirmation");
+  const invoiceFile = files.find((f) => f.file_type === "invoice");
+
+  // Derive financial panel left-border color from /innkaup status palette.
+  let panelStatus: POStatus;
+  if (po.paid_date) panelStatus = "paid";
+  else if (po.invoice_approved_at) panelStatus = "invoiced"; // approved → blue family
+  else if (po.invoice_received_date) panelStatus = "received"; // amber (pending)
+  else panelStatus = "ordered"; // neutral
+  const panelBorderColor =
+    panelStatus === "ordered" ? "#9ca3af" : PO_STATUS_STYLES[panelStatus].border;
 
   return (
     <div className="space-y-6">
@@ -536,7 +411,7 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         {t.actions.back}
       </button>
 
-      {/* Stepper (3-step: Pantað → Móttekið → Greitt) */}
+      {/* Stepper */}
       <POStageStepper
         po={po}
         hasTracking={(po.tracking_numbers ?? []).length > 0}
@@ -548,31 +423,23 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         onReactivate={() => void handleReactivate()}
       />
 
-      {/* Stepper-aligned action buttons */}
-      <POStepperActions
-        po={po}
-        onMarkReceived={() => void handleMarkReceived()}
-        onOpenInvoiceDrawer={() => setInvoiceDrawerOpen(true)}
-        onApproveInvoice={() => void handleApproveInvoice()}
-        onMarkPaid={() => setConfirmMarkPaid(true)}
-      />
-
-      {/* Header card */}
+      {/* Header card — display-only dates */}
       <div className="rounded-md border border-border bg-card p-6 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-1 min-w-0">
-            <div className="font-mono text-xs text-muted-foreground">{po.po_number}</div>
-            <h1 className="text-2xl font-semibold md:text-3xl">{supplierName}</h1>
-            <div className="text-sm text-muted-foreground">
-              <span>{t.purchaseOrder.supplier_reference}: </span>
-              <InlineText
-                value={po.supplier_reference}
-                placeholder="—"
-                onSave={(v) => void updatePo({ supplier_reference: v })}
-              />
+          <div className="min-w-0 space-y-1">
+            <div className="font-mono text-xs text-muted-foreground">
+              {po.po_number}
             </div>
+            <h1 className="text-2xl font-semibold md:text-3xl">{supplierName}</h1>
+            {po.supplier_reference && (
+              <div className="text-sm text-muted-foreground">
+                {t.purchaseOrder.supplier_reference}: {po.supplier_reference}
+              </div>
+            )}
             <div className="pt-1">
-              <span className="text-xs text-muted-foreground">{t.purchaseOrder.linked_deal}: </span>
+              <span className="text-xs text-muted-foreground">
+                {t.purchaseOrder.linked_deal}:{" "}
+              </span>
               {linkedDeal ? (
                 <Link
                   to="/deals/$id"
@@ -581,222 +448,202 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
                 >
                   {linkedDeal.so_number} — {linkedDeal.name}
                   {linkedDeal.company && (
-                    <span className="text-muted-foreground"> · {linkedDeal.company.name}</span>
+                    <span className="text-muted-foreground">
+                      {" "}
+                      · {linkedDeal.company.name}
+                    </span>
                   )}
                 </Link>
               ) : (
                 <span className="text-sm text-muted-foreground">—</span>
               )}
             </div>
-            <div className="pt-2">
-              <PoTrackingNumbersInline
-                poId={po.id}
-                dealId={po.deal_id}
-                initial={(po.tracking_numbers ?? []) as string[]}
-              />
-            </div>
           </div>
 
-          <div className="space-y-2 md:text-right">
-            <DateField
-              label={t.purchaseOrder.order_date}
-              value={po.order_date}
-              onChange={(v) => void updatePo({ order_date: v })}
-            />
-            <DateField
-              label={t.purchaseOrder.expected_delivery_date}
-              value={po.expected_delivery_date}
-              onChange={(v) => void updatePo({ expected_delivery_date: v })}
-            />
-            {(po.status === "received" || po.status === "invoiced" || po.status === "paid") && (
-              <DateField
-                label={t.purchaseOrder.received_date}
-                value={po.received_date}
-                onChange={(v) => void updatePo({ received_date: v })}
-              />
+          <div className="space-y-1.5 text-sm md:text-right">
+            <div>
+              <span className="text-muted-foreground">
+                {t.purchaseOrder.order_date}:{" "}
+              </span>
+              <span className="font-medium">
+                {po.order_date ? formatDate(po.order_date) : "—"}
+              </span>
+            </div>
+            {po.expected_delivery_date && (
+              <div>
+                <span className="text-muted-foreground">
+                  {t.purchaseOrder.expected_delivery_date}:{" "}
+                </span>
+                <span className="font-medium">
+                  {formatDate(po.expected_delivery_date)}
+                </span>
+              </div>
             )}
-            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-              <Pencil className="mr-1 h-3.5 w-3.5" />
-              {t.actions.edit}
-            </Button>
+            {po.received_date && (
+              <div>
+                <span className="text-muted-foreground">
+                  {t.purchaseOrder.received_date}:{" "}
+                </span>
+                <span className="font-medium">{formatDate(po.received_date)}</span>
+              </div>
+            )}
+            {po.paid_date && (
+              <div>
+                <span className="text-muted-foreground">
+                  {t.purchaseOrder.paid_date}:{" "}
+                </span>
+                <span className="font-medium">{formatDate(po.paid_date)}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Amounts */}
-      <div className="rounded-md border border-border bg-card p-6">
-        <h2 className="mb-4 text-lg font-semibold">{t.purchaseOrder.total_amount}</h2>
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-3">
-            <div>
-              <Label>{t.purchaseOrder.currency}</Label>
-              <Select
-                value={po.currency}
-                onValueChange={async (v) => {
-                  const rate = await fetchExchangeRate(v);
-                  await updatePo({ currency: v, exchange_rate: rate ?? po.exchange_rate });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PO_CURRENCIES.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t.purchaseOrder.exchange_rate}</Label>
-              <Input
-                type="number"
-                step="0.0001"
-                defaultValue={po.exchange_rate ?? ""}
-                onBlur={(e) => void updatePo({ exchange_rate: e.target.value ? Number(e.target.value) : null })}
-              />
-            </div>
-            <div>
-              <Label>{t.purchaseOrder.amount} ({po.currency})</Label>
-              <Input
-                type="number"
-                step="0.01"
-                defaultValue={po.amount ?? ""}
-                key={`amt-${po.id}-${po.amount}`}
-                onBlur={(e) => void updatePo({ amount: Number(e.target.value || 0) })}
-              />
-            </div>
-            <div>
-              <Label>{t.purchaseOrder.shipping_cost} ({po.currency})</Label>
-              <Input
-                type="number"
-                step="0.01"
-                defaultValue={po.shipping_cost ?? ""}
-                key={`ship-${po.id}-${po.shipping_cost}`}
-                onBlur={(e) => void updatePo({ shipping_cost: Number(e.target.value || 0) })}
-              />
-            </div>
-          </div>
-          <div className="space-y-2 rounded-md bg-muted/40 p-4">
-            <Row label={t.purchaseOrder.amount_isk} value={amountIsk !== null ? formatIsk(amountIsk) : "—"} />
-            <Row label={t.purchaseOrder.shipping_cost_isk} value={shippingIsk !== null ? formatIsk(shippingIsk) : "—"} />
-            <div className="border-t border-border pt-2">
+      {/* Tracking card */}
+      <TrackingCard
+        mode="po"
+        poId={po.id}
+        dealId={po.deal_id}
+        initial={(po.tracking_numbers ?? []) as string[]}
+      />
+
+      {/* Financial panel (no title, status-colored left border) */}
+      <div
+        className="rounded-md border border-border bg-card p-6 shadow-sm"
+        style={{ borderLeft: `4px solid ${panelBorderColor}` }}
+      >
+        {/* Top: PO amount summary */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="grid flex-1 gap-2 text-sm sm:grid-cols-2">
+            <Row label={t.purchaseOrder.currency} value={po.currency} />
+            <Row
+              label={t.purchaseOrder.exchange_rate}
+              value={exchangeRate != null ? formatNumber(exchangeRate, 4) : "—"}
+            />
+            <Row
+              label={t.purchaseOrder.amount}
+              value={`${po.currency} ${formatNumber(Number(po.amount ?? 0), 2)}${
+                amountIsk != null ? ` · ${formatIsk(amountIsk)}` : ""
+              }`}
+            />
+            <Row
+              label={t.purchaseOrder.shipping_cost}
+              value={`${po.currency} ${formatNumber(Number(po.shipping_cost ?? 0), 2)}${
+                shippingIsk != null ? ` · ${formatIsk(shippingIsk)}` : ""
+              }`}
+            />
+            <div className="sm:col-span-2 border-t border-border pt-2">
               <Row
                 label={t.purchaseOrder.total_amount}
-                value={totalIsk !== null ? formatIsk(totalIsk) : "—"}
+                value={totalIsk != null ? formatIsk(totalIsk) : "—"}
                 bold
               />
             </div>
-            <div className="text-xs text-muted-foreground">
-              {po.currency} {formatNumber(totalOriginal, 2)}
-            </div>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setEditCoreOpen(true)}
+            className="shrink-0"
+          >
+            <Pencil className="mr-1 h-3.5 w-3.5" />
+            {t.actions.edit}
+          </Button>
         </div>
-      </div>
 
-      {/* Invoice section — read-only summary; edits via InvoiceDrawer */}
-      {(po.invoice_received_date ||
-        po.supplier_invoice_number ||
-        po.supplier_invoice_amount ||
-        po.paid_date) && (
-        <div
-          className={cn(
-            "rounded-md border bg-card p-6",
-            po.paid_date
-              ? "border-l-4 border-l-green-500"
-              : po.invoice_approved_at
-                ? "border-l-4 border-l-green-500"
-                : po.invoice_received_date
-                  ? "border-l-4 border-l-blue-500"
-                  : "border-border",
-          )}
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{t.purchaseOrder.invoiceSection}</h2>
-            {po.invoice_received_date && (
-              <Button variant="ghost" size="sm" onClick={() => setInvoiceDrawerOpen(true)}>
+        {/* Order confirmation file card */}
+        {orderConfirmFile && (
+          <div className="mt-4">
+            <FileCardSmall
+              file={orderConfirmFile}
+              label={t.purchaseOrder.fileTypeOrderConfirm}
+            />
+          </div>
+        )}
+
+        {/* Invoice subsection */}
+        {po.invoice_received_date && (
+          <div className="mt-6 border-t border-border pt-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="grid flex-1 gap-2 text-sm sm:grid-cols-2">
+                <Row
+                  label={t.purchaseOrder.supplier_invoice_number}
+                  value={po.supplier_invoice_number ?? "—"}
+                />
+                <Row
+                  label={t.purchaseOrder.supplier_invoice_amount}
+                  value={
+                    po.supplier_invoice_amount != null
+                      ? `${po.currency} ${formatNumber(Number(po.supplier_invoice_amount), 2)}${
+                          exchangeRate
+                            ? ` · ${formatIsk(Number(po.supplier_invoice_amount) * exchangeRate)}`
+                            : ""
+                        }`
+                      : "—"
+                  }
+                />
+                <Row
+                  label={t.purchaseOrder.invoice_received_date}
+                  value={formatDate(po.invoice_received_date)}
+                />
+                <Row
+                  label={t.purchaseOrder.paid_date}
+                  value={po.paid_date ? formatDate(po.paid_date) : "—"}
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setInvoiceDrawerOpen(true)}
+                className="shrink-0"
+              >
                 <Pencil className="mr-1 h-3.5 w-3.5" />
                 {t.actions.edit}
               </Button>
-            )}
-          </div>
-          <div className="grid gap-3 text-sm md:grid-cols-2">
-            <Row
-              label={t.purchaseOrder.supplier_invoice_number}
-              value={po.supplier_invoice_number ?? "—"}
-            />
-            <Row
-              label={`${t.purchaseOrder.supplier_invoice_amount} (${po.currency})`}
-              value={
-                po.supplier_invoice_amount != null
-                  ? formatNumber(Number(po.supplier_invoice_amount), 2)
-                  : "—"
-              }
-            />
-            <Row
-              label={t.purchaseOrder.invoice_received_date}
-              value={po.invoice_received_date ? formatDate(po.invoice_received_date) : "—"}
-            />
-            <Row
-              label={t.purchaseOrder.paid_date}
-              value={po.paid_date ? formatDate(po.paid_date) : "—"}
-            />
-            {po.invoice_registered_by && (
-              <Row
-                label={t.purchaseOrder.registeredBy}
-                value={profileNames[po.invoice_registered_by] || "—"}
-              />
-            )}
-            {po.invoice_approved_at && (
-              <Row
-                label={t.purchaseOrder.approvedBy}
-                value={`${profileNames[po.invoice_approved_by ?? ""] || "—"} · ${formatDate(po.invoice_approved_at)}`}
-              />
-            )}
-          </div>
-        </div>
-      )}
+            </div>
 
-      {/* Files */}
-      <div className="rounded-md border border-border bg-card p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
-            {t.purchaseOrder.filesSection} ({files.length})
-          </h2>
-          <Button onClick={() => setUploadOpen(true)} className="bg-ide-navy text-white hover:bg-ide-navy-hover">
-            <Upload className="mr-1 h-4 w-4" />
-            {t.purchaseOrder.uploadFile}
-          </Button>
-        </div>
-        {files.length === 0 ? (
-          <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            {t.purchaseOrder.noFiles}
-          </div>
-        ) : (
-          <div className="space-y-5">
-            {PO_FILE_TYPES.map((ft) => {
-              const arr = filesByType.get(ft) ?? [];
-              if (arr.length === 0) return null;
-              return (
-                <div key={ft}>
-                  <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
-                    {poFileTypeLabel(t, ft)}
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {arr.map((f) => (
-                      <FileCard
-                        key={f.id}
-                        file={f}
-                        typeLabel={poFileTypeLabel(t, ft)}
-                        onDeleted={() => void load()}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            {invoiceFile && (
+              <div className="mt-4">
+                <FileCardSmall
+                  file={invoiceFile}
+                  label={t.purchaseOrder.fileTypeInvoice}
+                />
+              </div>
+            )}
+
+            {/* Footer metadata strip */}
+            {(po.invoice_registered_by || po.invoice_approved_at) && (
+              <div className="mt-4 text-xs text-muted-foreground">
+                {po.invoice_registered_by && (
+                  <>
+                    {t.purchaseOrder.registeredBy}{" "}
+                    {profileNames[po.invoice_registered_by] || "—"} ·{" "}
+                    {formatDate(po.invoice_received_date)}
+                  </>
+                )}
+                {po.invoice_approved_at && (
+                  <>
+                    {" · "}
+                    {t.purchaseOrder.approvedBy}{" "}
+                    {profileNames[po.invoice_approved_by ?? ""] || "—"} ·{" "}
+                    {formatDate(po.invoice_approved_at)}
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
+      </div>
+
+      {/* Action buttons (no card wrapper) */}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <POStepperActions
+          po={po}
+          onMarkReceived={() => void handleMarkReceived()}
+          onOpenInvoiceDrawer={() => setInvoiceDrawerOpen(true)}
+          onApproveInvoice={() => void handleApproveInvoice()}
+          onMarkPaid={() => setConfirmMarkPaid(true)}
+        />
       </div>
 
       {/* Log */}
@@ -834,38 +681,24 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         ) : (
           <ul className="space-y-2">
             {activities.map((a) => (
-              <li key={a.id} className="rounded-md border border-border bg-card p-3 text-sm">
+              <li
+                key={a.id}
+                className="rounded-md border border-border bg-card p-3 text-sm"
+              >
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="font-medium">{a.profile?.name ?? "—"}</span>
-                  <span className="text-xs text-muted-foreground">{formatDate(a.created_at)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDate(a.created_at)}
+                  </span>
                 </div>
-                {a.body && <p className="mt-1 whitespace-pre-wrap text-foreground">{a.body}</p>}
+                {a.body && (
+                  <p className="mt-1 whitespace-pre-wrap text-foreground">{a.body}</p>
+                )}
               </li>
             ))}
           </ul>
         )}
       </div>
-
-      {/* Confirm status change */}
-      <AlertDialog open={!!confirmStatus} onOpenChange={(o) => !o && setConfirmStatus(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t.status.areYouSure}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {confirmStatus && <>Færa í <span className="font-semibold">{t.poStatus[confirmStatus]}</span>?</>}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => confirmStatus && void handleStatusChange(confirmStatus)}
-              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-            >
-              {t.actions.confirm}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Confirm mark-as-paid */}
       <AlertDialog open={confirmMarkPaid} onOpenChange={setConfirmMarkPaid}>
@@ -888,14 +721,16 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Confirm: revert PO while SO is delivered (SO does not move) */}
+      {/* Confirm: revert PO while SO is delivered */}
       <AlertDialog
         open={confirmRevertWhileDelivered}
         onOpenChange={setConfirmRevertWhileDelivered}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t.purchaseOrder.revertPoFromDeliveredSoTitle}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t.purchaseOrder.revertPoFromDeliveredSoTitle}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {t.purchaseOrder.revertPoFromDeliveredSoBody}
             </AlertDialogDescription>
@@ -924,414 +759,61 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         onSaved={() => void load()}
       />
 
-      <EditPoDrawer
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        po={po}
-        linkedDeal={linkedDeal}
-        onSaved={() => void load()}
-      />
-
-      <MultiFileUploadDialog
-        open={uploadOpen}
-        onClose={() => setUploadOpen(false)}
-        title={t.upload.title}
-        fileTypes={PO_FILE_TYPES.map((ft) => ({ value: ft, label: poFileTypeLabel(t, ft) }))}
-        smartGuess={smartGuessPoFileType}
-        uploadOne={async (file, fileType) => {
-          const supplierSafe = pathSafe(supplierName || "unknown");
-          const ts = Math.floor(Date.now() / 1000);
-          const storagePath = `${supplierSafe}/${pathSafe(po.po_number)}/${ts}-${pathSafe(file.name)}`;
-          const { error: upErr } = await supabase.storage
-            .from("po_files")
-            .upload(storagePath, file, {
-              cacheControl: "3600",
-              upsert: false,
-              contentType: file.type || "application/octet-stream",
-            });
-          if (upErr) throw new Error(upErr.message);
-          const { error: insErr } = await supabase.from("po_files").insert({
-            po_id: po.id,
-            storage_path: storagePath,
-            file_url: null,
-            file_type: fileType,
-            original_filename: file.name,
-            file_size_bytes: file.size,
-            uploaded_by: currentProfileId,
-          });
-          if (insErr) throw new Error(insErr.message);
-        }}
-        onAnySuccess={() => void load()}
-        onBatchComplete={async (result) => {
-          if (result.successful > 0 && po.deal_id) {
-            const body =
-              result.successful === 1
-                ? `${po.po_number}: Skjali hlaðið upp`
-                : `${po.po_number}: ${result.successful} skjölum hlaðið upp`;
-            await supabase.from("activities").insert({
-              deal_id: po.deal_id,
-              type: "note",
-              body,
-              created_by: currentProfileId,
-            });
-          }
-        }}
+      {/* Edit PO core fields drawer */}
+      <CreatePoDrawer
+        open={editCoreOpen}
+        onOpenChange={setEditCoreOpen}
+        currentProfileId={currentProfileId}
+        editPo={po}
+        onCreated={() => void load()}
       />
     </div>
   );
 }
 
-function InlineText({
-  value,
-  placeholder,
-  onSave,
-}: {
-  value: string | null;
-  placeholder?: string;
-  onSave: (v: string | null) => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(value ?? "");
-  useEffect(() => setDraft(value ?? ""), [value]);
-
-  if (editing) {
-    return (
-      <span className="inline-flex items-center gap-1">
-        <Input
-          autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              onSave(draft.trim() || null);
-              setEditing(false);
-            } else if (e.key === "Escape") {
-              setDraft(value ?? "");
-              setEditing(false);
-            }
-          }}
-          onBlur={() => {
-            onSave(draft.trim() || null);
-            setEditing(false);
-          }}
-          className="h-7 w-48 px-2 py-0 text-sm"
-        />
-      </span>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={() => setEditing(true)}
-      className="inline-flex items-center gap-1 rounded px-1 text-sm text-foreground hover:bg-muted"
-    >
-      {value || <span className="text-muted-foreground">{placeholder ?? "—"}</span>}
-      <Pencil className="h-3 w-3 text-muted-foreground" />
-    </button>
-  );
-}
-
-function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={cn("tabular-nums", bold && "font-bold text-foreground")}>{value}</span>
-    </div>
-  );
-}
-
-function DateField({
+function Row({
   label,
   value,
-  onChange,
+  bold,
 }: {
   label: string;
-  value: string | null;
-  onChange: (v: string | null) => void;
+  value: string;
+  bold?: boolean;
 }) {
   return (
-    <div className="text-sm md:flex md:items-center md:justify-end md:gap-2">
-      <span className="text-muted-foreground">{label}:</span>
-      <Input
-        type="date"
-        defaultValue={value ?? ""}
-        key={`${label}-${value}`}
-        onBlur={(e) => onChange(e.target.value || null)}
-        className="h-8 w-auto"
-      />
-    </div>
-  );
-}
-
-
-function FileCard({
-  file,
-  typeLabel,
-  onDeleted,
-}: {
-  file: PoFile;
-  typeLabel: string;
-  onDeleted: () => void;
-}) {
-  const [confirmDelete, setConfirmDelete] = useState(false);
-
-  const resolvePath = (): string | null => {
-    if (file.storage_path) return file.storage_path;
-    const url = file.file_url;
-    if (!url) return null;
-    const marker = "/po_files/";
-    const idx = url.indexOf(marker);
-    if (idx < 0) return null;
-    return url.slice(idx + marker.length).split("?")[0];
-  };
-
-  const handleDelete = async () => {
-    const path = resolvePath();
-    if (path) {
-      await supabase.storage.from("po_files").remove([path]);
-    }
-    await supabase.from("po_files").delete().eq("id", file.id);
-    setConfirmDelete(false);
-    onDeleted();
-  };
-
-  const viewHref = file.signedUrl ?? file.file_url ?? "#";
-  const downloadHref = file.signedUrlDownload ?? file.file_url ?? "#";
-  const signedUrlForThumb = file.signedUrl ?? file.file_url ?? null;
-
-  return (
-    <div className="group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
-      <a
-        href={viewHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block w-full text-left"
-        title={file.original_filename ?? ""}
+    <div className="flex items-baseline justify-between gap-3">
+      <span className="text-muted-foreground">{label}</span>
+      <span
+        className={cn(
+          "tabular-nums text-right",
+          bold && "font-bold text-foreground",
+        )}
       >
-        <FileThumbnail
-          filename={file.original_filename}
-          signedUrl={signedUrlForThumb}
-          className="h-28"
-        />
-        <div className="space-y-1 p-3">
-          <div
-            className="truncate text-sm font-medium"
-            title={file.original_filename ?? ""}
-          >
-            {file.original_filename ?? "—"}
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
-              {typeLabel}
-            </span>
-            <span className="text-muted-foreground">
-              {formatFileSize(file.file_size_bytes)}
-            </span>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            {formatDate(file.uploaded_at)}
-          </div>
-        </div>
-      </a>
-
-      <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <a
-          href={downloadHref}
-          download={file.original_filename ?? ""}
-          onClick={(e) => e.stopPropagation()}
-          className="rounded-md bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-foreground"
-          aria-label={t.actions.download}
-        >
-          <Download className="h-4 w-4" />
-        </a>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            setConfirmDelete(true);
-          }}
-          className="rounded-md bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-red-600"
-          aria-label={t.actions.delete}
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      </div>
-
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t.purchaseOrder.deleteFileConfirm}</AlertDialogTitle>
-            <AlertDialogDescription>{t.status.cannotBeUndone}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void handleDelete()} className="bg-red-600 text-white">
-              {t.actions.delete}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {value}
+      </span>
     </div>
   );
 }
 
-
-function EditPoDrawer({
-  open,
-  onOpenChange,
-  po,
-  linkedDeal,
-  onSaved,
-}: {
-  open: boolean;
-  onOpenChange: (o: boolean) => void;
-  po: PO;
-  linkedDeal: { id: string; so_number: string; name: string } | null;
-  onSaved: () => void;
-}) {
-  const [supplierId, setSupplierId] = useState(po.supplier_id ?? "");
-  const [supplierRef, setSupplierRef] = useState(po.supplier_reference ?? "");
-  const [dealId, setDealId] = useState(po.deal_id ?? "");
-  const [notes, setNotes] = useState(po.notes ?? "");
-  const [orderDate, setOrderDate] = useState(po.order_date ?? "");
-  const [expectedDate, setExpectedDate] = useState(po.expected_delivery_date ?? "");
-  const [receivedDate, setReceivedDate] = useState(po.received_date ?? "");
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [deals, setDeals] = useState<Array<{ id: string; so_number: string; name: string }>>([]);
-  const [dealComboOpen, setDealComboOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    setSupplierId(po.supplier_id ?? "");
-    setSupplierRef(po.supplier_reference ?? "");
-    setDealId(po.deal_id ?? "");
-    setNotes(po.notes ?? "");
-    setOrderDate(po.order_date ?? "");
-    setExpectedDate(po.expected_delivery_date ?? "");
-    setReceivedDate(po.received_date ?? "");
-    void (async () => {
-      const [sRes, dRes] = await Promise.all([
-        supabase.from("suppliers").select("*").eq("active", true).order("name"),
-        supabase.from("deals").select("id, so_number, name").eq("archived", false).order("created_at", { ascending: false }).limit(500),
-      ]);
-      setSuppliers((sRes.data ?? []) as Supplier[]);
-      setDeals((dRes.data ?? []) as Array<{ id: string; so_number: string; name: string }>);
-    })();
-  }, [open, po]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    const supplierName = suppliers.find((s) => s.id === supplierId)?.name ?? po.supplier;
-    const { error } = await supabase
-      .from("purchase_orders")
-      .update({
-        supplier_id: supplierId || null,
-        supplier: supplierName,
-        supplier_reference: supplierRef.trim() || null,
-        deal_id: dealId || po.deal_id,
-        notes: notes.trim() || null,
-        order_date: orderDate || null,
-        expected_delivery_date: expectedDate || null,
-        received_date: receivedDate || null,
-      })
-      .eq("id", po.id);
-    setSaving(false);
-    if (error) {
-      toast.error(t.status.somethingWentWrong);
-      return;
-    }
-    toast.success(t.status.savedSuccessfully);
-    onOpenChange(false);
-    onSaved();
-  };
-
-  const selectedDeal = deals.find((d) => d.id === dealId) ?? linkedDeal;
-
+function FileCardSmall({ file, label }: { file: PoFile; label: string }) {
+  const href = file.signedUrl ?? file.file_url ?? "#";
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-[480px]">
-        <SheetHeader>
-          <SheetTitle>{t.actions.edit}</SheetTitle>
-        </SheetHeader>
-        <div className="space-y-3 py-4">
-          <div>
-            <Label>{t.purchaseOrder.supplier}</Label>
-            <Select value={supplierId} onValueChange={setSupplierId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {suppliers.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>{t.purchaseOrder.supplier_reference}</Label>
-            <Input value={supplierRef} onChange={(e) => setSupplierRef(e.target.value)} />
-          </div>
-          <div>
-            <Label>{t.purchaseOrder.linked_deal}</Label>
-            <Popover open={dealComboOpen} onOpenChange={setDealComboOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-between font-normal">
-                  {selectedDeal ? `${selectedDeal.so_number} — ${selectedDeal.name}` : t.purchaseOrder.selectDeal}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[400px] p-0">
-                <Command>
-                  <CommandInput placeholder={t.actions.search} />
-                  <CommandList>
-                    <CommandEmpty>{t.status.noResults}</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem value="__none__" onSelect={() => { setDealId(""); setDealComboOpen(false); }}>
-                        — {t.purchaseOrder.noDeal}
-                      </CommandItem>
-                      {deals.map((d) => (
-                        <CommandItem
-                          key={d.id}
-                          value={`${d.so_number} ${d.name}`}
-                          onSelect={() => { setDealId(d.id); setDealComboOpen(false); }}
-                        >
-                          <span className="font-mono text-xs text-muted-foreground mr-2">{d.so_number}</span>
-                          {d.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <Label>{t.purchaseOrder.order_date}</Label>
-              <Input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} />
-            </div>
-            <div>
-              <Label>{t.purchaseOrder.expected_delivery_date}</Label>
-              <Input type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} />
-            </div>
-            <div>
-              <Label>{t.purchaseOrder.received_date}</Label>
-              <Input type="date" value={receivedDate} onChange={(e) => setReceivedDate(e.target.value)} />
-            </div>
-          </div>
-          <div>
-            <Label>{t.purchaseOrder.notes}</Label>
-            <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </div>
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 rounded-md border border-border bg-muted/20 p-3 text-sm transition-colors hover:bg-muted/40"
+    >
+      <FileText className="h-5 w-5 shrink-0 text-muted-foreground" />
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-medium">
+          {file.original_filename ?? "—"}
         </div>
-        <SheetFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>{t.actions.cancel}</Button>
-          <Button onClick={() => void handleSave()} disabled={saving} className="bg-ide-navy text-white hover:bg-ide-navy-hover">
-            {saving ? t.status.saving : t.actions.save}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        <div className="text-xs text-muted-foreground">
+          {label} · {formatFileSize(file.file_size_bytes)}
+        </div>
+      </div>
+      <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+    </a>
   );
 }
