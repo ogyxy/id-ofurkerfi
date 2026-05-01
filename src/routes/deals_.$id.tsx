@@ -459,11 +459,21 @@ function DealDetailContent() {
         onEdit={() => setEditOpen(true)}
       />
 
-      <TrackingCard
-        mode="deal"
-        dealId={deal.id}
-        initial={deal.tracking_numbers ?? []}
-      />
+      {(deal.stage === "delivered" ||
+        deal.stage === "defect_reorder" ||
+        deal.payday_invoice_id) ? (
+        <PaydayInvoiceCard
+          deal={deal}
+          companyKennitala={company.kennitala}
+          onChanged={load}
+        />
+      ) : (
+        <TrackingCard
+          mode="deal"
+          dealId={deal.id}
+          initial={deal.tracking_numbers ?? []}
+        />
+      )}
 
       <DealLinesEditor
         dealId={deal.id}
