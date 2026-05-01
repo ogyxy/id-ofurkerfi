@@ -42,7 +42,8 @@ const navItems: Array<{
 export function Sidebar({ activeKey, userEmail }: SidebarProps) {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useSidebarCollapsed();
+  const [hovered, setHovered] = useState(false);
+  const collapsed = !hovered;
 
   useEffect(() => {
     if (!mobileOpen) return;
