@@ -709,6 +709,41 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                 variant="sub"
               />
             ))}
+          {activeStep === "afhent" && (() => {
+            const afhentDeals = deals.filter(
+              (d) =>
+                d.stage === "delivered" ||
+                (d.stage === "defect_reorder" && isDefectResolved(d)),
+            );
+            const withInvoice = afhentDeals.filter((d) => !!d.payday_invoice_id).length;
+            const missingInvoice = afhentDeals.filter((d) => !d.payday_invoice_id).length;
+            return (
+              <>
+                <StagePill
+                  label={stepLabel("afhent")}
+                  count={withInvoice}
+                  active={activeSubstage === "delivered"}
+                  onClick={() =>
+                    setActiveSubstage((prev) => (prev === "delivered" ? null : "delivered"))
+                  }
+                  showClose={activeSubstage === "delivered"}
+                  variant="sub"
+                />
+                <StagePill
+                  label={`${stepLabel("afhent")} · ${t.deal.substepMissingInvoice}`}
+                  count={missingInvoice}
+                  active={activeSubstage === "delivered_missing_invoice"}
+                  onClick={() =>
+                    setActiveSubstage((prev) =>
+                      prev === "delivered_missing_invoice" ? null : "delivered_missing_invoice",
+                    )
+                  }
+                  showClose={activeSubstage === "delivered_missing_invoice"}
+                  variant="sub"
+                />
+              </>
+            );
+          })()}
         </div>
       </div>
 
