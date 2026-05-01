@@ -33,7 +33,6 @@ const invoiceColors: Record<
   string
 > = {
   not_invoiced: "bg-gray-100 text-gray-700",
-  partial: "bg-amber-100 text-amber-800",
   full: "bg-green-100 text-green-700",
 };
 
