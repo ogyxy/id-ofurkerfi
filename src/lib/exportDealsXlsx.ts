@@ -15,6 +15,8 @@ export interface ExportableDeal {
   shipping_cost_isk?: number | null;
   margin_isk?: number | null;
   total_margin_isk?: number | null;
+  refund_amount_isk?: number | null;
+  defect_resolution?: Database["public"]["Enums"]["defect_resolution"] | null;
   promised_delivery_date: string | null;
   delivered_at: string | null;
   invoice_status: InvoiceStatus;
@@ -56,6 +58,7 @@ const COLUMNS = [
   { name: "Staða", key: "stage", width: 18 },
   { name: "Söluverð", key: "price", width: 16, numFmt: ISK_FMT, totalsRowFunction: "sum" as const },
   { name: "Kostnaðarverð", key: "cost", width: 16, numFmt: ISK_FMT, totalsRowFunction: "sum" as const },
+  { name: "Endurgreiðsla", key: "refund", width: 16, numFmt: ISK_FMT, totalsRowFunction: "sum" as const },
   { name: "Framlegð", key: "margin", width: 14, numFmt: ISK_FMT, totalsRowFunction: "sum" as const },
   { name: "Framlegð %", key: "margin_pct", width: 12, numFmt: PCT_FMT, totalsRowFormula: "" },
   { name: "Deadline", key: "promised", width: 12, numFmt: DATE_FMT },
@@ -83,9 +86,18 @@ export async function exportDealsToXlsx(
       d.total_cost_isk != null
         ? Number(d.total_cost_isk) + Number(d.shipping_cost_isk ?? 0)
         : null;
-    const margin = price != null && cost != null ? price - cost : null;
+    const refundActive =
+      d.defect_resolution === "refund" &&
+      d.refund_amount_isk != null &&
+      Number(d.refund_amount_isk) > 0;
+    const refund = refundActive ? -Number(d.refund_amount_isk) : null;
+    const margin =
+      price != null && cost != null ? price - cost + (refund ?? 0) : null;
+    const netPrice = price != null ? price + (refund ?? 0) : null;
     const marginPct =
-      margin != null && price != null && price !== 0 ? margin / price : null;
+      margin != null && netPrice != null && netPrice !== 0
+        ? margin / netPrice
+        : null;
 
     return [
       d.so_number,
@@ -96,6 +108,7 @@ export async function exportDealsToXlsx(
       t.dealStage[d.stage] ?? d.stage,
       price,
       cost,
+      refund,
       margin,
       marginPct,
       toDate(d.promised_delivery_date),
@@ -131,8 +144,8 @@ export async function exportDealsToXlsx(
       } else if (c.totalsRowFunction) {
         col.totalsRowFunction = c.totalsRowFunction;
       } else if (c.key === "margin_pct") {
-        // Weighted margin %: SUM(Framlegð) / SUM(Söluverð)
-        col.totalsRowFormula = `IFERROR(Solur[[#Totals],[Framlegð]]/Solur[[#Totals],[Söluverð]],0)`;
+        // Weighted margin %: SUM(Framlegð) / (SUM(Söluverð) + SUM(Endurgreiðsla))
+        col.totalsRowFormula = `IFERROR(Solur[[#Totals],[Framlegð]]/(Solur[[#Totals],[Söluverð]]+Solur[[#Totals],[Endurgreiðsla]]),0)`;
       }
       return col;
     }),
@@ -162,7 +175,7 @@ export async function exportDealsToXlsx(
   if (hasData) {
     const totalsRowNum = 1 + dataRows.length + 1; // header + data + totals
     const totalsRow = ws.getRow(totalsRowNum);
-    const numericColIdx = new Set([7, 8, 9, 10]); // 1-based: G, H, I, J
+    const numericColIdx = new Set([7, 8, 9, 10, 11]); // price, cost, refund, margin, margin %
     totalsRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
       cell.font = { bold: true, color: { argb: "FF1A2540" } };
       cell.fill = {
