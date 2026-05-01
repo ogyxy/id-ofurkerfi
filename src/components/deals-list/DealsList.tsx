@@ -448,8 +448,6 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
       base = base.filter(
         (d) => d.stage === "delivered" || (d.stage === "defect_reorder" && isDefectResolved(d)),
       );
-      if (activeSubstage === "delivered") base = base.filter((d) => !!d.payday_invoice_id);
-      else if (activeSubstage === "delivered_missing_invoice") base = base.filter((d) => !d.payday_invoice_id);
     } else if (activeStep === "cancelled") {
       base = base.filter((d) => d.stage === "cancelled");
     } else if (activeStep === "inquiry") {
@@ -467,13 +465,17 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     if (activeStep !== "cancelled") {
       base = base.filter((d) => d.stage !== "cancelled");
     }
-    const inv: Record<InvoiceStatus, number> = { not_invoiced: 0, full: 0 };
-    const pay: Record<PaymentStatus, number> = { unpaid: 0, partial: 0, paid: 0 };
-    base.forEach((d) => {
-      inv[d.invoice_status]++;
-      if (d.payday_invoice_id) pay[d.payment_status]++;
+    // Payday status only counts delivered / resolved-defect deals
+    const deliveredLike = base.filter(
+      (d) => d.stage === "delivered" || (d.stage === "defect_reorder" && isDefectResolved(d)),
+    );
+    const counts = { not_invoiced: 0, unpaid: 0, paid: 0 };
+    deliveredLike.forEach((d) => {
+      if (d.invoice_status === "not_invoiced") counts.not_invoiced++;
+      else if (d.invoice_status === "full" && d.payment_status === "unpaid") counts.unpaid++;
+      else if (d.invoice_status === "full" && d.payment_status === "paid") counts.paid++;
     });
-    return { inv, pay };
+    return counts;
   }, [deals, activeStep, activeSubstage, selectedOwners]);
 
   const ownersWithDeals = useMemo(() => {
