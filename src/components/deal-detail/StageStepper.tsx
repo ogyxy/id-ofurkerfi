@@ -56,9 +56,10 @@ const STEPS: Array<{
 interface Props {
   stage: DealStage;
   onChange: (next: DealStage) => void;
+  poProgress?: { received: number; total: number } | null;
 }
 
-export function StageStepper({ stage, onChange }: Props) {
+export function StageStepper({ stage, onChange, poProgress }: Props) {
   const [confirmBackStage, setConfirmBackStage] = useState<DealStage | null>(null);
 
   if (stage === "cancelled") {
@@ -85,7 +86,18 @@ export function StageStepper({ stage, onChange }: Props) {
     substepLabel = t.deal.substepSent;
     SubstepIcon = Send;
   } else if (stage === "ready_for_pickup") {
-    substepLabel = t.deal.substepInHouse;
+    substepLabel =
+      poProgress && poProgress.total > 1
+        ? `${poProgress.received}/${poProgress.total} ${t.deal.substepInHouse.toLowerCase()}`
+        : t.deal.substepInHouse;
+    SubstepIcon = Package;
+  } else if (
+    stage === "order_confirmed" &&
+    poProgress &&
+    poProgress.total > 0 &&
+    poProgress.received > 0
+  ) {
+    substepLabel = `${poProgress.received}/${poProgress.total} ${t.deal.substepInHouse.toLowerCase()}`;
     SubstepIcon = Package;
   }
 
