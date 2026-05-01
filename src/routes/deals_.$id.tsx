@@ -446,6 +446,8 @@ function DealDetailContent() {
                 }
               : null;
           })()}
+          canLinkPaydayInvoice={!deal.payday_invoice_id}
+          onLinkPaydayInvoice={() => setLinkPaydayOpen(true)}
         />
       )}
 
