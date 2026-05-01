@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatIsk } from "@/lib/sala_translations_is";
 import { formatKennitala } from "@/lib/formatters";
+import { formatSizeBreakdown, type SizeBreakdown } from "@/lib/sizeBreakdown";
 import ideLogoUrl from "@/assets/ide-logo.png";
 
 const NAVY: [number, number, number] = [26, 37, 64];
@@ -26,6 +27,7 @@ export interface QuoteLine {
   quantity: number;
   unit_price_isk: number;
   line_total_isk: number;
+  size_breakdown?: SizeBreakdown | null;
 }
 
 export interface QuoteSender {
@@ -151,8 +153,13 @@ export async function generateQuotePdf(data: QuoteData): Promise<ArrayBuffer> {
   const body = data.lines.map((l) => {
     const unitWithVat = Math.round(l.unit_price_isk * 1.24);
     const totalWithVat = Math.round(l.line_total_isk * 1.24);
+    let descCell = l.product_name;
+    if (l.description) descCell += `\n${l.description}`;
+    if (l.size_breakdown) {
+      descCell += `\nSundurliðun: ${formatSizeBreakdown(l.size_breakdown)}`;
+    }
     return [
-      l.product_name + (l.description ? `\n${l.description}` : ""),
+      descCell,
       String(l.quantity),
       formatIsk(l.unit_price_isk),
       formatIsk(unitWithVat),

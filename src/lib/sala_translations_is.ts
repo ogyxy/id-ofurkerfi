@@ -472,6 +472,16 @@ export const t = {
     shippingNote:         'Sendingarkostnaður er ekki reiknaður inn í söluverð — hann lækkar framlegð.',
     defaultMarkup:        'Sjálfgefin álagning',
     applyToAll:           'Nota á allar línur',
+    sizeBreakdown:            'Sundurliðun stærða',
+    sizeBreakdownClothing:    'Fatnaður',
+    sizeBreakdownShoes:       'Skóstærðir',
+    sizeBreakdownTotal:       'Samtals',
+    sizeBreakdownExpected:    'Á að vera',
+    sizeBreakdownMismatch:    'Summa stærða stemmir ekki við magn línunnar',
+    sizeBreakdownClear:       'Hreinsa sundurliðun',
+    sizeBreakdownMismatchBadge: 'Sundurliðun stemmir ekki — endurskoða',
+    duplicateLine:            'Afrita línu',
+    deleteLine:               'Eyða línu',
   },
 
   // ---------------------------------------------------------------------------

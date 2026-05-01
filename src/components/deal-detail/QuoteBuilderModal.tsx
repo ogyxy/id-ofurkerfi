@@ -20,6 +20,7 @@ import { t, formatIsk } from "@/lib/sala_translations_is";
 import { formatFileSize } from "@/lib/formatters";
 import { generateQuotePdf, type QuoteLine } from "@/lib/generateQuotePdf";
 import { mergeQuotePdf, type QuoteAttachment } from "@/lib/mergeQuotePdf";
+import { parseSizeBreakdown, type SizeBreakdown } from "@/lib/sizeBreakdown";
 
 const IMAGE_EXTS = ["png", "jpg", "jpeg", "gif", "webp"];
 const ALL_EXTS = ["pdf", ...IMAGE_EXTS];
@@ -38,6 +39,7 @@ interface DealLineRow {
   unit_price_isk: number;
   line_total_isk: number;
   line_order: number;
+  size_breakdown: SizeBreakdown | null;
 }
 
 interface AttachmentRow {
@@ -121,7 +123,7 @@ export function QuoteBuilderModal({
       const [linesRes, dealFilesRes, companyFilesRes] = await Promise.all([
         supabase
           .from("deal_lines")
-          .select("id, product_name, description, quantity, unit_price_isk, line_total_isk, line_order")
+          .select("id, product_name, description, quantity, unit_price_isk, line_total_isk, line_order, size_breakdown")
           .eq("deal_id", deal.id)
           .order("line_order"),
         supabase
@@ -134,7 +136,12 @@ export function QuoteBuilderModal({
           .eq("company_id", company.id),
       ]);
 
-      setLines((linesRes.data ?? []) as DealLineRow[]);
+      setLines(
+        (linesRes.data ?? []).map((r) => ({
+          ...(r as Omit<DealLineRow, "size_breakdown">),
+          size_breakdown: parseSizeBreakdown((r as { size_breakdown?: unknown }).size_breakdown),
+        })) as DealLineRow[],
+      );
 
       const buildRow = async (
         row: { id: string; storage_path: string; original_filename: string | null; file_size_bytes: number | null },
@@ -203,6 +210,7 @@ export function QuoteBuilderModal({
         quantity: l.quantity,
         unit_price_isk: Number(l.unit_price_isk),
         line_total_isk: Number(l.line_total_isk),
+        size_breakdown: l.size_breakdown,
       }));
 
       const baseBuf = await generateQuotePdf({

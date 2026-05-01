@@ -1,7 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus, GripVertical } from "lucide-react";
+import { Pencil, Trash2, Plus, GripVertical, MoreHorizontal, Ruler, Copy, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t, formatIsk } from "@/lib/sala_translations_is";
@@ -15,6 +15,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { SizeBreakdownModal } from "./SizeBreakdownModal";
+import { parseSizeBreakdown, sumSizeBreakdown, type SizeBreakdown } from "@/lib/sizeBreakdown";
 
 type DealLineRow = Database["public"]["Tables"]["deal_lines"]["Row"];
 
@@ -46,6 +55,7 @@ export type EditableLine = {
   unit_price_isk: number;
   manualPrice: boolean;
   notes: string;
+  size_breakdown: SizeBreakdown | null;
   emptyQty?: boolean;
   emptyCost?: boolean;
 };
@@ -68,6 +78,7 @@ export function fromDbLine(row: DealLineRow): EditableLine {
     unit_price_isk: Number(row.unit_price_isk),
     manualPrice: false,
     notes: row.notes ?? "",
+    size_breakdown: parseSizeBreakdown((row as unknown as { size_breakdown?: unknown }).size_breakdown),
   };
 }
 
@@ -120,6 +131,7 @@ export function DealLinesEditor({
   // Cache last serialized payload per id to avoid redundant writes
   const lastSerialized = useRef<Map<string, string>>(new Map());
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [breakdownOpenForId, setBreakdownOpenForId] = useState<string | null>(null);
 
   // Initialize persisted ids from existing (non-new) lines
   useEffect(() => {
@@ -163,6 +175,7 @@ export function DealLinesEditor({
       line_total_isk: lineTotalIsk(line),
       line_margin_isk: lineMarginIsk(line),
       notes: line.notes || null,
+      size_breakdown: line.size_breakdown as unknown as Database["public"]["Tables"]["deal_lines"]["Insert"]["size_breakdown"],
     };
     const serialized = JSON.stringify(payload);
     if (lastSerialized.current.get(line.id) === serialized) return;
@@ -283,6 +296,7 @@ export function DealLinesEditor({
       unit_price_isk: 0,
       manualPrice: false,
       notes: "",
+      size_breakdown: null,
       emptyQty: true,
       emptyCost: true,
     };
@@ -404,17 +418,26 @@ export function DealLinesEditor({
                     <GripVertical className="h-4 w-4" />
                   </td>
                   <td className="px-2 py-2">
-                    <Input
-                      value={line.product_name}
-                      onChange={(e) =>
-                        updateLine(idx, { product_name: e.target.value })
-                      }
-                      onKeyDown={handleLineKeyDown(idx)}
-                      data-line-id={line.id}
-                      data-field="product_name"
-                      className="min-w-[140px]"
-                      disabled={readOnly}
-                    />
+                    <div className="space-y-1">
+                      <Input
+                        value={line.product_name}
+                        onChange={(e) =>
+                          updateLine(idx, { product_name: e.target.value })
+                        }
+                        onKeyDown={handleLineKeyDown(idx)}
+                        data-line-id={line.id}
+                        data-field="product_name"
+                        className="min-w-[140px]"
+                        disabled={readOnly}
+                      />
+                      {line.size_breakdown &&
+                        sumSizeBreakdown(line.size_breakdown) !== line.quantity && (
+                          <div className="flex items-center gap-1 text-xs text-amber-700">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>{t.dealLine.sizeBreakdownMismatchBadge}</span>
+                          </div>
+                        )}
+                    </div>
                   </td>
                   <td className="px-2 py-2">
                     <Input
@@ -555,14 +578,36 @@ export function DealLinesEditor({
                     </div>
                   </td>
                   <td className="px-2 py-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeLine(idx)}
-                      disabled={readOnly}
-                    >
-                      <Trash2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
+                    {!readOnly && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="relative">
+                            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                            {line.size_breakdown && (
+                              <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
+                            )}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={() => setBreakdownOpenForId(line.id)}>
+                            <Ruler className="mr-2 h-4 w-4" />
+                            {t.dealLine.sizeBreakdown}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => duplicateLine(idx)}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            {t.dealLine.duplicateLine}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onSelect={() => removeLine(idx)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {t.dealLine.deleteLine}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </td>
                 </tr>
               );
@@ -585,6 +630,26 @@ export function DealLinesEditor({
         <Plus className="mr-1 h-4 w-4" />
         {t.dealLine.addLine}
       </Button>
+
+      {(() => {
+        const line = lines.find((l) => l.id === breakdownOpenForId);
+        if (!line) return null;
+        return (
+          <SizeBreakdownModal
+            open={true}
+            onOpenChange={(o) => { if (!o) setBreakdownOpenForId(null); }}
+            lineQuantity={line.quantity}
+            initial={line.size_breakdown}
+            onSave={(b) => {
+              const idx = lines.findIndex((l) => l.id === line.id);
+              if (idx < 0) return;
+              const next = [...lines];
+              next[idx] = { ...next[idx], size_breakdown: b };
+              setLines(next);
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }
