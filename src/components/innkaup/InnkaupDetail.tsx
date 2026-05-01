@@ -471,12 +471,25 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         {t.actions.back}
       </button>
 
-      {/* Stepper */}
-      <PoStepper
-        status={po.status}
-        onChange={(next) => setConfirmStatus(next)}
-        onCancel={handleCancel}
-        onReactivate={handleReactivate}
+      {/* Stepper (3-step: Pantað → Móttekið → Greitt) */}
+      <POStageStepper
+        po={po}
+        hasTracking={(po.tracking_numbers ?? []).length > 0}
+        onRevertToPantad={() => void handleRevertToPantad()}
+        onRevertToMottekid={() => void handleRevertToMottekid()}
+        onRevertApproval={() => void handleRevertApproval()}
+        onRevertPayment={() => void handleRevertToMottekid()}
+        onCancel={() => void handleCancel()}
+        onReactivate={() => void handleReactivate()}
+      />
+
+      {/* Stepper-aligned action buttons */}
+      <POStepperActions
+        po={po}
+        onMarkReceived={() => void handleMarkReceived()}
+        onOpenInvoiceDrawer={() => setInvoiceDrawerOpen(true)}
+        onApproveInvoice={() => void handleApproveInvoice()}
+        onMarkPaid={() => setConfirmMarkPaid(true)}
       />
 
       {/* Header card */}
