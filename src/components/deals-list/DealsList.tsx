@@ -387,12 +387,22 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     if (selectedOwners.size > 0) {
       list = list.filter((d) => d.owner && selectedOwners.has(d.owner.id));
     }
+    // Payday-derived filters
+    if (activeInvoiceStatus) {
+      list = list.filter((d) => d.invoice_status === activeInvoiceStatus);
+    }
+    if (activePaymentStatus) {
+      // Payment status only meaningful once an invoice is linked
+      list = list.filter(
+        (d) => d.payment_status === activePaymentStatus && !!d.payday_invoice_id,
+      );
+    }
     // Hide cancelled deals unless explicitly filtering for them
     if (activeStep !== "cancelled") {
       list = list.filter((d) => d.stage !== "cancelled");
     }
     return list;
-  }, [deals, activeStep, activeSubstage, selectedOwners]);
+  }, [deals, activeStep, activeSubstage, selectedOwners, activeInvoiceStatus, activePaymentStatus]);
 
   const stepCounts = useMemo(() => {
     const c: Record<StepKey, number> = {
