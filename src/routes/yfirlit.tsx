@@ -50,7 +50,7 @@ interface Profile {
 }
 
 interface TaskItem {
-  type: "overdue" | "defect_pending" | "unpaid_old" | "delivery_mismatch" | "po_invoice_approval";
+  type: "overdue" | "defect_pending" | "unpaid_old" | "delivery_mismatch" | "po_invoice_approval" | "delivered_uninvoiced";
   deal: {
     id: string;
     so_number: string;
@@ -250,8 +250,10 @@ function YfirlitContent({
         ) {
           out.push({ type: "overdue", deal: dealRef });
         }
-        // Note: deals delivered but not yet invoiced are intentionally
-        // excluded from this review section.
+        // Delivered but not yet invoiced
+        if (d.stage === "delivered" && d.invoice_status === "not_invoiced") {
+          out.push({ type: "delivered_uninvoiced", deal: dealRef });
+        }
         if (d.stage === "defect_reorder" && d.defect_resolution === "pending") {
           out.push({ type: "defect_pending", deal: dealRef });
         }
@@ -296,8 +298,6 @@ function YfirlitContent({
         const d = p.deal;
         if (!d || d.archived) return;
         if (d.owner_id !== viewedUserId) return;
-        // Don't surface to the same person who registered the invoice
-        if (p.invoice_registered_by && p.invoice_registered_by === viewedUserId) return;
         out.push({
           type: "po_invoice_approval",
           deal: {
@@ -865,6 +865,12 @@ const TASK_META: Record<
     icon: ClipboardList,
     bg: "bg-blue-100",
     fg: "text-blue-700",
+  },
+  delivered_uninvoiced: {
+    label: t.yfirlit.taskUninvoiced,
+    icon: CircleDollarSign,
+    bg: "bg-amber-100",
+    fg: "text-amber-700",
   },
 };
 
