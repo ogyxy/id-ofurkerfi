@@ -459,19 +459,27 @@ function DealDetailContent() {
         onEdit={() => setEditOpen(true)}
       />
 
-      {(deal.stage === "delivered" ||
-        deal.stage === "defect_reorder" ||
-        deal.payday_invoice_id) ? (
-        <PaydayInvoiceCard
-          deal={deal}
-          companyKennitala={company.kennitala}
-          onChanged={load}
-        />
-      ) : (
+      {(deal.stage === "inquiry" ||
+        deal.stage === "quote_in_progress" ||
+        deal.stage === "quote_sent" ||
+        deal.stage === "order_confirmed" ||
+        deal.stage === "ready_for_pickup" ||
+        (deal.tracking_numbers ?? []).length > 0) && (
         <TrackingCard
           mode="deal"
           dealId={deal.id}
           initial={deal.tracking_numbers ?? []}
+        />
+      )}
+
+      {(deal.stage === "delivered" ||
+        deal.stage === "defect_reorder" ||
+        deal.payday_invoice_id) && (
+        <PaydayInvoiceCard
+          deal={deal}
+          companyKennitala={company.kennitala}
+          currentProfile={currentProfile}
+          onChanged={load}
         />
       )}
 
