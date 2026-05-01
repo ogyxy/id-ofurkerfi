@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import { formatIsk } from "@/lib/sala_translations_is";
 import { formatKennitala } from "@/lib/formatters";
 import { formatSizeBreakdown, type SizeBreakdown } from "@/lib/sizeBreakdown";
-import ideLogoUrl from "@/assets/ide-logo.png";
+import ideLogoUrl from "@/assets/ide-house-of-brands-logo.png";
 
 const NAVY: [number, number, number] = [26, 37, 64];
 
@@ -77,10 +77,11 @@ export async function generateQuotePdf(data: QuoteData): Promise<ArrayBuffer> {
   const margin = 15;
 
   // --- Header: logo left, company info right ---
+  // Logo aspect ratio is ~16:9 (1280x720). 36mm wide → ~20mm tall.
   const logoData = await loadImageAsDataUrl(ideLogoUrl);
   if (logoData) {
     try {
-      doc.addImage(logoData, "PNG", margin, 12, 30, 14);
+      doc.addImage(logoData, "PNG", margin, 10, 36, 20);
     } catch {
       /* ignore image errors */
     }
@@ -91,7 +92,7 @@ export async function generateQuotePdf(data: QuoteData): Promise<ArrayBuffer> {
   const headerLines = [
     "IDÉ House of Brands Iceland ehf.",
     "Turnahvarfi 6B, 203 Kópavogi",
-    "Sími: 7735992",
+    "Sími: +354 497 0319",
     "kt. 670319-0750",
   ];
   headerLines.forEach((line, i) => {
@@ -134,7 +135,6 @@ export async function generateQuotePdf(data: QuoteData): Promise<ArrayBuffer> {
   doc.setFontSize(10);
   const meta: Array<[string, string]> = [
     ["Tilboð nr.", data.quoteNumber],
-    ["Viðskiptanúmer", (data.company.kennitala ?? "").replace(/\D/g, "") || "—"],
     ["Gildir til", formatDayMonthYear(data.validUntil)],
     ["Tilvísun/verk", data.dealName],
   ];
