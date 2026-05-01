@@ -362,6 +362,11 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
           d.stage === "delivered" ||
           (d.stage === "defect_reorder" && isDefectResolved(d)),
       );
+      if (activeSubstage === "delivered") {
+        list = list.filter((d) => !!d.payday_invoice_id);
+      } else if (activeSubstage === "delivered_missing_invoice") {
+        list = list.filter((d) => !d.payday_invoice_id);
+      }
     } else if (activeStep === "cancelled") {
       list = list.filter((d) => d.stage === "cancelled");
     } else if (activeStep === "inquiry") {
