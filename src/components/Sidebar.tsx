@@ -153,8 +153,7 @@ export function Sidebar({ activeKey, userEmail }: SidebarProps) {
         {drawerContent(false)}
       </aside>
 
-      {/* Desktop sidebar — always reserves narrow width, expands on hover as overlay */}
-      <div className="hidden md:block md:w-14" aria-hidden />
+      {/* Desktop sidebar — always collapsed; expands as overlay on hover */}
       <aside
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
