@@ -377,6 +377,7 @@ export const t = {
     filterDelivered:          'Afhentar',
     filterDefect:             'Galli / Vesen',
     filterCancelled:          'Hætt við',
+    filterPaydayRowLabel:     'Reikningsstaða',
     newCustomerSaving:        'Stofnar viðskiptavin...',
     firstNoteLabel:           'Fyrsta athugasemd (Log)',
     firstNotePlaceholder:     'Skráðu athugasemd sem mun birtast í Log...',
