@@ -280,6 +280,36 @@ function YfirlitContent({
           }
         }
       });
+      // PO invoice approvals — surface to the SO owner only
+      const { data: pendingPos } = await supabase
+        .from("purchase_orders")
+        .select(
+          `id, po_number, invoice_registered_by, invoice_approved_at, invoice_received_date,
+           deal:deals!inner(id, so_number, name, owner_id, archived,
+             company:companies(id, name))`,
+        )
+        .not("invoice_received_date", "is", null)
+        .is("invoice_approved_at", null)
+        .eq("archived", false);
+      (pendingPos ?? []).forEach((p: any) => {
+        const d = p.deal;
+        if (!d || d.archived) return;
+        if (d.owner_id !== viewedUserId) return;
+        // Don't surface to the same person who registered the invoice
+        if (p.invoice_registered_by && p.invoice_registered_by === viewedUserId) return;
+        out.push({
+          type: "po_invoice_approval",
+          deal: {
+            id: d.id,
+            so_number: d.so_number,
+            name: d.name,
+            company: d.company ? { id: d.company.id, name: d.company.name } : null,
+          },
+          poId: p.id,
+          poNumber: p.po_number,
+        });
+      });
+
       setTasks(out);
     })();
   }, [viewedUserId]);
