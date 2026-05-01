@@ -629,59 +629,68 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         </div>
       </div>
 
-      {/* Invoice section */}
-      <div
-        className={cn(
-          "rounded-md border bg-card p-6",
-          po.paid_date
-            ? "border-l-4 border-l-green-500"
-            : po.invoice_received_date
-              ? "border-l-4 border-l-blue-500"
-              : "border-border",
-        )}
-      >
-        <h2 className="mb-4 text-lg font-semibold">{t.purchaseOrder.invoiceSection}</h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          <div>
-            <Label>{t.purchaseOrder.supplier_invoice_number}</Label>
-            <Input
-              defaultValue={po.supplier_invoice_number ?? ""}
-              key={`inv-${po.id}-${po.supplier_invoice_number}`}
-              onBlur={(e) => void updatePo({ supplier_invoice_number: e.target.value || null })}
-            />
+      {/* Invoice section — read-only summary; edits via InvoiceDrawer */}
+      {(po.invoice_received_date ||
+        po.supplier_invoice_number ||
+        po.supplier_invoice_amount ||
+        po.paid_date) && (
+        <div
+          className={cn(
+            "rounded-md border bg-card p-6",
+            po.paid_date
+              ? "border-l-4 border-l-green-500"
+              : po.invoice_approved_at
+                ? "border-l-4 border-l-green-500"
+                : po.invoice_received_date
+                  ? "border-l-4 border-l-blue-500"
+                  : "border-border",
+          )}
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">{t.purchaseOrder.invoiceSection}</h2>
+            {po.invoice_received_date && (
+              <Button variant="ghost" size="sm" onClick={() => setInvoiceDrawerOpen(true)}>
+                <Pencil className="mr-1 h-3.5 w-3.5" />
+                {t.actions.edit}
+              </Button>
+            )}
           </div>
-          <div>
-            <Label>{t.purchaseOrder.supplier_invoice_amount} ({po.currency})</Label>
-            <Input
-              type="number"
-              step="0.01"
-              defaultValue={po.supplier_invoice_amount ?? ""}
-              key={`invamt-${po.id}-${po.supplier_invoice_amount}`}
-              onBlur={(e) =>
-                void updatePo({ supplier_invoice_amount: e.target.value ? Number(e.target.value) : null })
+          <div className="grid gap-3 text-sm md:grid-cols-2">
+            <Row
+              label={t.purchaseOrder.supplier_invoice_number}
+              value={po.supplier_invoice_number ?? "—"}
+            />
+            <Row
+              label={`${t.purchaseOrder.supplier_invoice_amount} (${po.currency})`}
+              value={
+                po.supplier_invoice_amount != null
+                  ? formatNumber(Number(po.supplier_invoice_amount), 2)
+                  : "—"
               }
             />
-          </div>
-          <div>
-            <Label>{t.purchaseOrder.invoice_received_date}</Label>
-            <Input
-              type="date"
-              defaultValue={po.invoice_received_date ?? ""}
-              key={`invd-${po.id}-${po.invoice_received_date}`}
-              onBlur={(e) => void updatePo({ invoice_received_date: e.target.value || null })}
+            <Row
+              label={t.purchaseOrder.invoice_received_date}
+              value={po.invoice_received_date ? formatDate(po.invoice_received_date) : "—"}
             />
-          </div>
-          <div>
-            <Label>{t.purchaseOrder.paid_date}</Label>
-            <Input
-              type="date"
-              defaultValue={po.paid_date ?? ""}
-              key={`paid-${po.id}-${po.paid_date}`}
-              onBlur={(e) => void updatePo({ paid_date: e.target.value || null })}
+            <Row
+              label={t.purchaseOrder.paid_date}
+              value={po.paid_date ? formatDate(po.paid_date) : "—"}
             />
+            {po.invoice_registered_by && (
+              <Row
+                label={t.purchaseOrder.registeredBy}
+                value={profileNames[po.invoice_registered_by] || "—"}
+              />
+            )}
+            {po.invoice_approved_at && (
+              <Row
+                label={t.purchaseOrder.approvedBy}
+                value={`${profileNames[po.invoice_approved_by ?? ""] || "—"} · ${formatDate(po.invoice_approved_at)}`}
+              />
+            )}
           </div>
         </div>
-      </div>
+      )}
 
       {/* Files */}
       <div className="rounded-md border border-border bg-card p-6">
