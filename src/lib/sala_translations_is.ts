@@ -888,7 +888,7 @@ export const t = {
   // ---------------------------------------------------------------------------
   payday: {
     sectionTitle:           'Reikningur',
-    notLinked:              'Engin Payday-reikningur tengdur',
+    notLinked:              'Enginn Payday-reikningur tengdur',
     linkButton:             'Skrá reikning',
     linkButtonHidden:       'Skrá reikning fyrirfram',
 
