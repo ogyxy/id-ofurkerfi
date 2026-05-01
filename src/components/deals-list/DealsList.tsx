@@ -214,7 +214,31 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
   const [exporting, setExporting] = useState(false);
   const [lineMatchedDealIds, setLineMatchedDealIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
-  
+  const pendingScrollRestoreRef = useRef<number | null>(
+    persisted && typeof window !== "undefined"
+      ? Number(sessionStorage.getItem(SCROLL_STORAGE_KEY) ?? "0") || 0
+      : null,
+  );
+
+  // Persist filters whenever they change.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const payload: PersistedFilters = {
+      search,
+      activeStep,
+      activeSubstage,
+      activeAfhentSub,
+      activePaydayStatus,
+      selectedYear,
+      selectedOwners: [...selectedOwners],
+    };
+    try {
+      sessionStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      /* ignore */
+    }
+  }, [search, activeStep, activeSubstage, activeAfhentSub, activePaydayStatus, selectedYear, selectedOwners]);
+
 
   // Debounce search
   useEffect(() => {
