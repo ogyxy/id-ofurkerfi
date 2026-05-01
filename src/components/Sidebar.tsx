@@ -13,7 +13,7 @@ import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { t } from "@/lib/sala_translations_is";
 import { SidebarNavLink } from "./SidebarNavLink";
-import { useSidebarCollapsed } from "@/hooks/use-sidebar-collapsed";
+
 import ideLogo from "@/assets/ide-logo.png";
 
 interface SidebarProps {
