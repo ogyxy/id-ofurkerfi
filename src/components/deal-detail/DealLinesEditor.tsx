@@ -22,12 +22,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { SizeBreakdownModal } from "./SizeBreakdownModal";
 import { parseSizeBreakdown, sumSizeBreakdown, type SizeBreakdown } from "@/lib/sizeBreakdown";
 
