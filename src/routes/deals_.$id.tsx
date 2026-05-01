@@ -615,6 +615,14 @@ function DealDetailContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <LinkPaydayInvoiceModal
+        open={linkPaydayOpen}
+        onOpenChange={setLinkPaydayOpen}
+        dealId={deal.id}
+        companyKennitala={company.kennitala}
+        onLinked={load}
+      />
     </div>
   );
 }
