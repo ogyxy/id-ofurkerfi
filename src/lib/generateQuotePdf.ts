@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import { formatIsk } from "@/lib/sala_translations_is";
 import { formatKennitala } from "@/lib/formatters";
 import { formatSizeBreakdown, type SizeBreakdown } from "@/lib/sizeBreakdown";
-import ideLogoUrl from "@/assets/ide-logo.png";
+import ideLogoUrl from "@/assets/ide-house-of-brands-logo.png";
 
 const NAVY: [number, number, number] = [26, 37, 64];
 
