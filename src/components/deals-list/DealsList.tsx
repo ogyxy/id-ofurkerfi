@@ -204,7 +204,9 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
   const [activeSubstage, setActiveSubstage] = useState<DealStage | null>(persisted?.activeSubstage ?? null);
   const [activeAfhentSub, setActiveAfhentSub] = useState<"linked" | "unlinked" | null>(persisted?.activeAfhentSub ?? null);
   const [activePaydayStatus, setActivePaydayStatus] = useState<"not_invoiced" | "unpaid" | "paid" | null>(persisted?.activePaydayStatus ?? null);
-  const [selectedYear, setSelectedYear] = useState<number | null>(persisted?.selectedYear ?? null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(
+    persisted ? persisted.selectedYear : new Date().getFullYear(),
+  );
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedOwners, setSelectedOwners] = useState<Set<string>>(
     new Set(persisted?.selectedOwners ?? []),
