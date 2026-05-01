@@ -20,6 +20,7 @@ import { t, formatIsk } from "@/lib/sala_translations_is";
 import { formatFileSize } from "@/lib/formatters";
 import { generateQuotePdf, type QuoteLine } from "@/lib/generateQuotePdf";
 import { mergeQuotePdf, type QuoteAttachment } from "@/lib/mergeQuotePdf";
+import { parseSizeBreakdown, type SizeBreakdown } from "@/lib/sizeBreakdown";
 
 const IMAGE_EXTS = ["png", "jpg", "jpeg", "gif", "webp"];
 const ALL_EXTS = ["pdf", ...IMAGE_EXTS];
@@ -38,6 +39,7 @@ interface DealLineRow {
   unit_price_isk: number;
   line_total_isk: number;
   line_order: number;
+  size_breakdown: SizeBreakdown | null;
 }
 
 interface AttachmentRow {
