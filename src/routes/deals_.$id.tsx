@@ -16,7 +16,7 @@ import { DefectDescriptionModal } from "@/components/deal-detail/DefectDescripti
 import { StepperActions } from "@/components/deal-detail/StepperActions";
 import { ParentDealBanner } from "@/components/deal-detail/ParentDealBanner";
 import { DealHeader } from "@/components/deal-detail/DealHeader";
-import { TrackingCard } from "@/components/tracking/TrackingCard";
+
 import {
   DealLinesEditor,
   fromDbLine,
