@@ -171,9 +171,8 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
   const [activeStep, setActiveStep] = useState<StepKey | null>(
     initialStage ? stageToStep(initialStage) : null,
   );
-  const [activeSubstage, setActiveSubstage] = useState<DealStage | "delivered_missing_invoice" | null>(null);
-  const [activeInvoiceStatus, setActiveInvoiceStatus] = useState<InvoiceStatus | null>(null);
-  const [activePaymentStatus, setActivePaymentStatus] = useState<PaymentStatus | null>(null);
+  const [activeSubstage, setActiveSubstage] = useState<DealStage | null>(null);
+  const [activePaydayStatus, setActivePaydayStatus] = useState<"not_invoiced" | "unpaid" | "paid" | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set());
@@ -364,11 +363,6 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
           d.stage === "delivered" ||
           (d.stage === "defect_reorder" && isDefectResolved(d)),
       );
-      if (activeSubstage === "delivered") {
-        list = list.filter((d) => !!d.payday_invoice_id);
-      } else if (activeSubstage === "delivered_missing_invoice") {
-        list = list.filter((d) => !d.payday_invoice_id);
-      }
     } else if (activeStep === "cancelled") {
       list = list.filter((d) => d.stage === "cancelled");
     } else if (activeStep === "inquiry") {
@@ -387,22 +381,31 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     if (selectedOwners.size > 0) {
       list = list.filter((d) => d.owner && selectedOwners.has(d.owner.id));
     }
-    // Payday-derived filters
-    if (activeInvoiceStatus) {
-      list = list.filter((d) => d.invoice_status === activeInvoiceStatus);
-    }
-    if (activePaymentStatus) {
-      // Payment status only meaningful once an invoice is linked
-      list = list.filter(
-        (d) => d.payment_status === activePaymentStatus && !!d.payday_invoice_id,
-      );
+    // Payday-derived filters — only meaningful for delivered / resolved-defect deals
+    if (activePaydayStatus) {
+      list = list.filter((d) => {
+        const isDeliveredLike =
+          d.stage === "delivered" ||
+          (d.stage === "defect_reorder" && isDefectResolved(d));
+        if (!isDeliveredLike) return false;
+        if (activePaydayStatus === "not_invoiced") {
+          return d.invoice_status === "not_invoiced";
+        }
+        if (activePaydayStatus === "unpaid") {
+          return d.invoice_status === "full" && d.payment_status === "unpaid";
+        }
+        if (activePaydayStatus === "paid") {
+          return d.invoice_status === "full" && d.payment_status === "paid";
+        }
+        return true;
+      });
     }
     // Hide cancelled deals unless explicitly filtering for them
     if (activeStep !== "cancelled") {
       list = list.filter((d) => d.stage !== "cancelled");
     }
     return list;
-  }, [deals, activeStep, activeSubstage, selectedOwners, activeInvoiceStatus, activePaymentStatus]);
+  }, [deals, activeStep, activeSubstage, selectedOwners, activePaydayStatus]);
 
   const stepCounts = useMemo(() => {
     const c: Record<StepKey, number> = {
@@ -445,8 +448,6 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
       base = base.filter(
         (d) => d.stage === "delivered" || (d.stage === "defect_reorder" && isDefectResolved(d)),
       );
-      if (activeSubstage === "delivered") base = base.filter((d) => !!d.payday_invoice_id);
-      else if (activeSubstage === "delivered_missing_invoice") base = base.filter((d) => !d.payday_invoice_id);
     } else if (activeStep === "cancelled") {
       base = base.filter((d) => d.stage === "cancelled");
     } else if (activeStep === "inquiry") {
@@ -464,13 +465,17 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     if (activeStep !== "cancelled") {
       base = base.filter((d) => d.stage !== "cancelled");
     }
-    const inv: Record<InvoiceStatus, number> = { not_invoiced: 0, full: 0 };
-    const pay: Record<PaymentStatus, number> = { unpaid: 0, partial: 0, paid: 0 };
-    base.forEach((d) => {
-      inv[d.invoice_status]++;
-      if (d.payday_invoice_id) pay[d.payment_status]++;
+    // Payday status only counts delivered / resolved-defect deals
+    const deliveredLike = base.filter(
+      (d) => d.stage === "delivered" || (d.stage === "defect_reorder" && isDefectResolved(d)),
+    );
+    const counts = { not_invoiced: 0, unpaid: 0, paid: 0 };
+    deliveredLike.forEach((d) => {
+      if (d.invoice_status === "not_invoiced") counts.not_invoiced++;
+      else if (d.invoice_status === "full" && d.payment_status === "unpaid") counts.unpaid++;
+      else if (d.invoice_status === "full" && d.payment_status === "paid") counts.paid++;
     });
-    return { inv, pay };
+    return counts;
   }, [deals, activeStep, activeSubstage, selectedOwners]);
 
   const ownersWithDeals = useMemo(() => {
@@ -496,8 +501,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     setActiveSubstage(null);
     setSelectedOwners(new Set());
     setSelectedYear(null);
-    setActiveInvoiceStatus(null);
-    setActivePaymentStatus(null);
+    setActivePaydayStatus(null);
   };
 
   const openDeal = (id: string) => {
@@ -761,77 +765,29 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                 variant="sub"
               />
             ))}
-          {activeStep === "afhent" && (() => {
-            const afhentDeals = deals.filter(
-              (d) =>
-                d.stage === "delivered" ||
-                (d.stage === "defect_reorder" && isDefectResolved(d)),
-            );
-            const withInvoice = afhentDeals.filter((d) => !!d.payday_invoice_id).length;
-            const missingInvoice = afhentDeals.filter((d) => !d.payday_invoice_id).length;
-            return (
-              <>
-                <StagePill
-                  label={stepLabel("afhent")}
-                  count={withInvoice}
-                  active={activeSubstage === "delivered"}
-                  onClick={() =>
-                    setActiveSubstage((prev) => (prev === "delivered" ? null : "delivered"))
-                  }
-                  showClose={activeSubstage === "delivered"}
-                  variant="sub"
-                />
-                <StagePill
-                  label={`${stepLabel("afhent")} · ${t.deal.substepMissingInvoice}`}
-                  count={missingInvoice}
-                  active={activeSubstage === "delivered_missing_invoice"}
-                  onClick={() =>
-                    setActiveSubstage((prev) =>
-                      prev === "delivered_missing_invoice" ? null : "delivered_missing_invoice",
-                    )
-                  }
-                  showClose={activeSubstage === "delivered_missing_invoice"}
-                  variant="sub"
-                />
-              </>
-            );
-          })()}
         </div>
       </div>
 
-      {/* Payday-derived status filter pills (invoice + payment) */}
+      {/* Payday-derived status filter pills (delivered deals only) */}
       <div className="mb-4">
         <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
           {t.deal.filterPaydayRowLabel}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {(["not_invoiced", "full"] as InvoiceStatus[]).map((s) => {
-            const isActive = activeInvoiceStatus === s;
-            if (activeInvoiceStatus && !isActive) return null;
+          {([
+            { key: "not_invoiced" as const, label: t.invoiceStatus.not_invoiced },
+            { key: "unpaid" as const, label: t.paymentStatus.unpaid },
+            { key: "paid" as const, label: t.paymentStatus.paid },
+          ]).map(({ key, label }) => {
+            const isActive = activePaydayStatus === key;
+            if (activePaydayStatus && !isActive) return null;
             return (
               <StagePill
-                key={`inv-${s}`}
-                label={t.invoiceStatus[s]}
-                count={paydayCounts.inv[s]}
+                key={`pds-${key}`}
+                label={label}
+                count={paydayCounts[key]}
                 active={isActive}
-                onClick={() => setActiveInvoiceStatus((prev) => (prev === s ? null : s))}
-                showClose={isActive}
-              />
-            );
-          })}
-          {!activeInvoiceStatus && !activePaymentStatus && (
-            <span className="px-1 text-muted-foreground" aria-hidden>·</span>
-          )}
-          {(["unpaid", "partial", "paid"] as PaymentStatus[]).map((s) => {
-            const isActive = activePaymentStatus === s;
-            if (activePaymentStatus && !isActive) return null;
-            return (
-              <StagePill
-                key={`pay-${s}`}
-                label={t.paymentStatus[s]}
-                count={paydayCounts.pay[s]}
-                active={isActive}
-                onClick={() => setActivePaymentStatus((prev) => (prev === s ? null : s))}
+                onClick={() => setActivePaydayStatus((prev) => (prev === key ? null : key))}
                 showClose={isActive}
               />
             );
