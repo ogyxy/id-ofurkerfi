@@ -642,6 +642,40 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     scrollMargin: listRef.current?.offsetTop ?? 0,
   });
 
+  // Restore scroll position after returning from a deal detail page.
+  // Runs once after the list has loaded and rendered enough to allow scrolling.
+  useEffect(() => {
+    if (loading) return;
+    const target = pendingScrollRestoreRef.current;
+    if (target == null || target <= 0) {
+      pendingScrollRestoreRef.current = null;
+      return;
+    }
+    let cancelled = false;
+    let attempts = 0;
+    const tryScroll = () => {
+      if (cancelled) return;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      if (max >= target || attempts > 30) {
+        window.scrollTo({ top: Math.min(target, Math.max(max, 0)), behavior: "auto" });
+        pendingScrollRestoreRef.current = null;
+        try {
+          sessionStorage.removeItem(SCROLL_STORAGE_KEY);
+        } catch {
+          /* ignore */
+        }
+        return;
+      }
+      attempts++;
+      requestAnimationFrame(tryScroll);
+    };
+    requestAnimationFrame(tryScroll);
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, visibleDeals.length]);
+
+
   return (
     <div>
       {/* Header */}
