@@ -190,11 +190,12 @@ export function CreatePoDrawer({
   useEffect(() => {
     if (isEdit) return;
     if (currencyTouched) return;
-    if (selectedSupplier?.default_currency) {
-      setCurrency(selectedSupplier.default_currency);
+    const next = selectedSupplier?.default_currency;
+    if (next && next !== currency) {
+      setCurrency(next);
       setExchangeRate(""); // refetch for new currency
     }
-  }, [selectedSupplier, isEdit, currencyTouched]);
+  }, [selectedSupplier, isEdit, currencyTouched, currency]);
 
   // Auto-fetch exchange rate when currency changes and field is empty
   useEffect(() => {
