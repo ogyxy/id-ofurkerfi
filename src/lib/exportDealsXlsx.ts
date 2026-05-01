@@ -15,6 +15,8 @@ export interface ExportableDeal {
   shipping_cost_isk?: number | null;
   margin_isk?: number | null;
   total_margin_isk?: number | null;
+  refund_amount_isk?: number | null;
+  defect_resolution?: Database["public"]["Enums"]["defect_resolution"] | null;
   promised_delivery_date: string | null;
   delivered_at: string | null;
   invoice_status: InvoiceStatus;
