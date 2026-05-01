@@ -165,26 +165,80 @@ function isOverdue(date: string | null, stage: DealStage): boolean {
   return new Date(date) < new Date(new Date().toDateString());
 }
 
+const FILTER_STORAGE_KEY = "deals-list:filters:v1";
+const SCROLL_STORAGE_KEY = "deals-list:scrollY:v1";
+
+type PersistedFilters = {
+  search: string;
+  activeStep: StepKey | null;
+  activeSubstage: DealStage | null;
+  activeAfhentSub: "linked" | "unlinked" | null;
+  activePaydayStatus: "not_invoiced" | "unpaid" | "paid" | null;
+  selectedYear: number | null;
+  selectedOwners: string[];
+};
+
+function readPersistedFilters(): PersistedFilters | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(FILTER_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as PersistedFilters;
+  } catch {
+    return null;
+  }
+}
+
 export function DealsList({ currentUserId, initialStage = null }: Props) {
+  // Restore persisted filters on first render so the user returns to the
+  // exact filtered view they had before navigating into a deal.
+  const persisted = typeof window !== "undefined" ? readPersistedFilters() : null;
+
   const [deals, setDeals] = useState<DealRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [search, setSearch] = useState(persisted?.search ?? "");
+  const [debouncedSearch, setDebouncedSearch] = useState(persisted?.search ?? "");
   const [activeStep, setActiveStep] = useState<StepKey | null>(
-    initialStage ? stageToStep(initialStage) : null,
+    persisted ? persisted.activeStep : initialStage ? stageToStep(initialStage) : null,
   );
-  const [activeSubstage, setActiveSubstage] = useState<DealStage | null>(null);
-  const [activeAfhentSub, setActiveAfhentSub] = useState<"linked" | "unlinked" | null>(null);
-  const [activePaydayStatus, setActivePaydayStatus] = useState<"not_invoiced" | "unpaid" | "paid" | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [activeSubstage, setActiveSubstage] = useState<DealStage | null>(persisted?.activeSubstage ?? null);
+  const [activeAfhentSub, setActiveAfhentSub] = useState<"linked" | "unlinked" | null>(persisted?.activeAfhentSub ?? null);
+  const [activePaydayStatus, setActivePaydayStatus] = useState<"not_invoiced" | "unpaid" | "paid" | null>(persisted?.activePaydayStatus ?? null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(persisted?.selectedYear ?? null);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
-  const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set());
+  const [selectedOwners, setSelectedOwners] = useState<Set<string>>(
+    new Set(persisted?.selectedOwners ?? []),
+  );
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [lineMatchedDealIds, setLineMatchedDealIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
-  
+  const pendingScrollRestoreRef = useRef<number | null>(
+    persisted && typeof window !== "undefined"
+      ? Number(sessionStorage.getItem(SCROLL_STORAGE_KEY) ?? "0") || 0
+      : null,
+  );
+
+  // Persist filters whenever they change.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const payload: PersistedFilters = {
+      search,
+      activeStep,
+      activeSubstage,
+      activeAfhentSub,
+      activePaydayStatus,
+      selectedYear,
+      selectedOwners: [...selectedOwners],
+    };
+    try {
+      sessionStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      /* ignore */
+    }
+  }, [search, activeStep, activeSubstage, activeAfhentSub, activePaydayStatus, selectedYear, selectedOwners]);
+
 
   // Debounce search
   useEffect(() => {
@@ -514,6 +568,13 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
   };
 
   const openDeal = (id: string) => {
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem(SCROLL_STORAGE_KEY, String(window.scrollY));
+      } catch {
+        /* ignore */
+      }
+    }
     rememberDealReturnPath("/deals");
     navigate({ to: "/deals/$id", params: { id } });
   };
@@ -580,6 +641,40 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     overscan: 8,
     scrollMargin: listRef.current?.offsetTop ?? 0,
   });
+
+  // Restore scroll position after returning from a deal detail page.
+  // Runs once after the list has loaded and rendered enough to allow scrolling.
+  useEffect(() => {
+    if (loading) return;
+    const target = pendingScrollRestoreRef.current;
+    if (target == null || target <= 0) {
+      pendingScrollRestoreRef.current = null;
+      return;
+    }
+    let cancelled = false;
+    let attempts = 0;
+    const tryScroll = () => {
+      if (cancelled) return;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      if (max >= target || attempts > 30) {
+        window.scrollTo({ top: Math.min(target, Math.max(max, 0)), behavior: "auto" });
+        pendingScrollRestoreRef.current = null;
+        try {
+          sessionStorage.removeItem(SCROLL_STORAGE_KEY);
+        } catch {
+          /* ignore */
+        }
+        return;
+      }
+      attempts++;
+      requestAnimationFrame(tryScroll);
+    };
+    requestAnimationFrame(tryScroll);
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, visibleDeals.length]);
+
 
   return (
     <div>
