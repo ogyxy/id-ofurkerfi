@@ -301,6 +301,7 @@ export function DealLinesEditor({
       unit_price_isk: 0,
       manualPrice: false,
       notes: "",
+      size_breakdown: null,
       emptyQty: true,
       emptyCost: true,
     };
