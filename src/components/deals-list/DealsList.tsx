@@ -171,7 +171,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
   const [activeStep, setActiveStep] = useState<StepKey | null>(
     initialStage ? stageToStep(initialStage) : null,
   );
-  const [activeSubstage, setActiveSubstage] = useState<DealStage | null>(null);
+  const [activeSubstage, setActiveSubstage] = useState<DealStage | "delivered_missing_invoice" | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set());
