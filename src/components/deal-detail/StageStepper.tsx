@@ -57,9 +57,17 @@ interface Props {
   stage: DealStage;
   onChange: (next: DealStage) => void;
   poProgress?: { received: number; total: number } | null;
+  canLinkPaydayInvoice?: boolean;
+  onLinkPaydayInvoice?: () => void;
 }
 
-export function StageStepper({ stage, onChange, poProgress }: Props) {
+export function StageStepper({
+  stage,
+  onChange,
+  poProgress,
+  canLinkPaydayInvoice,
+  onLinkPaydayInvoice,
+}: Props) {
   const [confirmBackStage, setConfirmBackStage] = useState<DealStage | null>(null);
 
   if (stage === "cancelled") {
