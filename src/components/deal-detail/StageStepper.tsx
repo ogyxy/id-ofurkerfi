@@ -232,6 +232,17 @@ export function StageStepper({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {canLinkPaydayInvoice &&
+              onLinkPaydayInvoice &&
+              (stage === "inquiry" ||
+                stage === "quote_in_progress" ||
+                stage === "quote_sent" ||
+                stage === "order_confirmed" ||
+                stage === "ready_for_pickup") && (
+                <DropdownMenuItem onClick={onLinkPaydayInvoice}>
+                  {t.payday.linkButtonHidden}
+                </DropdownMenuItem>
+              )}
             <DropdownMenuItem
               onClick={() => onChange("cancelled")}
               className="text-red-600"
