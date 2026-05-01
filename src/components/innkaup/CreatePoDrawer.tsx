@@ -526,6 +526,7 @@ export function CreatePoDrawer({
                 <Select
                   value={currency}
                   onValueChange={(v) => {
+                    setCurrencyTouched(true);
                     setCurrency(v);
                     setExchangeRate(""); // trigger refetch
                   }}
