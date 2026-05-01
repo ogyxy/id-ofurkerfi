@@ -137,6 +137,7 @@ export function DealLinesEditor({
   // Cache last serialized payload per id to avoid redundant writes
   const lastSerialized = useRef<Map<string, string>>(new Map());
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [breakdownOpenForId, setBreakdownOpenForId] = useState<string | null>(null);
 
   // Initialize persisted ids from existing (non-new) lines
   useEffect(() => {
@@ -423,17 +424,26 @@ export function DealLinesEditor({
                     <GripVertical className="h-4 w-4" />
                   </td>
                   <td className="px-2 py-2">
-                    <Input
-                      value={line.product_name}
-                      onChange={(e) =>
-                        updateLine(idx, { product_name: e.target.value })
-                      }
-                      onKeyDown={handleLineKeyDown(idx)}
-                      data-line-id={line.id}
-                      data-field="product_name"
-                      className="min-w-[140px]"
-                      disabled={readOnly}
-                    />
+                    <div className="space-y-1">
+                      <Input
+                        value={line.product_name}
+                        onChange={(e) =>
+                          updateLine(idx, { product_name: e.target.value })
+                        }
+                        onKeyDown={handleLineKeyDown(idx)}
+                        data-line-id={line.id}
+                        data-field="product_name"
+                        className="min-w-[140px]"
+                        disabled={readOnly}
+                      />
+                      {line.size_breakdown &&
+                        sumSizeBreakdown(line.size_breakdown) !== line.quantity && (
+                          <div className="flex items-center gap-1 text-xs text-amber-700">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>{t.dealLine.sizeBreakdownMismatchBadge}</span>
+                          </div>
+                        )}
+                    </div>
                   </td>
                   <td className="px-2 py-2">
                     <Input
