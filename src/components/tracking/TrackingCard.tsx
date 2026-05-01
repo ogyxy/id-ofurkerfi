@@ -29,7 +29,7 @@ function getTrackingUrl(trackingNumber: string): string {
   return `https://www.ordertracker.com/track/${encodeURIComponent(trackingNumber)}`;
 }
 
-type Props =
+type Props = (
   | {
       mode: "deal";
       dealId: string;
@@ -40,7 +40,11 @@ type Props =
       poId: string;
       dealId: string | null;
       initial: string[];
-    };
+    }
+) & {
+  /** When true, render without the outer card chrome (for embedding inside another card). */
+  bare?: boolean;
+};
 
 /**
  * Shared tracking-numbers card used by both the SO and PO detail pages.
