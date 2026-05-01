@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatIsk } from "@/lib/sala_translations_is";
 import { formatKennitala } from "@/lib/formatters";
+import { formatSizeBreakdown, type SizeBreakdown } from "@/lib/sizeBreakdown";
 import ideLogoUrl from "@/assets/ide-logo.png";
 
 const NAVY: [number, number, number] = [26, 37, 64];
@@ -26,6 +27,7 @@ export interface QuoteLine {
   quantity: number;
   unit_price_isk: number;
   line_total_isk: number;
+  size_breakdown?: SizeBreakdown | null;
 }
 
 export interface QuoteSender {
