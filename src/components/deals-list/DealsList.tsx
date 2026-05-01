@@ -496,6 +496,8 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     setActiveSubstage(null);
     setSelectedOwners(new Set());
     setSelectedYear(null);
+    setActiveInvoiceStatus(null);
+    setActivePaymentStatus(null);
   };
 
   const openDeal = (id: string) => {
