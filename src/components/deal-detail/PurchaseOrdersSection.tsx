@@ -79,24 +79,8 @@ export function PurchaseOrdersSection({ dealId, pos, trackingNumbers }: Props) {
       </div>
 
       <div className="border-t border-border pt-4">
-        <TrackingCardEmbedded dealId={dealId} initial={trackingNumbers} />
+        <TrackingCard mode="deal" dealId={dealId} initial={trackingNumbers} bare />
       </div>
     </div>
   );
-}
-
-/**
- * Tracking section embedded inside the merged Innkaup card.
- * Reuses the existing TrackingCard but strips its outer card chrome
- * by wrapping it — the TrackingCard renders its own padded card, so
- * we just render it raw here.
- */
-function TrackingCardEmbedded({
-  dealId,
-  initial,
-}: {
-  dealId: string;
-  initial: string[];
-}) {
-  return <TrackingCard mode="deal" dealId={dealId} initial={initial} />;
 }
