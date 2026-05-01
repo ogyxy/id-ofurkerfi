@@ -34,10 +34,10 @@ export async function fetchLinkedPos(
 ): Promise<LinkedPo[]> {
   const { data } = await supabase
     .from("purchase_orders")
-    .select("id, po_number, status, received_date, tracking_numbers")
+    .select("id, po_number, status, received_date, tracking_numbers, supplier, supplier_record:suppliers(name)")
     .eq("deal_id", dealId)
     .order("created_at", { ascending: false });
-  return (data ?? []) as LinkedPo[];
+  return (data ?? []) as unknown as LinkedPo[];
 }
 
 // ----------------------------------------------------------------------------
