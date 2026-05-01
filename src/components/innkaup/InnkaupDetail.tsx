@@ -802,6 +802,36 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Confirm mark-as-paid */}
+      <AlertDialog open={confirmMarkPaid} onOpenChange={setConfirmMarkPaid}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.purchaseOrder.confirmMarkPaid}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.purchaseOrder.actionMarkPaid}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void handleMarkPaid()}
+              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+            >
+              {t.actions.confirm}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Invoice register/edit drawer */}
+      <InvoiceDrawer
+        open={invoiceDrawerOpen}
+        onOpenChange={setInvoiceDrawerOpen}
+        po={po}
+        currentProfileId={currentProfileId}
+        onSaved={() => void load()}
+      />
+
       <EditPoDrawer
         open={editOpen}
         onOpenChange={setEditOpen}
