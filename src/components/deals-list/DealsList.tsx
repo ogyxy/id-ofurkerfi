@@ -363,11 +363,6 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
           d.stage === "delivered" ||
           (d.stage === "defect_reorder" && isDefectResolved(d)),
       );
-      if (activeSubstage === "delivered") {
-        list = list.filter((d) => !!d.payday_invoice_id);
-      } else if (activeSubstage === "delivered_missing_invoice") {
-        list = list.filter((d) => !d.payday_invoice_id);
-      }
     } else if (activeStep === "cancelled") {
       list = list.filter((d) => d.stage === "cancelled");
     } else if (activeStep === "inquiry") {
@@ -386,22 +381,31 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     if (selectedOwners.size > 0) {
       list = list.filter((d) => d.owner && selectedOwners.has(d.owner.id));
     }
-    // Payday-derived filters
-    if (activeInvoiceStatus) {
-      list = list.filter((d) => d.invoice_status === activeInvoiceStatus);
-    }
-    if (activePaymentStatus) {
-      // Payment status only meaningful once an invoice is linked
-      list = list.filter(
-        (d) => d.payment_status === activePaymentStatus && !!d.payday_invoice_id,
-      );
+    // Payday-derived filters — only meaningful for delivered / resolved-defect deals
+    if (activePaydayStatus) {
+      list = list.filter((d) => {
+        const isDeliveredLike =
+          d.stage === "delivered" ||
+          (d.stage === "defect_reorder" && isDefectResolved(d));
+        if (!isDeliveredLike) return false;
+        if (activePaydayStatus === "not_invoiced") {
+          return d.invoice_status === "not_invoiced";
+        }
+        if (activePaydayStatus === "unpaid") {
+          return d.invoice_status === "full" && d.payment_status === "unpaid";
+        }
+        if (activePaydayStatus === "paid") {
+          return d.invoice_status === "full" && d.payment_status === "paid";
+        }
+        return true;
+      });
     }
     // Hide cancelled deals unless explicitly filtering for them
     if (activeStep !== "cancelled") {
       list = list.filter((d) => d.stage !== "cancelled");
     }
     return list;
-  }, [deals, activeStep, activeSubstage, selectedOwners, activeInvoiceStatus, activePaymentStatus]);
+  }, [deals, activeStep, activeSubstage, selectedOwners, activePaydayStatus]);
 
   const stepCounts = useMemo(() => {
     const c: Record<StepKey, number> = {
