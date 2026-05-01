@@ -584,14 +584,36 @@ export function DealLinesEditor({
                     </div>
                   </td>
                   <td className="px-2 py-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeLine(idx)}
-                      disabled={readOnly}
-                    >
-                      <Trash2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
+                    {!readOnly && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="relative">
+                            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                            {line.size_breakdown && (
+                              <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
+                            )}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={() => setBreakdownOpenForId(line.id)}>
+                            <Ruler className="mr-2 h-4 w-4" />
+                            {t.dealLine.sizeBreakdown}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => duplicateLine(idx)}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            {t.dealLine.duplicateLine}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onSelect={() => removeLine(idx)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {t.dealLine.deleteLine}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </td>
                 </tr>
               );
@@ -614,6 +636,26 @@ export function DealLinesEditor({
         <Plus className="mr-1 h-4 w-4" />
         {t.dealLine.addLine}
       </Button>
+
+      {(() => {
+        const line = lines.find((l) => l.id === breakdownOpenForId);
+        if (!line) return null;
+        return (
+          <SizeBreakdownModal
+            open={true}
+            onOpenChange={(o) => { if (!o) setBreakdownOpenForId(null); }}
+            lineQuantity={line.quantity}
+            initial={line.size_breakdown}
+            onSave={(b) => {
+              const idx = lines.findIndex((l) => l.id === line.id);
+              if (idx < 0) return;
+              const next = [...lines];
+              next[idx] = { ...next[idx], size_breakdown: b };
+              setLines(next);
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }
