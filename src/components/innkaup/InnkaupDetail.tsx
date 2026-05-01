@@ -1,9 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Check, Download, MoreHorizontal, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarIcon,
+  Check,
+  CheckCircle2,
+  Download,
+  FileText,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { FileThumbnail } from "@/components/FileThumbnail";
 import { MultiFileUploadDialog } from "@/components/MultiFileUploadDialog";
 import { smartGuessPoFileType } from "@/lib/uploadHelpers";
+import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -31,6 +43,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,13 +61,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -62,7 +68,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { pathSafe, formatFileSize } from "@/lib/formatters";
 import { goBack } from "@/lib/dealReturn";
@@ -79,8 +84,14 @@ import {
   logPoPaid,
   logPoReceived,
   logPoStatusChanged,
+  logPoInvoiceApproved,
+  logPoInvoiceApprovalRevoked,
+  logPoPaymentRevoked,
+  logPoRevertedToOrdered,
 } from "@/lib/poActivityLog";
 import { PoTrackingNumbersInline } from "./PoTrackingNumbersInline";
+import { POStageStepper } from "@/components/po-detail/POStageStepper";
+import { InvoiceDrawer } from "@/components/po-detail/InvoiceDrawer";
 
 type PO = Database["public"]["Tables"]["purchase_orders"]["Row"];
 type Supplier = Database["public"]["Tables"]["suppliers"]["Row"];
@@ -95,8 +106,10 @@ type Activity = {
   created_at: string;
   profile: { id: string; name: string | null } | null;
 };
+type ProfileMini = { id: string; name: string | null };
 
 const NAVY = "#1a2540";
+
 
 interface Props {
   poId: string;
@@ -1064,7 +1077,7 @@ function EditPoDrawer({
         supplier_id: supplierId || null,
         supplier: supplierName,
         supplier_reference: supplierRef.trim() || null,
-        deal_id: dealId || null,
+        deal_id: dealId || po.deal_id,
         notes: notes.trim() || null,
         order_date: orderDate || null,
         expected_delivery_date: expectedDate || null,
