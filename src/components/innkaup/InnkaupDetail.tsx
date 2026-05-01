@@ -59,6 +59,7 @@ import { cn } from "@/lib/utils";
 import { pathSafe, formatFileSize } from "@/lib/formatters";
 import { goBack } from "@/lib/dealReturn";
 import {
+  PO_CURRENCIES,
   PO_FILE_TYPES,
   poFileTypeLabel,
   type POStatus,
@@ -102,7 +103,7 @@ interface Props {
 }
 
 export function InnkaupDetail({ poId, currentProfileId }: Props) {
-  const navigate = useNavigate();
+  
   const [po, setPo] = useState<PO | null>(null);
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [linkedDeal, setLinkedDeal] = useState<{
