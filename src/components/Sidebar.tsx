@@ -61,11 +61,7 @@ export function Sidebar({ activeKey, userEmail }: SidebarProps) {
 
   const drawerContent = (isCollapsed: boolean) => (
     <>
-      <div
-        className={`relative flex items-center px-4 py-6 ${
-          isCollapsed ? "justify-center" : "justify-center"
-        }`}
-      >
+      <div className="relative flex h-36 items-center justify-center px-4">
         {!isCollapsed && (
           <img
             src={ideLogo}
