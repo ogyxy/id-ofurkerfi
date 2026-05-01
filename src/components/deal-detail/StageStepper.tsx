@@ -57,9 +57,17 @@ interface Props {
   stage: DealStage;
   onChange: (next: DealStage) => void;
   poProgress?: { received: number; total: number } | null;
+  canLinkPaydayInvoice?: boolean;
+  onLinkPaydayInvoice?: () => void;
 }
 
-export function StageStepper({ stage, onChange, poProgress }: Props) {
+export function StageStepper({
+  stage,
+  onChange,
+  poProgress,
+  canLinkPaydayInvoice,
+  onLinkPaydayInvoice,
+}: Props) {
   const [confirmBackStage, setConfirmBackStage] = useState<DealStage | null>(null);
 
   if (stage === "cancelled") {
@@ -224,6 +232,17 @@ export function StageStepper({ stage, onChange, poProgress }: Props) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {canLinkPaydayInvoice &&
+              onLinkPaydayInvoice &&
+              (stage === "inquiry" ||
+                stage === "quote_in_progress" ||
+                stage === "quote_sent" ||
+                stage === "order_confirmed" ||
+                stage === "ready_for_pickup") && (
+                <DropdownMenuItem onClick={onLinkPaydayInvoice}>
+                  {t.payday.linkButtonHidden}
+                </DropdownMenuItem>
+              )}
             <DropdownMenuItem
               onClick={() => onChange("cancelled")}
               className="text-red-600"

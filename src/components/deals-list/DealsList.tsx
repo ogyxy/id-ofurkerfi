@@ -1163,7 +1163,7 @@ function AmountCell({ deal }: { deal: DealRow }) {
   const isAmber =
     deal.stage === "delivered" && deal.invoice_status === "not_invoiced";
   const isBlue =
-    (deal.invoice_status === "partial" || deal.invoice_status === "full") &&
+    deal.invoice_status === "full" &&
     (deal.payment_status === "unpaid" || deal.payment_status === "partial");
 
   const colorClass = isAmber

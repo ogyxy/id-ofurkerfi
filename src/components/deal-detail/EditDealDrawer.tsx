@@ -41,7 +41,7 @@ type Profile = { id: string; name: string | null; email: string };
 type InvoiceStatus = Database["public"]["Enums"]["invoice_status"];
 type PaymentStatus = Database["public"]["Enums"]["payment_status"];
 
-const INVOICE: InvoiceStatus[] = ["not_invoiced", "partial", "full"];
+const INVOICE: InvoiceStatus[] = ["not_invoiced", "full"];
 const PAYMENT: PaymentStatus[] = ["unpaid", "partial", "paid"];
 
 interface Props {

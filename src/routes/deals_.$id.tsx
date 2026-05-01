@@ -26,6 +26,8 @@ import { DealSummary } from "@/components/deal-detail/DealSummary";
 import { PurchaseOrdersSection } from "@/components/deal-detail/PurchaseOrdersSection";
 import { DealFilesSection } from "@/components/deal-detail/DealFilesSection";
 import { QuoteBuilderModal } from "@/components/deal-detail/QuoteBuilderModal";
+import { PaydayInvoiceCard } from "@/components/deal-detail/PaydayInvoiceCard";
+import { LinkPaydayInvoiceModal } from "@/components/deal-detail/LinkPaydayInvoiceModal";
 
 import { DealLog, type LogEntry } from "@/components/deal-detail/DealLog";
 import { EditDealDrawer } from "@/components/deal-detail/EditDealDrawer";
@@ -110,6 +112,7 @@ function DealDetailContent() {
   const [ratesError, setRatesError] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [quoteBuilderOpen, setQuoteBuilderOpen] = useState(false);
+  const [linkPaydayOpen, setLinkPaydayOpen] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [defectModalOpen, setDefectModalOpen] = useState(false);
   const [defectBusy, setDefectBusy] = useState(false);
@@ -443,6 +446,8 @@ function DealDetailContent() {
                 }
               : null;
           })()}
+          canLinkPaydayInvoice={!deal.payday_invoice_id}
+          onLinkPaydayInvoice={() => setLinkPaydayOpen(true)}
         />
       )}
 
@@ -454,11 +459,21 @@ function DealDetailContent() {
         onEdit={() => setEditOpen(true)}
       />
 
-      <TrackingCard
-        mode="deal"
-        dealId={deal.id}
-        initial={deal.tracking_numbers ?? []}
-      />
+      {(deal.stage === "delivered" ||
+        deal.stage === "defect_reorder" ||
+        deal.payday_invoice_id) ? (
+        <PaydayInvoiceCard
+          deal={deal}
+          companyKennitala={company.kennitala}
+          onChanged={load}
+        />
+      ) : (
+        <TrackingCard
+          mode="deal"
+          dealId={deal.id}
+          initial={deal.tracking_numbers ?? []}
+        />
+      )}
 
       <DealLinesEditor
         dealId={deal.id}
@@ -600,6 +615,14 @@ function DealDetailContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <LinkPaydayInvoiceModal
+        open={linkPaydayOpen}
+        onOpenChange={setLinkPaydayOpen}
+        dealId={deal.id}
+        companyKennitala={company.kennitala}
+        onLinked={load}
+      />
     </div>
   );
 }
