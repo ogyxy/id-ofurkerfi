@@ -339,6 +339,9 @@ function DealDetailContent() {
         setCascadeDialog({ outstanding: plan.outstanding, total: plan.total });
         return;
       }
+      if (plan.action === "cascadeSilent") {
+        await cascadeReceiveAllPos(plan.outstanding);
+      }
     }
     await performStageUpdate(next);
   };
@@ -428,7 +431,19 @@ function DealDetailContent() {
           currentProfileId={currentProfile?.id ?? null}
         />
       ) : (
-        <StageStepper stage={deal.stage} onChange={updateStage} />
+        <StageStepper
+          stage={deal.stage}
+          onChange={updateStage}
+          poProgress={(() => {
+            const active = pos.filter((p) => p.status !== "cancelled");
+            return active.length > 0
+              ? {
+                  received: active.filter((p) => p.received_date).length,
+                  total: active.length,
+                }
+              : null;
+          })()}
+        />
       )}
 
       <DealHeader
