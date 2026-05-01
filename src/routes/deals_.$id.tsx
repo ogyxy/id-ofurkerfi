@@ -281,12 +281,8 @@ function DealDetailContent() {
     [deal, currentProfile],
   );
 
-  const updateStage = async (next: Deal["stage"]) => {
+  const performStageUpdate = async (next: Deal["stage"]) => {
     if (!deal) return;
-    if (next === "defect_reorder") {
-      setDefectModalOpen(true);
-      return;
-    }
     const patch: Partial<Deal> =
       next === "delivered"
         ? { stage: next, delivered_at: new Date().toISOString().split("T")[0] }
@@ -302,6 +298,48 @@ function DealDetailContent() {
     await logStageChange(next);
     toast.success(t.status.savedSuccessfully);
     await load();
+  };
+
+  const cascadeReceiveAllPos = async (outstanding: LinkedPo[]) => {
+    if (!deal) return;
+    const today = new Date().toISOString().split("T")[0];
+    for (const p of outstanding) {
+      await supabase
+        .from("purchase_orders")
+        .update({ received_date: today, status: "received" })
+        .eq("id", p.id);
+      await logPoReceived({
+        dealId: deal.id,
+        poNumber: p.po_number,
+        receivedDate: today,
+        createdBy: currentProfile?.id ?? null,
+      });
+      // Extra note attributing the cascade
+      await supabase.from("activities").insert({
+        deal_id: deal.id,
+        type: "note",
+        body: `${p.po_number}: ${t.purchaseOrder.cascadeReceivedNote}`,
+        created_by: currentProfile?.id ?? null,
+      });
+    }
+  };
+
+  const updateStage = async (next: Deal["stage"]) => {
+    if (!deal) return;
+    if (next === "defect_reorder") {
+      setDefectModalOpen(true);
+      return;
+    }
+    // Intercept "Komin í hús" to cascade with PO state
+    if (next === "ready_for_pickup" && deal.stage === "order_confirmed") {
+      const linked = await fetchLinkedPos(supabase, deal.id);
+      const plan = planSoMarkArrived(linked);
+      if (plan.action === "confirmCascade") {
+        setCascadeDialog({ outstanding: plan.outstanding, total: plan.total });
+        return;
+      }
+    }
+    await performStageUpdate(next);
   };
 
   const confirmDefectTransition = async (description: string) => {
