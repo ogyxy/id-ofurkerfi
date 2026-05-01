@@ -20,6 +20,8 @@ export type LinkedPo = {
   status: POStatus;
   received_date: string | null;
   tracking_numbers: string[];
+  supplier: string | null;
+  supplier_record: { name: string } | null;
 };
 
 // ----------------------------------------------------------------------------
