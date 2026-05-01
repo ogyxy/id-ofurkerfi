@@ -736,9 +736,11 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                   if (isActive) {
                     setActiveStep(null);
                     setActiveSubstage(null);
+                    setActiveAfhentSub(null);
                   } else {
                     setActiveStep(step);
                     setActiveSubstage(null);
+                    setActiveAfhentSub(null);
                   }
                 }}
                 showClose={isActive}
@@ -774,6 +776,33 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                 variant="sub"
               />
             ))}
+          {activeStep === "afhent" &&
+            ([
+              { key: "linked" as const, label: t.deal.filterAfhentLinked },
+              { key: "unlinked" as const, label: t.deal.filterAfhentUnlinked },
+            ]).map(({ key, label }) => {
+              const count = deals.filter((d) => {
+                const isAfhent =
+                  d.stage === "delivered" ||
+                  (d.stage === "defect_reorder" && isDefectResolved(d));
+                if (!isAfhent) return false;
+                if (selectedOwners.size > 0 && (!d.owner || !selectedOwners.has(d.owner.id))) return false;
+                return key === "linked" ? !!d.payday_invoice_number : !d.payday_invoice_number;
+              }).length;
+              return (
+                <StagePill
+                  key={`afhent-${key}`}
+                  label={label}
+                  count={count}
+                  active={activeAfhentSub === key}
+                  onClick={() =>
+                    setActiveAfhentSub((prev) => (prev === key ? null : key))
+                  }
+                  showClose={activeAfhentSub === key}
+                  variant="sub"
+                />
+              );
+            })}
         </div>
       </div>
 
