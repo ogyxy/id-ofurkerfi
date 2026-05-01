@@ -144,8 +144,8 @@ export async function exportDealsToXlsx(
       } else if (c.totalsRowFunction) {
         col.totalsRowFunction = c.totalsRowFunction;
       } else if (c.key === "margin_pct") {
-        // Weighted margin %: SUM(Framlegð) / SUM(Söluverð)
-        col.totalsRowFormula = `IFERROR(Solur[[#Totals],[Framlegð]]/Solur[[#Totals],[Söluverð]],0)`;
+        // Weighted margin %: SUM(Framlegð) / (SUM(Söluverð) + SUM(Endurgreiðsla))
+        col.totalsRowFormula = `IFERROR(Solur[[#Totals],[Framlegð]]/(Solur[[#Totals],[Söluverð]]+Solur[[#Totals],[Endurgreiðsla]]),0)`;
       }
       return col;
     }),
