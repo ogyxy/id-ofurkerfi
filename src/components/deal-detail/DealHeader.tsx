@@ -5,7 +5,7 @@ import { rememberCompanyReturnPath } from "@/lib/dealReturn";
 import { Button } from "@/components/ui/button";
 import { formatPhone } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
-import { TrackingNumbersInline } from "./TrackingNumbersInline";
+
 import { CopySoButton, CopyTextButton } from "@/components/deals-list/DealsList";
 
 type Deal = Database["public"]["Tables"]["deals"]["Row"];
@@ -104,10 +104,6 @@ export function DealHeader({
               {contact.phone && <> · {formatPhone(contact.phone)}</>}
             </div>
           )}
-          <TrackingNumbersInline
-            dealId={deal.id}
-            initial={deal.tracking_numbers ?? []}
-          />
           {ownerName && (
             <div className="text-xs text-muted-foreground">
               {t.deal.owner_id}: {ownerName}
