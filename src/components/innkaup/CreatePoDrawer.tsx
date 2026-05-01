@@ -100,6 +100,7 @@ export function CreatePoDrawer({
   const [orderDate, setOrderDate] = useState<string>(todayIso());
   const [expectedDate, setExpectedDate] = useState<string>("");
   const [currency, setCurrency] = useState<string>("EUR");
+  const [currencyTouched, setCurrencyTouched] = useState(false);
   const [exchangeRate, setExchangeRate] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [shippingCost, setShippingCost] = useState<string>("0");
