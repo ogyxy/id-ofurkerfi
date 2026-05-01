@@ -50,13 +50,15 @@ interface Profile {
 }
 
 interface TaskItem {
-  type: "overdue" | "defect_pending" | "unpaid_old" | "delivery_mismatch";
+  type: "overdue" | "defect_pending" | "unpaid_old" | "delivery_mismatch" | "po_invoice_approval";
   deal: {
     id: string;
     so_number: string;
     name: string;
     company?: { id: string; name: string } | null;
   };
+  poId?: string;
+  poNumber?: string;
 }
 
 interface PulseStats {
