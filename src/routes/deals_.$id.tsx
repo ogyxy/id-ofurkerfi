@@ -502,9 +502,9 @@ function DealDetailContent() {
         stage={deal.stage}
         onChange={updateStage}
         onOpenQuoteBuilder={() => setQuoteBuilderOpen(true)}
-        hideOrderConfirmedActions={
-          pos.length === 0 && deal.created_at >= PO_GATE_CUTOFF
-        }
+        onOpenCreatePo={() => setCreatePoOpen(true)}
+        poCount={pos.length}
+        legacyAllowProgressionWithoutPo={deal.created_at < PO_GATE_CUTOFF}
       />
 
       <DealSummary
@@ -516,13 +516,6 @@ function DealDetailContent() {
         readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
         refundAmountIsk={deal.refund_amount_isk as number | null}
         defectResolution={deal.defect_resolution}
-      />
-
-      <PurchaseOrdersSection
-        dealId={deal.id}
-        pos={pos}
-        currentProfileId={currentProfile?.id ?? null}
-        onChanged={load}
       />
 
       <DealFilesSection
