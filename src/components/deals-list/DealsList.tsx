@@ -174,6 +174,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     initialStage ? stageToStep(initialStage) : null,
   );
   const [activeSubstage, setActiveSubstage] = useState<DealStage | null>(null);
+  const [activeAfhentSub, setActiveAfhentSub] = useState<"linked" | "unlinked" | null>(null);
   const [activePaydayStatus, setActivePaydayStatus] = useState<"not_invoiced" | "unpaid" | "paid" | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
@@ -365,6 +366,11 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
           d.stage === "delivered" ||
           (d.stage === "defect_reorder" && isDefectResolved(d)),
       );
+      if (activeAfhentSub === "linked") {
+        list = list.filter((d) => !!d.payday_invoice_number);
+      } else if (activeAfhentSub === "unlinked") {
+        list = list.filter((d) => !d.payday_invoice_number);
+      }
     } else if (activeStep === "cancelled") {
       list = list.filter((d) => d.stage === "cancelled");
     } else if (activeStep === "inquiry") {
@@ -407,7 +413,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
       list = list.filter((d) => d.stage !== "cancelled");
     }
     return list;
-  }, [deals, activeStep, activeSubstage, selectedOwners, activePaydayStatus]);
+  }, [deals, activeStep, activeSubstage, activeAfhentSub, selectedOwners, activePaydayStatus]);
 
   const stepCounts = useMemo(() => {
     const c: Record<StepKey, number> = {
@@ -501,6 +507,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     setSearch("");
     setActiveStep(null);
     setActiveSubstage(null);
+    setActiveAfhentSub(null);
     setSelectedOwners(new Set());
     setSelectedYear(null);
     setActivePaydayStatus(null);
