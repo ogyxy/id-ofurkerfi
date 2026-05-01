@@ -339,6 +339,9 @@ function DealDetailContent() {
         setCascadeDialog({ outstanding: plan.outstanding, total: plan.total });
         return;
       }
+      if (plan.action === "cascadeSilent") {
+        await cascadeReceiveAllPos(plan.outstanding);
+      }
     }
     await performStageUpdate(next);
   };
