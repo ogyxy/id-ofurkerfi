@@ -534,6 +534,53 @@ function DealDetailContent() {
           void load();
         }}
       />
+
+      {/* SO mark-arrived cascade: 3-button dialog when POs are still outstanding */}
+      <AlertDialog
+        open={!!cascadeDialog}
+        onOpenChange={(o) => !o && setCascadeDialog(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t.deal.trackingsoPartialDeliveryTitle}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {cascadeDialog
+                ? t.deal.trackingsoPartialDeliveryBody
+                    .replace("{outstanding}", String(cascadeDialog.outstanding.length))
+                    .replace("{total}", String(cascadeDialog.total))
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+            <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const d = cascadeDialog;
+                setCascadeDialog(null);
+                if (!d) return;
+                await performStageUpdate("ready_for_pickup");
+              }}
+            >
+              {t.deal.trackingsoPartialDeliverySoOnly}
+            </Button>
+            <Button
+              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+              onClick={async () => {
+                const d = cascadeDialog;
+                setCascadeDialog(null);
+                if (!d) return;
+                await cascadeReceiveAllPos(d.outstanding);
+                await performStageUpdate("ready_for_pickup");
+              }}
+            >
+              {t.deal.trackingsoPartialDeliveryMarkAll}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
