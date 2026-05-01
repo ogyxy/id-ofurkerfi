@@ -30,6 +30,7 @@ export interface ExportableDeal {
 
 export interface ExportFilenameParts {
   stageLabel?: string | null;
+  searchTerm?: string | null;
   year?: number | null;
   ownerName?: string | null;
 }
@@ -202,13 +203,14 @@ export async function exportDealsToXlsx(
 
   // Build filename
   const parts: string[] = [];
-  const stageYear = [
+  const stageSearchYear = [
     filenameParts.stageLabel?.trim() || null,
+    filenameParts.searchTerm?.trim() || null,
     filenameParts.year != null ? String(filenameParts.year) : null,
   ]
     .filter(Boolean)
     .join(" ");
-  if (stageYear) parts.push(stageYear);
+  if (stageSearchYear) parts.push(stageSearchYear);
   if (filenameParts.ownerName?.trim()) parts.push(filenameParts.ownerName.trim());
   const suffix = parts.length ? ` - ${parts.join(" - ")}` : "";
   const filename = `IDÉ Sölur${suffix}.xlsx`;

@@ -537,6 +537,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                 }
                 await exportDealsToXlsx(visibleDeals, {
                   stageLabel: activeStep ? stageLabelMap[activeStep] : null,
+                  searchTerm: debouncedSearch.trim() || null,
                   year: selectedYear,
                   ownerName,
                 });
