@@ -210,6 +210,7 @@ export function QuoteBuilderModal({
         quantity: l.quantity,
         unit_price_isk: Number(l.unit_price_isk),
         line_total_isk: Number(l.line_total_isk),
+        size_breakdown: l.size_breakdown,
       }));
 
       const baseBuf = await generateQuotePdf({
