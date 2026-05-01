@@ -58,6 +58,7 @@ const COLUMNS = [
   { name: "Staða", key: "stage", width: 18 },
   { name: "Söluverð", key: "price", width: 16, numFmt: ISK_FMT, totalsRowFunction: "sum" as const },
   { name: "Kostnaðarverð", key: "cost", width: 16, numFmt: ISK_FMT, totalsRowFunction: "sum" as const },
+  { name: "Endurgreiðsla", key: "refund", width: 16, numFmt: ISK_FMT, totalsRowFunction: "sum" as const },
   { name: "Framlegð", key: "margin", width: 14, numFmt: ISK_FMT, totalsRowFunction: "sum" as const },
   { name: "Framlegð %", key: "margin_pct", width: 12, numFmt: PCT_FMT, totalsRowFormula: "" },
   { name: "Deadline", key: "promised", width: 12, numFmt: DATE_FMT },
