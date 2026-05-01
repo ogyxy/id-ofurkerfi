@@ -112,6 +112,11 @@ function DealDetailContent() {
   const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [defectModalOpen, setDefectModalOpen] = useState(false);
   const [defectBusy, setDefectBusy] = useState(false);
+  const [cascadeDialog, setCascadeDialog] = useState<{
+    outstanding: LinkedPo[];
+    total: number;
+  } | null>(null);
+
   const [parentDeal, setParentDeal] = useState<{
     id: string;
     so_number: string;
