@@ -171,7 +171,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
   const [activeStep, setActiveStep] = useState<StepKey | null>(
     initialStage ? stageToStep(initialStage) : null,
   );
-  const [activeSubstage, setActiveSubstage] = useState<DealStage | null>(null);
+  const [activeSubstage, setActiveSubstage] = useState<DealStage | "delivered_missing_invoice" | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set());
@@ -362,6 +362,11 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
           d.stage === "delivered" ||
           (d.stage === "defect_reorder" && isDefectResolved(d)),
       );
+      if (activeSubstage === "delivered") {
+        list = list.filter((d) => !!d.payday_invoice_id);
+      } else if (activeSubstage === "delivered_missing_invoice") {
+        list = list.filter((d) => !d.payday_invoice_id);
+      }
     } else if (activeStep === "cancelled") {
       list = list.filter((d) => d.stage === "cancelled");
     } else if (activeStep === "inquiry") {
@@ -704,6 +709,41 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                 variant="sub"
               />
             ))}
+          {activeStep === "afhent" && (() => {
+            const afhentDeals = deals.filter(
+              (d) =>
+                d.stage === "delivered" ||
+                (d.stage === "defect_reorder" && isDefectResolved(d)),
+            );
+            const withInvoice = afhentDeals.filter((d) => !!d.payday_invoice_id).length;
+            const missingInvoice = afhentDeals.filter((d) => !d.payday_invoice_id).length;
+            return (
+              <>
+                <StagePill
+                  label={stepLabel("afhent")}
+                  count={withInvoice}
+                  active={activeSubstage === "delivered"}
+                  onClick={() =>
+                    setActiveSubstage((prev) => (prev === "delivered" ? null : "delivered"))
+                  }
+                  showClose={activeSubstage === "delivered"}
+                  variant="sub"
+                />
+                <StagePill
+                  label={`${stepLabel("afhent")} · ${t.deal.substepMissingInvoice}`}
+                  count={missingInvoice}
+                  active={activeSubstage === "delivered_missing_invoice"}
+                  onClick={() =>
+                    setActiveSubstage((prev) =>
+                      prev === "delivered_missing_invoice" ? null : "delivered_missing_invoice",
+                    )
+                  }
+                  showClose={activeSubstage === "delivered_missing_invoice"}
+                  variant="sub"
+                />
+              </>
+            );
+          })()}
         </div>
       </div>
 
