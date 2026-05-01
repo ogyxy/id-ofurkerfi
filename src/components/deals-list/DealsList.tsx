@@ -464,7 +464,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     if (activeStep !== "cancelled") {
       base = base.filter((d) => d.stage !== "cancelled");
     }
-    const inv: Record<InvoiceStatus, number> = { not_invoiced: 0, partial: 0, full: 0 };
+    const inv: Record<InvoiceStatus, number> = { not_invoiced: 0, full: 0 };
     const pay: Record<PaymentStatus, number> = { unpaid: 0, partial: 0, paid: 0 };
     base.forEach((d) => {
       inv[d.invoice_status]++;
