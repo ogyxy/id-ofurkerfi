@@ -80,7 +80,6 @@ import {
   type PoFileType,
 } from "@/lib/poConstants";
 import {
-  logPoCreated,
   logPoPaid,
   logPoReceived,
   logPoStatusChanged,
@@ -91,6 +90,7 @@ import {
 } from "@/lib/poActivityLog";
 import { PoTrackingNumbersInline } from "./PoTrackingNumbersInline";
 import { POStageStepper } from "@/components/po-detail/POStageStepper";
+import { POStepperActions } from "@/components/po-detail/POStepperActions";
 import { InvoiceDrawer } from "@/components/po-detail/InvoiceDrawer";
 
 type PO = Database["public"]["Tables"]["purchase_orders"]["Row"];
