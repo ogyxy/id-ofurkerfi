@@ -763,11 +763,18 @@ function YfirlitContent({
 function TaskRow({ task }: { task: TaskItem }) {
   const navigate = useNavigate();
   const meta = TASK_META[task.type];
+  const handleClick = () => {
+    if (task.type === "po_invoice_approval" && task.poId) {
+      navigate({ to: "/innkaup/$id", params: { id: task.poId } });
+    } else {
+      navigate({ to: "/deals/$id", params: { id: task.deal.id } });
+    }
+  };
   return (
     <li>
       <button
         type="button"
-        onClick={() => navigate({ to: "/deals/$id", params: { id: task.deal.id } })}
+        onClick={handleClick}
         className="flex w-full items-center gap-3 py-3 text-left transition-colors hover:bg-muted/40"
       >
         <span className={`flex h-8 w-8 items-center justify-center rounded-full ${meta.bg}`}>
@@ -775,7 +782,11 @@ function TaskRow({ task }: { task: TaskItem }) {
         </span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-sm text-foreground">{task.deal.so_number}</span>
+            <span className="font-mono text-sm text-foreground">
+              {task.type === "po_invoice_approval" && task.poNumber
+                ? task.poNumber
+                : task.deal.so_number}
+            </span>
             {task.deal.company && (
               <span className="truncate text-sm text-muted-foreground">
                 · {task.deal.company.name}
@@ -817,6 +828,12 @@ const TASK_META: Record<
     icon: AlertTriangle,
     bg: "bg-red-100",
     fg: "text-red-600",
+  },
+  po_invoice_approval: {
+    label: t.yfirlit.taskPoInvoiceApproval,
+    icon: ClipboardList,
+    bg: "bg-blue-100",
+    fg: "text-blue-700",
   },
 };
 
