@@ -78,6 +78,11 @@ import { PoTrackingNumbersInline } from "./PoTrackingNumbersInline";
 import { POStageStepper } from "@/components/po-detail/POStageStepper";
 import { POStepperActions } from "@/components/po-detail/POStepperActions";
 import { InvoiceDrawer } from "@/components/po-detail/InvoiceDrawer";
+import {
+  fetchLinkedPos,
+  planSoAfterPoReceived,
+  planSoAfterPoReverted,
+} from "@/lib/poSoSync";
 
 type PO = Database["public"]["Tables"]["purchase_orders"]["Row"];
 type Supplier = Database["public"]["Tables"]["suppliers"]["Row"];
@@ -122,7 +127,9 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
   const [confirmMarkPaid, setConfirmMarkPaid] = useState(false);
+  const [confirmRevertWhileDelivered, setConfirmRevertWhileDelivered] = useState(false);
   const [logText, setLogText] = useState("");
+
 
   const load = useCallback(async () => {
     const [poRes, filesRes] = await Promise.all([
