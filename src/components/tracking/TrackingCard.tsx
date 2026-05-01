@@ -29,7 +29,7 @@ function getTrackingUrl(trackingNumber: string): string {
   return `https://www.ordertracker.com/track/${encodeURIComponent(trackingNumber)}`;
 }
 
-type Props =
+type Props = (
   | {
       mode: "deal";
       dealId: string;
@@ -40,7 +40,11 @@ type Props =
       poId: string;
       dealId: string | null;
       initial: string[];
-    };
+    }
+) & {
+  /** When true, render without the outer card chrome (for embedding inside another card). */
+  bare?: boolean;
+};
 
 /**
  * Shared tracking-numbers card used by both the SO and PO detail pages.
@@ -302,8 +306,8 @@ export function TrackingCard(props: Props) {
     </button>
   );
 
-  return (
-    <div className="rounded-md border border-border bg-card p-6 shadow-sm">
+  const body = (
+    <>
       <h2 className="mb-3 text-sm font-semibold text-foreground">
         {t.purchaseOrder.trackingSectionTitle}
       </h2>
@@ -359,6 +363,13 @@ export function TrackingCard(props: Props) {
           )}
         </div>
       )}
+    </>
+  );
+
+  if (props.bare) return <div>{body}</div>;
+  return (
+    <div className="rounded-md border border-border bg-card p-6 shadow-sm">
+      {body}
     </div>
   );
 }

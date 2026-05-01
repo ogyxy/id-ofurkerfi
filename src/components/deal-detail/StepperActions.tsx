@@ -1,4 +1,4 @@
-import { Package, PackageOpen, FileText, CheckCircle2, Check } from "lucide-react";
+import { Package, PackageOpen, FileText, CheckCircle2, Check, Plus } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
@@ -9,9 +9,12 @@ interface Props {
   stage: DealStage;
   onChange: (next: DealStage) => void;
   onOpenQuoteBuilder?: () => void;
-  /** When true on order_confirmed, hides the goods-arrived/delivered buttons
-   *  because the deal has no purchase orders registered yet (PO gate). */
-  hideOrderConfirmedActions?: boolean;
+  onOpenCreatePo?: () => void;
+  /** Number of purchase orders on the deal (drives order_confirmed UI shape). */
+  poCount: number;
+  /** Legacy escape hatch: deals created before the PO gate cutoff always show
+   *  the goods-arrived / delivered buttons even with zero POs. */
+  legacyAllowProgressionWithoutPo?: boolean;
 }
 
 /**
@@ -20,11 +23,21 @@ interface Props {
  *
  * - quote_in_progress: [Útbúa tilboð] (opens quote builder)
  * - quote_sent       : [Tilboð sent ✓ chip] [Lagfæra tilboð] [Staðfesta pöntun]
- * - order_confirmed  : [Vörur komnar í hús] [Merkja sem afhent]
+ * - order_confirmed  :
+ *     • 0 POs (new deals)  → [Bæta við PO]                       (PO gate)
+ *     • 0 POs (legacy)     → [Bæta við PO] [Vörur komnar í hús] [Merkja sem afhent]
+ *     • ≥1 PO              → [Bæta við PO] [Vörur komnar í hús] [Merkja sem afhent]
  * - ready_for_pickup : [Skila í pöntunarstöðu] [Merkja sem afhent]
  * - inquiry / delivered / defect_reorder / cancelled: nothing
  */
-export function StepperActions({ stage, onChange, onOpenQuoteBuilder, hideOrderConfirmedActions }: Props) {
+export function StepperActions({
+  stage,
+  onChange,
+  onOpenQuoteBuilder,
+  onOpenCreatePo,
+  poCount,
+  legacyAllowProgressionWithoutPo,
+}: Props) {
   if (
     stage === "inquiry" ||
     stage === "delivered" ||
@@ -34,19 +47,12 @@ export function StepperActions({ stage, onChange, onOpenQuoteBuilder, hideOrderC
     return null;
   }
 
-  // PO gate: on order_confirmed with zero POs (for new deals), hide the
-  // goods-arrived / delivered buttons entirely.
-  if (stage === "order_confirmed" && hideOrderConfirmedActions) {
-    return null;
-  }
+  const navy = "bg-ide-navy text-white hover:bg-ide-navy-hover";
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-2 rounded-md border border-border bg-muted/30 p-3">
       {stage === "quote_in_progress" && (
-        <Button
-          onClick={() => onOpenQuoteBuilder?.()}
-          className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-        >
+        <Button onClick={() => onOpenQuoteBuilder?.()} className={navy}>
           <FileText className="mr-1.5 h-4 w-4" />
           {t.deal.quoteBuilder}
         </Button>
@@ -62,31 +68,42 @@ export function StepperActions({ stage, onChange, onOpenQuoteBuilder, hideOrderC
             <FileText className="mr-1.5 h-4 w-4" />
             {t.deal.quoteRefine}
           </Button>
-          <Button
-            onClick={() => onChange("order_confirmed")}
-            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-          >
+          <Button onClick={() => onChange("order_confirmed")} className={navy}>
             <CheckCircle2 className="mr-1.5 h-4 w-4" />
             {t.deal.confirmOrder}
           </Button>
         </>
       )}
 
-      {stage === "order_confirmed" && (
-        <>
-          <Button variant="outline" onClick={() => onChange("ready_for_pickup")}>
-            <Package className="mr-1.5 h-4 w-4" />
-            {t.deal.markGoodsArrived}
-          </Button>
-          <Button
-            onClick={() => onChange("delivered")}
-            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-          >
-            <CheckCircle2 className="mr-1.5 h-4 w-4" />
-            {t.deal.markAsDelivered}
-          </Button>
-        </>
-      )}
+      {stage === "order_confirmed" && (() => {
+        const showProgression = poCount > 0 || legacyAllowProgressionWithoutPo;
+        const poButtonIsPrimary = poCount === 0 && !legacyAllowProgressionWithoutPo;
+
+        return (
+          <>
+            <Button
+              variant={poButtonIsPrimary ? "default" : "outline"}
+              onClick={() => onOpenCreatePo?.()}
+              className={poButtonIsPrimary ? navy : undefined}
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              {t.purchaseOrder.createFromDeal}
+            </Button>
+            {showProgression && (
+              <>
+                <Button variant="outline" onClick={() => onChange("ready_for_pickup")}>
+                  <Package className="mr-1.5 h-4 w-4" />
+                  {t.deal.markGoodsArrived}
+                </Button>
+                <Button onClick={() => onChange("delivered")} className={navy}>
+                  <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                  {t.deal.markAsDelivered}
+                </Button>
+              </>
+            )}
+          </>
+        );
+      })()}
 
       {stage === "ready_for_pickup" && (
         <>
@@ -94,10 +111,7 @@ export function StepperActions({ stage, onChange, onOpenQuoteBuilder, hideOrderC
             <PackageOpen className="mr-1.5 h-4 w-4" />
             {t.deal.revertGoodsArrived}
           </Button>
-          <Button
-            onClick={() => onChange("delivered")}
-            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-          >
+          <Button onClick={() => onChange("delivered")} className={navy}>
             <CheckCircle2 className="mr-1.5 h-4 w-4" />
             {t.deal.markAsDelivered}
           </Button>

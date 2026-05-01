@@ -16,7 +16,7 @@ import { DefectDescriptionModal } from "@/components/deal-detail/DefectDescripti
 import { StepperActions } from "@/components/deal-detail/StepperActions";
 import { ParentDealBanner } from "@/components/deal-detail/ParentDealBanner";
 import { DealHeader } from "@/components/deal-detail/DealHeader";
-import { TrackingCard } from "@/components/tracking/TrackingCard";
+
 import {
   DealLinesEditor,
   fromDbLine,
@@ -24,6 +24,7 @@ import {
 } from "@/components/deal-detail/DealLinesEditor";
 import { DealSummary } from "@/components/deal-detail/DealSummary";
 import { PurchaseOrdersSection } from "@/components/deal-detail/PurchaseOrdersSection";
+import { CreatePoDrawer } from "@/components/innkaup/CreatePoDrawer";
 import { DealFilesSection } from "@/components/deal-detail/DealFilesSection";
 import { QuoteBuilderModal } from "@/components/deal-detail/QuoteBuilderModal";
 import { PaydayInvoiceCard } from "@/components/deal-detail/PaydayInvoiceCard";
@@ -120,6 +121,7 @@ function DealDetailContent() {
   const [editOpen, setEditOpen] = useState(false);
   const [quoteBuilderOpen, setQuoteBuilderOpen] = useState(false);
   const [linkPaydayOpen, setLinkPaydayOpen] = useState(false);
+  const [createPoOpen, setCreatePoOpen] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [defectModalOpen, setDefectModalOpen] = useState(false);
   const [defectBusy, setDefectBusy] = useState(false);
@@ -466,18 +468,13 @@ function DealDetailContent() {
         onEdit={() => setEditOpen(true)}
       />
 
-      {(deal.stage === "inquiry" ||
-        deal.stage === "quote_in_progress" ||
-        deal.stage === "quote_sent" ||
-        deal.stage === "order_confirmed" ||
-        deal.stage === "ready_for_pickup" ||
-        (deal.tracking_numbers ?? []).length > 0) && (
-        <TrackingCard
-          mode="deal"
+      {pos.length > 0 || (deal.tracking_numbers ?? []).length > 0 ? (
+        <PurchaseOrdersSection
           dealId={deal.id}
-          initial={deal.tracking_numbers ?? []}
+          pos={pos}
+          trackingNumbers={deal.tracking_numbers ?? []}
         />
-      )}
+      ) : null}
 
       {(deal.stage === "delivered" ||
         deal.stage === "defect_reorder" ||
@@ -507,9 +504,9 @@ function DealDetailContent() {
         stage={deal.stage}
         onChange={updateStage}
         onOpenQuoteBuilder={() => setQuoteBuilderOpen(true)}
-        hideOrderConfirmedActions={
-          pos.length === 0 && deal.created_at >= PO_GATE_CUTOFF
-        }
+        onOpenCreatePo={() => setCreatePoOpen(true)}
+        poCount={pos.length}
+        legacyAllowProgressionWithoutPo={deal.created_at < PO_GATE_CUTOFF}
       />
 
       <DealSummary
@@ -521,13 +518,6 @@ function DealDetailContent() {
         readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
         refundAmountIsk={deal.refund_amount_isk as number | null}
         defectResolution={deal.defect_resolution}
-      />
-
-      <PurchaseOrdersSection
-        dealId={deal.id}
-        pos={pos}
-        currentProfileId={currentProfile?.id ?? null}
-        onChanged={load}
       />
 
       <DealFilesSection
@@ -641,6 +631,15 @@ function DealDetailContent() {
         companyKennitala={company.kennitala}
         currentProfile={currentProfile}
         onLinked={load}
+      />
+
+      <CreatePoDrawer
+        open={createPoOpen}
+        onOpenChange={setCreatePoOpen}
+        fixedDealId={deal.id}
+        currentProfileId={currentProfile?.id ?? null}
+        onCreated={() => void load()}
+        navigateOnCreate={true}
       />
     </div>
   );
