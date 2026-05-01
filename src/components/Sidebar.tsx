@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  ChevronLeft,
-  ChevronRight,
   LayoutDashboard,
   Menu,
   Package,
@@ -15,7 +13,7 @@ import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { t } from "@/lib/sala_translations_is";
 import { SidebarNavLink } from "./SidebarNavLink";
-import { useSidebarCollapsed } from "@/hooks/use-sidebar-collapsed";
+
 import ideLogo from "@/assets/ide-logo.png";
 
 interface SidebarProps {
@@ -44,7 +42,8 @@ const navItems: Array<{
 export function Sidebar({ activeKey, userEmail }: SidebarProps) {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useSidebarCollapsed();
+  const [hovered, setHovered] = useState(false);
+  const collapsed = !hovered;
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -154,21 +153,15 @@ export function Sidebar({ activeKey, userEmail }: SidebarProps) {
         {drawerContent(false)}
       </aside>
 
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar — always collapsed; expands as overlay on hover */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 hidden flex-col bg-ide-navy text-white transition-[width] duration-200 md:flex ${
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className={`fixed inset-y-0 left-0 z-30 hidden flex-col bg-ide-navy text-white shadow-xl transition-[width] duration-200 md:flex ${
           collapsed ? "w-14" : "w-60"
         }`}
       >
         {drawerContent(collapsed)}
-        <button
-          type="button"
-          onClick={() => setCollapsed(!collapsed)}
-          aria-label={collapsed ? "Stækka valmynd" : "Minnka valmynd"}
-          className="absolute -right-3 top-36 hidden h-6 w-6 items-center justify-center rounded-full border border-border bg-ide-navy text-white shadow hover:bg-ide-navy-hover md:flex"
-        >
-          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-        </button>
       </aside>
     </>
   );
