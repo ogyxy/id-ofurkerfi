@@ -123,7 +123,7 @@ export function QuoteBuilderModal({
       const [linesRes, dealFilesRes, companyFilesRes] = await Promise.all([
         supabase
           .from("deal_lines")
-          .select("id, product_name, description, quantity, unit_price_isk, line_total_isk, line_order")
+          .select("id, product_name, description, quantity, unit_price_isk, line_total_isk, line_order, size_breakdown")
           .eq("deal_id", deal.id)
           .order("line_order"),
         supabase
