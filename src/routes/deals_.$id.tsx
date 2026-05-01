@@ -507,6 +507,9 @@ function DealDetailContent() {
         stage={deal.stage}
         onChange={updateStage}
         onOpenQuoteBuilder={() => setQuoteBuilderOpen(true)}
+        hideOrderConfirmedActions={
+          pos.length === 0 && deal.created_at >= PO_GATE_CUTOFF
+        }
       />
 
       <DealSummary
