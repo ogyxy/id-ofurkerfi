@@ -9,6 +9,9 @@ interface Props {
   stage: DealStage;
   onChange: (next: DealStage) => void;
   onOpenQuoteBuilder?: () => void;
+  /** When true on order_confirmed, hides the goods-arrived/delivered buttons
+   *  because the deal has no purchase orders registered yet (PO gate). */
+  hideOrderConfirmedActions?: boolean;
 }
 
 /**
