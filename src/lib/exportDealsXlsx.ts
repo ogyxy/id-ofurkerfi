@@ -30,6 +30,7 @@ export interface ExportableDeal {
 
 export interface ExportFilenameParts {
   stageLabel?: string | null;
+  searchTerm?: string | null;
   year?: number | null;
   ownerName?: string | null;
 }
