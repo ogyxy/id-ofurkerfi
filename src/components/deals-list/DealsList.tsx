@@ -174,6 +174,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     initialStage ? stageToStep(initialStage) : null,
   );
   const [activeSubstage, setActiveSubstage] = useState<DealStage | null>(null);
+  const [activeAfhentSub, setActiveAfhentSub] = useState<"linked" | "unlinked" | null>(null);
   const [activePaydayStatus, setActivePaydayStatus] = useState<"not_invoiced" | "unpaid" | "paid" | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
@@ -365,6 +366,11 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
           d.stage === "delivered" ||
           (d.stage === "defect_reorder" && isDefectResolved(d)),
       );
+      if (activeAfhentSub === "linked") {
+        list = list.filter((d) => !!d.payday_invoice_number);
+      } else if (activeAfhentSub === "unlinked") {
+        list = list.filter((d) => !d.payday_invoice_number);
+      }
     } else if (activeStep === "cancelled") {
       list = list.filter((d) => d.stage === "cancelled");
     } else if (activeStep === "inquiry") {
@@ -407,7 +413,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
       list = list.filter((d) => d.stage !== "cancelled");
     }
     return list;
-  }, [deals, activeStep, activeSubstage, selectedOwners, activePaydayStatus]);
+  }, [deals, activeStep, activeSubstage, activeAfhentSub, selectedOwners, activePaydayStatus]);
 
   const stepCounts = useMemo(() => {
     const c: Record<StepKey, number> = {
@@ -501,6 +507,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     setSearch("");
     setActiveStep(null);
     setActiveSubstage(null);
+    setActiveAfhentSub(null);
     setSelectedOwners(new Set());
     setSelectedYear(null);
     setActivePaydayStatus(null);
@@ -729,9 +736,11 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                   if (isActive) {
                     setActiveStep(null);
                     setActiveSubstage(null);
+                    setActiveAfhentSub(null);
                   } else {
                     setActiveStep(step);
                     setActiveSubstage(null);
+                    setActiveAfhentSub(null);
                   }
                 }}
                 showClose={isActive}
@@ -767,6 +776,33 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                 variant="sub"
               />
             ))}
+          {activeStep === "afhent" &&
+            ([
+              { key: "linked" as const, label: t.deal.filterAfhentLinked },
+              { key: "unlinked" as const, label: t.deal.filterAfhentUnlinked },
+            ]).map(({ key, label }) => {
+              const count = deals.filter((d) => {
+                const isAfhent =
+                  d.stage === "delivered" ||
+                  (d.stage === "defect_reorder" && isDefectResolved(d));
+                if (!isAfhent) return false;
+                if (selectedOwners.size > 0 && (!d.owner || !selectedOwners.has(d.owner.id))) return false;
+                return key === "linked" ? !!d.payday_invoice_number : !d.payday_invoice_number;
+              }).length;
+              return (
+                <StagePill
+                  key={`afhent-${key}`}
+                  label={label}
+                  count={count}
+                  active={activeAfhentSub === key}
+                  onClick={() =>
+                    setActiveAfhentSub((prev) => (prev === key ? null : key))
+                  }
+                  showClose={activeAfhentSub === key}
+                  variant="sub"
+                />
+              );
+            })}
         </div>
       </div>
 
