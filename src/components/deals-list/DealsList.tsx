@@ -37,6 +37,7 @@ type DealRow = {
   defect_resolution: DefectResolution;
   tracking_numbers: string[];
   payday_invoice_id: string | null;
+  payday_invoice_number: string | null;
   archived: boolean;
   created_at: string;
   company: { id: string; name: string } | null;
@@ -129,6 +130,7 @@ const SELECT = `
   defect_resolution,
   tracking_numbers,
   payday_invoice_id,
+  payday_invoice_number,
   archived,
   created_at,
   company:companies(id, name),

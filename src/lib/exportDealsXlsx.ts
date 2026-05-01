@@ -21,6 +21,7 @@ export interface ExportableDeal {
   delivered_at: string | null;
   invoice_status: InvoiceStatus;
   payment_status: PaymentStatus;
+  payday_invoice_number?: string | null;
   tracking_numbers: string[] | null;
   created_at: string;
   company: { name: string } | null;
@@ -66,6 +67,7 @@ const COLUMNS = [
   { name: "Afhent", key: "delivered_at", width: 12, numFmt: DATE_FMT },
   { name: "Reikningsstaða", key: "invoice_status", width: 18 },
   { name: "Greiðslustaða", key: "payment_status", width: 16 },
+  { name: "payday_invoice_number", key: "payday_invoice_number", width: 22 },
   { name: "Söluaðili", key: "owner", width: 18 },
   { name: "Tracking númer", key: "tracking", width: 24 },
 ];
@@ -116,6 +118,7 @@ export async function exportDealsToXlsx(
       toDate(d.delivered_at),
       t.invoiceStatus[d.invoice_status] ?? d.invoice_status,
       t.paymentStatus[d.payment_status] ?? d.payment_status,
+      d.payday_invoice_number ?? "",
       d.owner?.name ?? "",
       (d.tracking_numbers ?? []).join(", "),
     ];
