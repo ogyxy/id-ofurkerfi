@@ -296,10 +296,36 @@ export function DealLinesEditor({
     }, 0);
   };
 
-  const handleEnterAddLine = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+  const duplicateLine = (idx: number) => {
+    const src = lines[idx];
+    const newLine: EditableLine = {
+      ...src,
+      id: `tmp-${Date.now()}-${Math.random()}`,
+      isNew: true,
+      line_order: idx + 2,
+      manualPrice: src.manualPrice,
+      emptyQty: false,
+      emptyCost: false,
+    };
+    const next = [...lines.slice(0, idx + 1), newLine, ...lines.slice(idx + 1)];
+    setLines(next);
+    setTimeout(() => {
+      const el = document.querySelector<HTMLInputElement>(
+        `input[data-line-id="${newLine.id}"][data-field="product_name"]`,
+      );
+      el?.focus();
+      el?.select();
+    }, 0);
+  };
+
+  const handleLineKeyDown = (idx: number) => (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      addLine();
+      if (e.shiftKey) {
+        duplicateLine(idx);
+      } else {
+        addLine();
+      }
     }
   };
 
