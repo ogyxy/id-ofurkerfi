@@ -629,6 +629,7 @@ function DealDetailContent() {
         onOpenChange={setLinkPaydayOpen}
         dealId={deal.id}
         companyKennitala={company.kennitala}
+        currentProfile={currentProfile}
         onLinked={load}
       />
     </div>
