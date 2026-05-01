@@ -26,6 +26,8 @@ import { DealSummary } from "@/components/deal-detail/DealSummary";
 import { PurchaseOrdersSection } from "@/components/deal-detail/PurchaseOrdersSection";
 import { DealFilesSection } from "@/components/deal-detail/DealFilesSection";
 import { QuoteBuilderModal } from "@/components/deal-detail/QuoteBuilderModal";
+import { PaydayInvoiceCard } from "@/components/deal-detail/PaydayInvoiceCard";
+import { LinkPaydayInvoiceModal } from "@/components/deal-detail/LinkPaydayInvoiceModal";
 
 import { DealLog, type LogEntry } from "@/components/deal-detail/DealLog";
 import { EditDealDrawer } from "@/components/deal-detail/EditDealDrawer";
