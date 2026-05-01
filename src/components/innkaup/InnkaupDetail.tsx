@@ -1,13 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
-  CalendarIcon,
-  Check,
-  CheckCircle2,
   Download,
-  FileText,
-  MoreHorizontal,
   Pencil,
   Trash2,
   Upload,
@@ -15,7 +10,6 @@ import {
 import { FileThumbnail } from "@/components/FileThumbnail";
 import { MultiFileUploadDialog } from "@/components/MultiFileUploadDialog";
 import { smartGuessPoFileType } from "@/lib/uploadHelpers";
-import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -43,13 +37,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,7 +59,6 @@ import { cn } from "@/lib/utils";
 import { pathSafe, formatFileSize } from "@/lib/formatters";
 import { goBack } from "@/lib/dealReturn";
 import {
-  HAPPY_PATH_PO_STATUSES,
   PO_CURRENCIES,
   PO_FILE_TYPES,
   poFileTypeLabel,
@@ -80,7 +66,6 @@ import {
   type PoFileType,
 } from "@/lib/poConstants";
 import {
-  logPoCreated,
   logPoPaid,
   logPoReceived,
   logPoStatusChanged,
@@ -91,6 +76,7 @@ import {
 } from "@/lib/poActivityLog";
 import { PoTrackingNumbersInline } from "./PoTrackingNumbersInline";
 import { POStageStepper } from "@/components/po-detail/POStageStepper";
+import { POStepperActions } from "@/components/po-detail/POStepperActions";
 import { InvoiceDrawer } from "@/components/po-detail/InvoiceDrawer";
 
 type PO = Database["public"]["Tables"]["purchase_orders"]["Row"];
@@ -117,7 +103,7 @@ interface Props {
 }
 
 export function InnkaupDetail({ poId, currentProfileId }: Props) {
-  const navigate = useNavigate();
+  
   const [po, setPo] = useState<PO | null>(null);
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [linkedDeal, setLinkedDeal] = useState<{
@@ -128,11 +114,14 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
   } | null>(null);
   const [files, setFiles] = useState<PoFile[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [profileNames, setProfileNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [confirmStatus, setConfirmStatus] = useState<POStatus | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
+  const [confirmMarkPaid, setConfirmMarkPaid] = useState(false);
   const [logText, setLogText] = useState("");
 
   const load = useCallback(async () => {
@@ -199,6 +188,24 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
       setActivities((acts ?? []) as unknown as Activity[]);
     } else {
       setActivities([]);
+    }
+
+    // Load profile names for invoice_registered_by + invoice_approved_by
+    const profileIds = [data.invoice_registered_by, data.invoice_approved_by].filter(
+      (x): x is string => Boolean(x),
+    );
+    if (profileIds.length > 0) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .in("id", profileIds);
+      const map: Record<string, string> = {};
+      (profs ?? []).forEach((p: ProfileMini) => {
+        if (p.id) map[p.id] = p.name ?? "";
+      });
+      setProfileNames(map);
+    } else {
+      setProfileNames({});
     }
     setLoading(false);
   }, [poId]);
@@ -319,6 +326,87 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
     }
   };
 
+  // ---- New action handlers (3-step stepper) ----
+  const today = () => new Date().toISOString().split("T")[0];
+
+  const handleMarkReceived = async () => {
+    if (!po) return;
+    const d = today();
+    await updatePo({ received_date: d, status: "received" });
+    await logPoReceived({
+      dealId: po.deal_id,
+      poNumber: po.po_number,
+      receivedDate: d,
+      createdBy: currentProfileId,
+    });
+  };
+
+  const handleApproveInvoice = async () => {
+    if (!po) return;
+    await updatePo({
+      invoice_approved_at: new Date().toISOString(),
+      invoice_approved_by: currentProfileId,
+    });
+    await logPoInvoiceApproved({
+      dealId: po.deal_id,
+      poNumber: po.po_number,
+      createdBy: currentProfileId,
+    });
+  };
+
+  const handleMarkPaid = async () => {
+    if (!po) return;
+    const d = today();
+    await updatePo({ paid_date: d, status: "paid" });
+    await logPoPaid({
+      dealId: po.deal_id,
+      poNumber: po.po_number,
+      paidDate: d,
+      createdBy: currentProfileId,
+    });
+    setConfirmMarkPaid(false);
+  };
+
+  const handleRevertApproval = async () => {
+    if (!po) return;
+    await updatePo({ invoice_approved_at: null, invoice_approved_by: null });
+    await logPoInvoiceApprovalRevoked({
+      dealId: po.deal_id,
+      poNumber: po.po_number,
+      createdBy: currentProfileId,
+    });
+  };
+
+  const handleRevertToMottekid = async () => {
+    if (!po) return;
+    await updatePo({ paid_date: null, status: "received" });
+    await logPoPaymentRevoked({
+      dealId: po.deal_id,
+      poNumber: po.po_number,
+      createdBy: currentProfileId,
+    });
+  };
+
+  const handleRevertToPantad = async () => {
+    if (!po) return;
+    await updatePo({
+      received_date: null,
+      paid_date: null,
+      invoice_received_date: null,
+      supplier_invoice_number: null,
+      supplier_invoice_amount: null,
+      invoice_approved_at: null,
+      invoice_approved_by: null,
+      invoice_registered_by: null,
+      status: "ordered",
+    });
+    await logPoRevertedToOrdered({
+      dealId: po.deal_id,
+      poNumber: po.po_number,
+      createdBy: currentProfileId,
+    });
+  };
+
   const submitLog = async () => {
     const body = logText.trim();
     if (!body || !po?.deal_id) return;
@@ -369,12 +457,25 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         {t.actions.back}
       </button>
 
-      {/* Stepper */}
-      <PoStepper
-        status={po.status}
-        onChange={(next) => setConfirmStatus(next)}
-        onCancel={handleCancel}
-        onReactivate={handleReactivate}
+      {/* Stepper (3-step: Pantað → Móttekið → Greitt) */}
+      <POStageStepper
+        po={po}
+        hasTracking={(po.tracking_numbers ?? []).length > 0}
+        onRevertToPantad={() => void handleRevertToPantad()}
+        onRevertToMottekid={() => void handleRevertToMottekid()}
+        onRevertApproval={() => void handleRevertApproval()}
+        onRevertPayment={() => void handleRevertToMottekid()}
+        onCancel={() => void handleCancel()}
+        onReactivate={() => void handleReactivate()}
+      />
+
+      {/* Stepper-aligned action buttons */}
+      <POStepperActions
+        po={po}
+        onMarkReceived={() => void handleMarkReceived()}
+        onOpenInvoiceDrawer={() => setInvoiceDrawerOpen(true)}
+        onApproveInvoice={() => void handleApproveInvoice()}
+        onMarkPaid={() => setConfirmMarkPaid(true)}
       />
 
       {/* Header card */}
@@ -514,59 +615,68 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         </div>
       </div>
 
-      {/* Invoice section */}
-      <div
-        className={cn(
-          "rounded-md border bg-card p-6",
-          po.paid_date
-            ? "border-l-4 border-l-green-500"
-            : po.invoice_received_date
-              ? "border-l-4 border-l-blue-500"
-              : "border-border",
-        )}
-      >
-        <h2 className="mb-4 text-lg font-semibold">{t.purchaseOrder.invoiceSection}</h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          <div>
-            <Label>{t.purchaseOrder.supplier_invoice_number}</Label>
-            <Input
-              defaultValue={po.supplier_invoice_number ?? ""}
-              key={`inv-${po.id}-${po.supplier_invoice_number}`}
-              onBlur={(e) => void updatePo({ supplier_invoice_number: e.target.value || null })}
-            />
+      {/* Invoice section — read-only summary; edits via InvoiceDrawer */}
+      {(po.invoice_received_date ||
+        po.supplier_invoice_number ||
+        po.supplier_invoice_amount ||
+        po.paid_date) && (
+        <div
+          className={cn(
+            "rounded-md border bg-card p-6",
+            po.paid_date
+              ? "border-l-4 border-l-green-500"
+              : po.invoice_approved_at
+                ? "border-l-4 border-l-green-500"
+                : po.invoice_received_date
+                  ? "border-l-4 border-l-blue-500"
+                  : "border-border",
+          )}
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">{t.purchaseOrder.invoiceSection}</h2>
+            {po.invoice_received_date && (
+              <Button variant="ghost" size="sm" onClick={() => setInvoiceDrawerOpen(true)}>
+                <Pencil className="mr-1 h-3.5 w-3.5" />
+                {t.actions.edit}
+              </Button>
+            )}
           </div>
-          <div>
-            <Label>{t.purchaseOrder.supplier_invoice_amount} ({po.currency})</Label>
-            <Input
-              type="number"
-              step="0.01"
-              defaultValue={po.supplier_invoice_amount ?? ""}
-              key={`invamt-${po.id}-${po.supplier_invoice_amount}`}
-              onBlur={(e) =>
-                void updatePo({ supplier_invoice_amount: e.target.value ? Number(e.target.value) : null })
+          <div className="grid gap-3 text-sm md:grid-cols-2">
+            <Row
+              label={t.purchaseOrder.supplier_invoice_number}
+              value={po.supplier_invoice_number ?? "—"}
+            />
+            <Row
+              label={`${t.purchaseOrder.supplier_invoice_amount} (${po.currency})`}
+              value={
+                po.supplier_invoice_amount != null
+                  ? formatNumber(Number(po.supplier_invoice_amount), 2)
+                  : "—"
               }
             />
-          </div>
-          <div>
-            <Label>{t.purchaseOrder.invoice_received_date}</Label>
-            <Input
-              type="date"
-              defaultValue={po.invoice_received_date ?? ""}
-              key={`invd-${po.id}-${po.invoice_received_date}`}
-              onBlur={(e) => void updatePo({ invoice_received_date: e.target.value || null })}
+            <Row
+              label={t.purchaseOrder.invoice_received_date}
+              value={po.invoice_received_date ? formatDate(po.invoice_received_date) : "—"}
             />
-          </div>
-          <div>
-            <Label>{t.purchaseOrder.paid_date}</Label>
-            <Input
-              type="date"
-              defaultValue={po.paid_date ?? ""}
-              key={`paid-${po.id}-${po.paid_date}`}
-              onBlur={(e) => void updatePo({ paid_date: e.target.value || null })}
+            <Row
+              label={t.purchaseOrder.paid_date}
+              value={po.paid_date ? formatDate(po.paid_date) : "—"}
             />
+            {po.invoice_registered_by && (
+              <Row
+                label={t.purchaseOrder.registeredBy}
+                value={profileNames[po.invoice_registered_by] || "—"}
+              />
+            )}
+            {po.invoice_approved_at && (
+              <Row
+                label={t.purchaseOrder.approvedBy}
+                value={`${profileNames[po.invoice_approved_by ?? ""] || "—"} · ${formatDate(po.invoice_approved_at)}`}
+              />
+            )}
           </div>
         </div>
-      </div>
+      )}
 
       {/* Files */}
       <div className="rounded-md border border-border bg-card p-6">
@@ -677,6 +787,36 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Confirm mark-as-paid */}
+      <AlertDialog open={confirmMarkPaid} onOpenChange={setConfirmMarkPaid}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.purchaseOrder.confirmMarkPaid}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.purchaseOrder.actionMarkPaid}?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void handleMarkPaid()}
+              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+            >
+              {t.actions.confirm}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Invoice register/edit drawer */}
+      <InvoiceDrawer
+        open={invoiceDrawerOpen}
+        onOpenChange={setInvoiceDrawerOpen}
+        po={po}
+        currentProfileId={currentProfileId}
+        onSaved={() => void load()}
+      />
 
       <EditPoDrawer
         open={editOpen}
@@ -819,97 +959,6 @@ function DateField({
   );
 }
 
-interface StepperProps {
-  status: POStatus;
-  onChange: (next: POStatus) => void;
-  onCancel: () => void;
-  onReactivate: () => void;
-}
-
-function PoStepper({ status, onChange, onCancel, onReactivate }: StepperProps) {
-  if (status === "cancelled") {
-    return (
-      <div className="flex items-center justify-between rounded-md border border-red-300 bg-red-100 p-4 text-red-800">
-        <div className="font-semibold">{t.poStatus.cancelled}</div>
-        <Button variant="outline" onClick={onReactivate} className="bg-white">
-          {t.purchaseOrder.reactivatePO}
-        </Button>
-      </div>
-    );
-  }
-  const idx = HAPPY_PATH_PO_STATUSES.indexOf(status);
-  return (
-    <div className="rounded-md border border-border bg-card p-4">
-      <div className="flex items-center gap-2">
-        <ol className="flex flex-1 items-center">
-          {HAPPY_PATH_PO_STATUSES.map((s, i) => {
-            const completed = i < idx;
-            const current = i === idx;
-            const next = i === idx + 1;
-            const future = i > idx;
-            const sizeClass = current ? "h-9 w-9 text-sm" : "h-7 w-7 text-xs";
-            const baseCircle =
-              "relative flex items-center justify-center rounded-full font-semibold transition-all";
-            let style: React.CSSProperties = {};
-            if (completed) style = { backgroundColor: NAVY, color: "white" };
-            else if (current)
-              style = {
-                backgroundColor: NAVY,
-                color: "white",
-                boxShadow: `0 0 0 2px white, 0 0 0 4px ${NAVY}`,
-              };
-            else if (future)
-              style = { backgroundColor: "white", color: "#9ca3af", border: "1px solid #d1d5db" };
-            const content = completed ? <Check className="h-4 w-4" /> : <span>{i + 1}</span>;
-
-            const labelClass = current
-              ? "text-xs font-bold"
-              : "text-xs text-muted-foreground";
-            const labelStyle = current ? { color: NAVY } : undefined;
-
-            return (
-              <li
-                key={s}
-                className={cn("flex flex-1 items-center", i === HAPPY_PATH_PO_STATUSES.length - 1 && "flex-none")}
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={!next}
-                    onClick={() => next && onChange(s)}
-                    className={cn(baseCircle, sizeClass, next && "cursor-pointer hover:opacity-80")}
-                    style={style}
-                  >
-                    {content}
-                  </button>
-                  <span className={labelClass} style={labelStyle}>{t.poStatus[s]}</span>
-                </div>
-                {i < HAPPY_PATH_PO_STATUSES.length - 1 && (
-                  <div
-                    className={cn("mx-2 -mt-6 h-0.5 flex-1", i >= idx && "border-t-2 border-dashed bg-transparent")}
-                    style={i < idx ? { backgroundColor: NAVY } : { borderColor: "#d1d5db" }}
-                  />
-                )}
-              </li>
-            );
-          })}
-        </ol>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreHorizontal className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onCancel} className="text-red-600">
-              {t.purchaseOrder.cancelPO}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
-  );
-}
 
 function FileCard({
   file,
