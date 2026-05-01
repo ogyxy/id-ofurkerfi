@@ -306,8 +306,8 @@ export function TrackingCard(props: Props) {
     </button>
   );
 
-  return (
-    <div className="rounded-md border border-border bg-card p-6 shadow-sm">
+  const body = (
+    <>
       <h2 className="mb-3 text-sm font-semibold text-foreground">
         {t.purchaseOrder.trackingSectionTitle}
       </h2>
@@ -363,6 +363,13 @@ export function TrackingCard(props: Props) {
           )}
         </div>
       )}
+    </>
+  );
+
+  if (props.bare) return <div>{body}</div>;
+  return (
+    <div className="rounded-md border border-border bg-card p-6 shadow-sm">
+      {body}
     </div>
   );
 }
