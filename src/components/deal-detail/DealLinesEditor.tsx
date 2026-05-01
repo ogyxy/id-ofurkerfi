@@ -409,7 +409,7 @@ export function DealLinesEditor({
                       onChange={(e) =>
                         updateLine(idx, { product_name: e.target.value })
                       }
-                      onKeyDown={handleEnterAddLine}
+                      onKeyDown={handleLineKeyDown(idx)}
                       data-line-id={line.id}
                       data-field="product_name"
                       className="min-w-[140px]"
@@ -426,7 +426,7 @@ export function DealLinesEditor({
                           ...(e.target.value === "" ? { emptyQty: true } : {}),
                         })
                       }
-                      onKeyDown={handleEnterAddLine}
+                      onKeyDown={handleLineKeyDown(idx)}
                       className={cn("w-20 mx-auto text-center", NO_SPINNER)}
                       disabled={readOnly}
                     />
@@ -443,7 +443,7 @@ export function DealLinesEditor({
                             ...(e.target.value === "" ? { emptyCost: true } : {}),
                           })
                         }
-                        onKeyDown={handleEnterAddLine}
+                        onKeyDown={handleLineKeyDown(idx)}
                         className={cn("w-24 pr-10 text-right", NO_SPINNER)}
                         disabled={readOnly}
                       />
@@ -481,7 +481,7 @@ export function DealLinesEditor({
                             exchange_rate: Number(e.target.value),
                           })
                         }
-                        onKeyDown={handleEnterAddLine}
+                        onKeyDown={handleLineKeyDown(idx)}
                         placeholder={ratesError ? "Sláðu inn gengi" : ""}
                         className={cn("w-24 pr-8 text-right", NO_SPINNER)}
                         disabled={readOnly || line.cost_currency === "ISK"}
@@ -502,7 +502,7 @@ export function DealLinesEditor({
                             markup_pct: Number(e.target.value),
                           })
                         }
-                        onKeyDown={handleEnterAddLine}
+                        onKeyDown={handleLineKeyDown(idx)}
                         onBlur={() => {
                           const updated = {
                             ...line,
@@ -538,7 +538,7 @@ export function DealLinesEditor({
                               unit_price_isk: Number(e.target.value),
                             })
                           }
-                          onKeyDown={handleEnterAddLine}
+                          onKeyDown={handleLineKeyDown(idx)}
                           className={cn("w-28 pr-8 text-right", NO_SPINNER)}
                           disabled={readOnly}
                         />
