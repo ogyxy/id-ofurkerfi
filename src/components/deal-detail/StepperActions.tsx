@@ -24,13 +24,19 @@ interface Props {
  * - ready_for_pickup : [Skila í pöntunarstöðu] [Merkja sem afhent]
  * - inquiry / delivered / defect_reorder / cancelled: nothing
  */
-export function StepperActions({ stage, onChange, onOpenQuoteBuilder }: Props) {
+export function StepperActions({ stage, onChange, onOpenQuoteBuilder, hideOrderConfirmedActions }: Props) {
   if (
     stage === "inquiry" ||
     stage === "delivered" ||
     stage === "defect_reorder" ||
     stage === "cancelled"
   ) {
+    return null;
+  }
+
+  // PO gate: on order_confirmed with zero POs (for new deals), hide the
+  // goods-arrived / delivered buttons entirely.
+  if (stage === "order_confirmed" && hideOrderConfirmedActions) {
     return null;
   }
 
