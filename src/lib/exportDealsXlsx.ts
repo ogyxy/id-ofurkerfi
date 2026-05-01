@@ -175,7 +175,7 @@ export async function exportDealsToXlsx(
   if (hasData) {
     const totalsRowNum = 1 + dataRows.length + 1; // header + data + totals
     const totalsRow = ws.getRow(totalsRowNum);
-    const numericColIdx = new Set([7, 8, 9, 10]); // 1-based: G, H, I, J
+    const numericColIdx = new Set([7, 8, 9, 10, 11]); // price, cost, refund, margin, margin %
     totalsRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
       cell.font = { bold: true, color: { argb: "FF1A2540" } };
       cell.fill = {
