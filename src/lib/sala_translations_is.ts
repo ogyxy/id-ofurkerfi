@@ -883,6 +883,71 @@ export const t = {
     monthsLong:  ['janúar', 'febrúar', 'mars', 'apríl', 'maí', 'júní', 'júlí', 'ágúst', 'september', 'október', 'nóvember', 'desember'],
   },
 
+  // ---------------------------------------------------------------------------
+  // Payday invoice integration
+  // ---------------------------------------------------------------------------
+  payday: {
+    sectionTitle:           'Reikningur',
+    notLinked:              'Engin Payday-reikningur tengdur',
+    linkButton:             'Skrá reikning',
+    linkButtonHidden:       'Skrá reikning fyrirfram',
+
+    modalTitle:             'Tengja Payday-reikning',
+    modalInputLabel:        'Reikningsnúmer í Payday',
+    modalInputPlaceholder:  't.d. 1958',
+    modalFetch:             'Sækja',
+    modalFetching:          'Sækir...',
+    modalConfirm:           'Tengja reikning',
+    modalLinking:           'Tengir...',
+    modalCancel:            'Hætta við',
+
+    modalKennitalaMismatch: 'Athugaðu að kennitala reiknings ({invoiceKt}) er ekki sú sama og kennitala viðskiptavinarins ({dealKt}). Þetta getur verið rétt ef reikningur fer á annan aðila — staðfestu áður en þú tengir.',
+    modalNoCustomerKt:      'Reikningurinn er á erlendan aðila án kennitölu.',
+    modalErrorNotFound:     'Reikningur fannst ekki í Payday',
+    modalErrorCancelled:    'Þessi reikningur hefur verið hætt við og er ekki hægt að tengja',
+    modalErrorDraft:        'Reikningur er í drögum og er ekki hægt að tengja',
+    modalErrorCredit:       'Kreditnótur er ekki hægt að tengja',
+    modalErrorGeneric:      'Eitthvað fór úrskeiðis við að ná í reikning',
+
+    previewTitle:           'Forskoðun',
+    previewCustomer:        'Viðskiptavinur',
+    previewInvoiceDate:     'Útgáfudagur',
+    previewAmountExVsk:     'Upphæð án VSK',
+    previewAmountInclVsk:   'Upphæð með VSK',
+    previewAmount:          'Upphæð',
+    previewStatus:          'Staða',
+    previewStatusPaid:      'Greitt',
+    previewStatusUnpaid:    'Ógreitt',
+
+    cardInvoiceNumber:      'Reikningur',
+    cardInvoiceDate:        'Útgefið',
+    cardAmountExVsk:        'Upphæð án VSK',
+    cardAmountInclVsk:      'Upphæð með VSK',
+    cardAmount:             'Upphæð',
+    cardForeignAt:          'á gengi',
+    cardPaidLabel:          'Greitt',
+    cardPaidOn:             'Greitt þann',
+    cardOutstandingLabel:   'Eftirstöðvar',
+    cardLastSynced:         'Síðast uppfært',
+    cardRefresh:            'Uppfæra frá Payday',
+    cardRefreshing:         'Uppfærir...',
+    cardUnlink:             'Aftengja',
+    cardOpenInPayday:       'Opna í Payday',
+
+    refreshSuccess:         'Reikningur uppfærður',
+    refreshCancelledNotice: 'Reikningurinn hefur verið hætt við í Payday — tenging fjarlægð',
+    linkSuccess:            'Reikningur tengdur',
+    unlinkConfirm:          'Aftengja reikning?',
+    unlinkConfirmBody:      'Þetta hreinsar allar reikningsupplýsingar af sölunni. Þú getur tengt aftur síðar.',
+    unlinkSuccess:          'Reikningur aftengdur',
+
+    timeJustNow:            'rétt í þessu',
+    timeMinutesAgo:         'fyrir {n} mín',
+    timeHoursAgo:           'fyrir {n} klst',
+    timeYesterday:          'í gær',
+    timeDaysAgo:            'fyrir {n} dögum',
+  },
+
 } as const;
 
 
