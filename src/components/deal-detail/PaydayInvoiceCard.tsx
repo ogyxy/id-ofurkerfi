@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { Download } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatIsk, formatDate } from "@/lib/sala_translations_is";
@@ -22,6 +22,7 @@ type Deal = Database["public"]["Tables"]["deals"]["Row"];
 type Props = {
   deal: Deal;
   companyKennitala: string | null;
+  currentProfile: { id: string; name: string | null } | null;
   onChanged: () => void;
 };
 
@@ -63,11 +64,12 @@ const foreignAmountFmt = new Intl.NumberFormat("is-IS", {
   maximumFractionDigits: 0,
 });
 
-export function PaydayInvoiceCard({ deal, companyKennitala, onChanged }: Props) {
+export function PaydayInvoiceCard({ deal, companyKennitala, currentProfile, onChanged }: Props) {
   const [linkOpen, setLinkOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [unlinkOpen, setUnlinkOpen] = useState(false);
   const [unlinking, setUnlinking] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   // State A — not linked
   if (!deal.payday_invoice_id) {
@@ -91,6 +93,7 @@ export function PaydayInvoiceCard({ deal, companyKennitala, onChanged }: Props) 
           onOpenChange={setLinkOpen}
           dealId={deal.id}
           companyKennitala={companyKennitala}
+          currentProfile={currentProfile}
           onLinked={onChanged}
         />
       </>
@@ -109,7 +112,12 @@ export function PaydayInvoiceCard({ deal, companyKennitala, onChanged }: Props) 
         toast.error(t.payday.modalErrorGeneric);
         return;
       }
-      const result = data as { cancelled?: boolean; error?: string } | null;
+      const result = data as {
+        cancelled?: boolean;
+        error?: string;
+        invoice_status?: string;
+        payment_status?: string;
+      } | null;
       if (result?.error) {
         toast.error(result.error);
         return;
@@ -118,6 +126,21 @@ export function PaydayInvoiceCard({ deal, companyKennitala, onChanged }: Props) 
         toast.warning(t.payday.refreshCancelledNotice);
       } else {
         toast.success(t.payday.refreshSuccess);
+      }
+      try {
+        await supabase.from("audit_log").insert({
+          user_id: currentProfile?.id ?? null,
+          action: "payday_refresh",
+          entity_type: "deal",
+          entity_id: deal.id,
+          changes: {
+            cancelled: result?.cancelled ?? false,
+            invoice_status: result?.invoice_status,
+            payment_status: result?.payment_status,
+          },
+        });
+      } catch (e) {
+        console.error("audit_log insert (payday_refresh) failed", e);
       }
     } catch {
       toast.error(t.payday.modalErrorGeneric);
@@ -130,6 +153,7 @@ export function PaydayInvoiceCard({ deal, companyKennitala, onChanged }: Props) 
   const handleUnlink = async () => {
     setUnlinking(true);
     try {
+      const previousInvoiceNumber = deal.payday_invoice_number;
       const { error } = await supabase
         .from("deals")
         .update({
@@ -152,11 +176,62 @@ export function PaydayInvoiceCard({ deal, companyKennitala, onChanged }: Props) 
         toast.error(t.status.somethingWentWrong);
         return;
       }
+      try {
+        await supabase.from("audit_log").insert({
+          user_id: currentProfile?.id ?? null,
+          action: "payday_unlink",
+          entity_type: "deal",
+          entity_id: deal.id,
+          changes: { previous_invoice_number: previousInvoiceNumber },
+        });
+      } catch (e) {
+        console.error("audit_log insert (payday_unlink) failed", e);
+      }
       toast.success(t.payday.unlinkSuccess);
       setUnlinkOpen(false);
       onChanged();
     } finally {
       setUnlinking(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    setDownloading(true);
+    try {
+      const session = await supabase.auth.getSession();
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payday-invoice-pdf`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.data.session?.access_token ?? ""}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ deal_id: deal.id }),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        toast.error(errBody.error ?? t.payday.pdfDownloadError);
+        return;
+      }
+      const blob = await res.blob();
+      const filename =
+        res.headers.get("content-disposition")?.match(/filename="(.+)"/)?.[1] ??
+        `Reikningur-${deal.payday_invoice_number ?? "payday"}.pdf`;
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+      toast.success(t.payday.pdfDownloadSuccess);
+    } catch (e) {
+      console.error(e);
+      toast.error(t.payday.pdfDownloadError);
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -182,15 +257,16 @@ export function PaydayInvoiceCard({ deal, companyKennitala, onChanged }: Props) 
         {/* Header */}
         <div className="mb-3 flex items-center justify-between">
           <div className="text-sm font-semibold">{t.payday.sectionTitle}</div>
-          <a
-            href={`https://app.payday.is/invoices/${deal.payday_invoice_id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1 px-2 text-xs"
+            onClick={() => void handleDownloadPdf()}
+            disabled={downloading}
           >
-            {t.payday.cardOpenInPayday}
-            <ExternalLink className="h-3 w-3" />
-          </a>
+            <Download className="h-3 w-3" />
+            {downloading ? t.payday.pdfDownloading : t.payday.pdfDownload}
+          </Button>
         </div>
 
         {/* Invoice number row */}

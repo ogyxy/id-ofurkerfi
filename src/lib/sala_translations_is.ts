@@ -932,7 +932,10 @@ export const t = {
     cardRefresh:            'Uppfæra frá Payday',
     cardRefreshing:         'Uppfærir...',
     cardUnlink:             'Aftengja',
-    cardOpenInPayday:       'Opna í Payday',
+    pdfDownload:            'Sækja PDF',
+    pdfDownloading:         'Sækir...',
+    pdfDownloadSuccess:     'Reikningur sóttur',
+    pdfDownloadError:       'Tókst ekki að sækja reikning',
 
     refreshSuccess:         'Reikningur uppfærður',
     refreshCancelledNotice: 'Reikningurinn hefur verið hætt við í Payday — tenging fjarlægð',

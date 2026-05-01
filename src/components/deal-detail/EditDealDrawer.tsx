@@ -38,11 +38,6 @@ type Contact = Pick<
   "id" | "first_name" | "last_name" | "email"
 >;
 type Profile = { id: string; name: string | null; email: string };
-type InvoiceStatus = Database["public"]["Enums"]["invoice_status"];
-type PaymentStatus = Database["public"]["Enums"]["payment_status"];
-
-const INVOICE: InvoiceStatus[] = ["not_invoiced", "full"];
-const PAYMENT: PaymentStatus[] = ["unpaid", "partial", "paid"];
 
 interface Props {
   open: boolean;
@@ -58,14 +53,6 @@ type FormState = {
   contact_id: string;
   owner_id: string;
   promised_delivery_date: string;
-  // estimated_delivery_date is intentionally omitted — it can only be edited from /innkaup/:id
-  invoice_status: InvoiceStatus;
-  payment_status: PaymentStatus;
-  invoice_date: string;
-  amount_invoiced_isk: string;
-  amount_paid_isk: string;
-  paid_at: string;
-  payday_invoice_number: string;
   notes: string;
 };
 
@@ -75,13 +62,6 @@ function fromDeal(d: Deal): FormState {
     contact_id: d.contact_id ?? "",
     owner_id: d.owner_id ?? "",
     promised_delivery_date: d.promised_delivery_date ?? "",
-    invoice_status: d.invoice_status,
-    payment_status: d.payment_status,
-    invoice_date: d.invoice_date ?? "",
-    amount_invoiced_isk: d.amount_invoiced_isk?.toString() ?? "",
-    amount_paid_isk: d.amount_paid_isk?.toString() ?? "",
-    paid_at: d.paid_at ?? "",
-    payday_invoice_number: d.payday_invoice_number ?? "",
     notes: d.notes ?? "",
   };
 }
@@ -145,18 +125,6 @@ export function EditDealDrawer({
         contact_id: form.contact_id || null,
         owner_id: form.owner_id || null,
         promised_delivery_date: form.promised_delivery_date || null,
-        
-        invoice_status: form.invoice_status,
-        payment_status: form.payment_status,
-        invoice_date: form.invoice_date || null,
-        amount_invoiced_isk: form.amount_invoiced_isk
-          ? Number(form.amount_invoiced_isk)
-          : null,
-        amount_paid_isk: form.amount_paid_isk
-          ? Number(form.amount_paid_isk)
-          : null,
-        paid_at: form.paid_at || null,
-        payday_invoice_number: form.payday_invoice_number.trim() || null,
         notes: form.notes.trim() || null,
       })
       .eq("id", deal.id);
@@ -179,8 +147,8 @@ export function EditDealDrawer({
               {t.actions.edit} — {deal.name}
             </SheetTitle>
           </SheetHeader>
-          <div className="grid gap-3 py-4 md:grid-cols-2">
-            <div className="md:col-span-2">
+          <div className="grid gap-4 py-4">
+            <div>
               <Label>
                 {t.deal.name} <span className="text-destructive">*</span>
               </Label>
@@ -244,89 +212,6 @@ export function EditDealDrawer({
               />
             </div>
             <div>
-              <Label>{t.deal.invoice_status}</Label>
-              <Select
-                value={form.invoice_status}
-                onValueChange={(v) =>
-                  update("invoice_status", v as InvoiceStatus)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {INVOICE.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {t.invoiceStatus[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t.deal.payment_status}</Label>
-              <Select
-                value={form.payment_status}
-                onValueChange={(v) =>
-                  update("payment_status", v as PaymentStatus)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAYMENT.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {t.paymentStatus[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t.deal.invoice_date}</Label>
-              <Input
-                type="date"
-                value={form.invoice_date}
-                onChange={(e) => update("invoice_date", e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>{t.deal.payday_invoice_number}</Label>
-              <Input
-                value={form.payday_invoice_number}
-                onChange={(e) =>
-                  update("payday_invoice_number", e.target.value)
-                }
-              />
-            </div>
-            <div>
-              <Label>{t.deal.amount_invoiced_isk}</Label>
-              <Input
-                type="number"
-                value={form.amount_invoiced_isk}
-                onChange={(e) =>
-                  update("amount_invoiced_isk", e.target.value)
-                }
-              />
-            </div>
-            <div>
-              <Label>{t.deal.amount_paid_isk}</Label>
-              <Input
-                type="number"
-                value={form.amount_paid_isk}
-                onChange={(e) => update("amount_paid_isk", e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>{t.deal.paid_at}</Label>
-              <Input
-                type="date"
-                value={form.paid_at}
-                onChange={(e) => update("paid_at", e.target.value)}
-              />
-            </div>
-            <div className="md:col-span-2">
               <Label>{t.deal.notes}</Label>
               <Textarea
                 rows={4}
