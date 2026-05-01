@@ -100,6 +100,7 @@ export function CreatePoDrawer({
   const [orderDate, setOrderDate] = useState<string>(todayIso());
   const [expectedDate, setExpectedDate] = useState<string>("");
   const [currency, setCurrency] = useState<string>("EUR");
+  const [currencyTouched, setCurrencyTouched] = useState(false);
   const [exchangeRate, setExchangeRate] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [shippingCost, setShippingCost] = useState<string>("0");
@@ -178,19 +179,22 @@ export function CreatePoDrawer({
       setNewSupplierName("");
       setNewSupplierCurrency("EUR");
     }
+    setCurrencyTouched(false);
   }, [open, editPo]);
 
-  // Auto-fill currency from supplier (create mode only)
+  // Auto-fill currency from supplier (create mode only, only if user hasn't touched it)
   const selectedSupplier = useMemo(
     () => suppliers.find((s) => s.id === supplierId) ?? null,
     [supplierId, suppliers],
   );
   useEffect(() => {
     if (isEdit) return;
+    if (currencyTouched) return;
     if (selectedSupplier?.default_currency) {
       setCurrency(selectedSupplier.default_currency);
+      setExchangeRate(""); // refetch for new currency
     }
-  }, [selectedSupplier, isEdit]);
+  }, [selectedSupplier, isEdit, currencyTouched]);
 
   // Auto-fetch exchange rate when currency changes and field is empty
   useEffect(() => {
@@ -522,6 +526,7 @@ export function CreatePoDrawer({
                 <Select
                   value={currency}
                   onValueChange={(v) => {
+                    setCurrencyTouched(true);
                     setCurrency(v);
                     setExchangeRate(""); // trigger refetch
                   }}
