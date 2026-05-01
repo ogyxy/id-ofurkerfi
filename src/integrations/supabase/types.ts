@@ -443,6 +443,7 @@ export type Database = {
         Row: {
           actual_close_date: string | null
           amount_invoiced_isk: number | null
+          amount_invoiced_with_vsk_isk: number | null
           amount_isk: number | null
           amount_paid_isk: number | null
           archived: boolean
@@ -463,7 +464,9 @@ export type Database = {
           owner_id: string | null
           paid_at: string | null
           parent_deal_id: string | null
+          payday_invoice_id: string | null
           payday_invoice_number: string | null
+          payday_synced_at: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           promised_delivery_date: string | null
           refund_amount_isk: number | null
@@ -479,6 +482,7 @@ export type Database = {
         Insert: {
           actual_close_date?: string | null
           amount_invoiced_isk?: number | null
+          amount_invoiced_with_vsk_isk?: number | null
           amount_isk?: number | null
           amount_paid_isk?: number | null
           archived?: boolean
@@ -499,7 +503,9 @@ export type Database = {
           owner_id?: string | null
           paid_at?: string | null
           parent_deal_id?: string | null
+          payday_invoice_id?: string | null
           payday_invoice_number?: string | null
+          payday_synced_at?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           promised_delivery_date?: string | null
           refund_amount_isk?: number | null
@@ -515,6 +521,7 @@ export type Database = {
         Update: {
           actual_close_date?: string | null
           amount_invoiced_isk?: number | null
+          amount_invoiced_with_vsk_isk?: number | null
           amount_isk?: number | null
           amount_paid_isk?: number | null
           archived?: boolean
@@ -535,7 +542,9 @@ export type Database = {
           owner_id?: string | null
           paid_at?: string | null
           parent_deal_id?: string | null
+          payday_invoice_id?: string | null
           payday_invoice_number?: string | null
+          payday_synced_at?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           promised_delivery_date?: string | null
           refund_amount_isk?: number | null
@@ -708,6 +717,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payday_auth: {
+        Row: {
+          access_token: string
+          expires_at: string
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          expires_at: string
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          expires_at?: string
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       po_files: {
         Row: {
@@ -1280,7 +1310,7 @@ export type Database = {
         | "refund"
         | "credit_note"
         | "resolved"
-      invoice_status: "not_invoiced" | "partial" | "full"
+      invoice_status: "not_invoiced" | "full"
       payment_status: "unpaid" | "partial" | "paid"
       po_status: "ordered" | "received" | "invoiced" | "paid" | "cancelled"
       quote_status: "draft" | "sent" | "accepted" | "rejected" | "expired"
@@ -1451,7 +1481,7 @@ export const Constants = {
         "credit_note",
         "resolved",
       ],
-      invoice_status: ["not_invoiced", "partial", "full"],
+      invoice_status: ["not_invoiced", "full"],
       payment_status: ["unpaid", "partial", "paid"],
       po_status: ["ordered", "received", "invoiced", "paid", "cancelled"],
       quote_status: ["draft", "sent", "accepted", "rejected", "expired"],
