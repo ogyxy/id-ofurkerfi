@@ -570,7 +570,7 @@ export const t = {
     manageSuppliers:         'Stjórna birgjum',
     searchPlaceholder:       'Leita að PO, birgi, tilvísun...',
     noOrders:                'Engin innkaupapöntun fundin',
-    noOrdersOnDeal:          'Engar innkaupapantanir tengdar',
+    noOrdersOnDeal:          'Engin innkaupapöntun tengd',
 
     po_number:               'PO númer',
     supplier:                'Birgir',

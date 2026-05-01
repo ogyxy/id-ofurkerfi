@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { t, formatDate, formatIsk } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
@@ -25,24 +24,27 @@ export function PurchaseOrdersSection({
   onChanged,
 }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const hasPos = pos.length > 0;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">
-          {t.nav.purchaseOrders} ({pos.length})
-        </h2>
+    <div className="rounded-md border border-border bg-card p-4 shadow-sm">
+      {/* Header */}
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="text-sm font-semibold">{t.purchaseOrder.title}</div>
         <Button
+          variant={hasPos ? "outline" : "default"}
+          size={hasPos ? "sm" : "default"}
           onClick={() => setDrawerOpen(true)}
-          className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+          className={
+            hasPos ? undefined : "bg-ide-navy text-white hover:bg-ide-navy-hover"
+          }
         >
-          <Plus className="mr-1 h-4 w-4" />
           {t.purchaseOrder.createFromDeal}
         </Button>
       </div>
 
-      {pos.length === 0 ? (
-        <div className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+      {!hasPos ? (
+        <div className="text-sm text-muted-foreground">
           {t.purchaseOrder.noOrdersOnDeal}
         </div>
       ) : (

@@ -65,6 +65,13 @@ type PurchaseOrder = Database["public"]["Tables"]["purchase_orders"]["Row"];
 type POLine = Database["public"]["Tables"]["po_lines"]["Row"];
 type Profile = { id: string; name: string | null; email: string };
 
+// Deals created at or after this timestamp are subject to the PO gate
+// on the order_confirmed → delivered transition (the "Vörur komnar í hús"
+// and "Merkja sem afhent" buttons are hidden until at least one PO exists).
+// Deals created before this timestamp follow the legacy behavior
+// (progression buttons always shown), so existing work isn't blocked.
+const PO_GATE_CUTOFF = "2026-05-01T00:00:00Z";
+
 export const Route = createFileRoute("/deals_/$id")({
   ssr: false,
   head: () => ({
@@ -500,6 +507,9 @@ function DealDetailContent() {
         stage={deal.stage}
         onChange={updateStage}
         onOpenQuoteBuilder={() => setQuoteBuilderOpen(true)}
+        hideOrderConfirmedActions={
+          pos.length === 0 && deal.created_at >= PO_GATE_CUTOFF
+        }
       />
 
       <DealSummary
