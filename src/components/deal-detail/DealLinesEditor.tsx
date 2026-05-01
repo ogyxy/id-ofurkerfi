@@ -180,6 +180,7 @@ export function DealLinesEditor({
       line_total_isk: lineTotalIsk(line),
       line_margin_isk: lineMarginIsk(line),
       notes: line.notes || null,
+      size_breakdown: line.size_breakdown as unknown as Database["public"]["Tables"]["deal_lines"]["Insert"]["size_breakdown"],
     };
     const serialized = JSON.stringify(payload);
     if (lastSerialized.current.get(line.id) === serialized) return;
