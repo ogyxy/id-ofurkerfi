@@ -509,7 +509,14 @@ function DealDetailContent() {
       <DealLog
         dealId={deal.id}
         companyId={company.id}
-        entries={logEntries}
+        entries={(() => {
+          const poNumbers = pos.map((p) => p.po_number);
+          return logEntries.filter((e) => {
+            if (e.type !== "note") return true;
+            const body = e.body ?? "";
+            return !poNumbers.some((n) => body.startsWith(`${n}:`));
+          });
+        })()}
         currentProfile={currentProfile}
         onChanged={load}
       />
