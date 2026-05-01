@@ -223,7 +223,7 @@ export function QuoteBuilderModal({
       }));
 
       const baseBuf = await generateQuotePdf({
-        quoteNumber: filename.replace(/\.pdf$/, ""),
+        quoteNumber: suffix,
         soNumber: deal.so_number,
         dealName: deal.name,
         validUntil: new Date(validUntil),
