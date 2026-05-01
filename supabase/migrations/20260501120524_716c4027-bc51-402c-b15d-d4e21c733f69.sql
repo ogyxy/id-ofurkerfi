@@ -1,0 +1,1 @@
+ALTER TABLE public.deal_lines ADD COLUMN size_breakdown jsonb;

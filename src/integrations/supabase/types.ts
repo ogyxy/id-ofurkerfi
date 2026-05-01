@@ -379,6 +379,7 @@ export type Database = {
           product_name: string
           product_supplier_sku: string | null
           quantity: number
+          size_breakdown: Json | null
           unit_cost: number
           unit_cost_isk: number
           unit_price_isk: number
@@ -400,6 +401,7 @@ export type Database = {
           product_name: string
           product_supplier_sku?: string | null
           quantity?: number
+          size_breakdown?: Json | null
           unit_cost?: number
           unit_cost_isk?: number
           unit_price_isk?: number
@@ -421,6 +423,7 @@ export type Database = {
           product_name?: string
           product_supplier_sku?: string | null
           quantity?: number
+          size_breakdown?: Json | null
           unit_cost?: number
           unit_cost_isk?: number
           unit_price_isk?: number
