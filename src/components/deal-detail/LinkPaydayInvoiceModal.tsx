@@ -32,6 +32,7 @@ type Props = {
   onOpenChange: (open: boolean) => void;
   dealId: string;
   companyKennitala: string | null;
+  currentProfile: { id: string; name: string | null } | null;
   onLinked: () => void;
 };
 
@@ -50,6 +51,7 @@ export function LinkPaydayInvoiceModal({
   onOpenChange,
   dealId,
   companyKennitala,
+  currentProfile,
   onLinked,
 }: Props) {
   const [input, setInput] = useState("");
@@ -119,6 +121,20 @@ export function LinkPaydayInvoiceModal({
         return;
       }
       toast.success(t.payday.linkSuccess);
+      try {
+        await supabase.from("audit_log").insert({
+          user_id: currentProfile?.id ?? null,
+          action: "payday_link",
+          entity_type: "deal",
+          entity_id: dealId,
+          changes: {
+            invoice_number: input.trim(),
+            kennitala_mismatch: !!showMismatch,
+          },
+        });
+      } catch (e) {
+        console.error("audit_log insert (payday_link) failed", e);
+      }
       onOpenChange(false);
       onLinked();
     } catch {
