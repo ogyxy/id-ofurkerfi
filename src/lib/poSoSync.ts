@@ -237,9 +237,8 @@ export function planSoAfterPoReverted(
 
 /**
  * When a user clicks "Vörur komnar í hús" on the SO, decide what to do.
- * - All active POs already received → just advance.
- * - Some outstanding → caller must show 3-button dialog.
- * - No POs at all → just advance (no PO context to cascade to).
+ * - 0 or 1 active PO → just advance directly (no dialog noise).
+ * - 2+ active POs → confirm with the user that all are received.
  */
 export function planSoMarkArrived(
   pos: LinkedPo[],
@@ -247,7 +246,7 @@ export function planSoMarkArrived(
   | { action: "advance" }
   | { action: "confirmCascade"; outstanding: LinkedPo[]; total: number } {
   const active = activePos(pos);
-  if (active.length === 0) return { action: "advance" };
+  if (active.length < 2) return { action: "advance" };
   const outstanding = active.filter((p) => !isPoReceived(p));
   if (outstanding.length === 0) return { action: "advance" };
   return { action: "confirmCascade", outstanding, total: active.length };
