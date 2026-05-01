@@ -165,20 +165,50 @@ function isOverdue(date: string | null, stage: DealStage): boolean {
   return new Date(date) < new Date(new Date().toDateString());
 }
 
+const FILTER_STORAGE_KEY = "deals-list:filters:v1";
+const SCROLL_STORAGE_KEY = "deals-list:scrollY:v1";
+
+type PersistedFilters = {
+  search: string;
+  activeStep: StepKey | null;
+  activeSubstage: DealStage | null;
+  activeAfhentSub: "linked" | "unlinked" | null;
+  activePaydayStatus: "not_invoiced" | "unpaid" | "paid" | null;
+  selectedYear: number | null;
+  selectedOwners: string[];
+};
+
+function readPersistedFilters(): PersistedFilters | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(FILTER_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as PersistedFilters;
+  } catch {
+    return null;
+  }
+}
+
 export function DealsList({ currentUserId, initialStage = null }: Props) {
+  // Restore persisted filters on first render so the user returns to the
+  // exact filtered view they had before navigating into a deal.
+  const persisted = typeof window !== "undefined" ? readPersistedFilters() : null;
+
   const [deals, setDeals] = useState<DealRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [search, setSearch] = useState(persisted?.search ?? "");
+  const [debouncedSearch, setDebouncedSearch] = useState(persisted?.search ?? "");
   const [activeStep, setActiveStep] = useState<StepKey | null>(
-    initialStage ? stageToStep(initialStage) : null,
+    persisted ? persisted.activeStep : initialStage ? stageToStep(initialStage) : null,
   );
-  const [activeSubstage, setActiveSubstage] = useState<DealStage | null>(null);
-  const [activeAfhentSub, setActiveAfhentSub] = useState<"linked" | "unlinked" | null>(null);
-  const [activePaydayStatus, setActivePaydayStatus] = useState<"not_invoiced" | "unpaid" | "paid" | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [activeSubstage, setActiveSubstage] = useState<DealStage | null>(persisted?.activeSubstage ?? null);
+  const [activeAfhentSub, setActiveAfhentSub] = useState<"linked" | "unlinked" | null>(persisted?.activeAfhentSub ?? null);
+  const [activePaydayStatus, setActivePaydayStatus] = useState<"not_invoiced" | "unpaid" | "paid" | null>(persisted?.activePaydayStatus ?? null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(persisted?.selectedYear ?? null);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
-  const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set());
+  const [selectedOwners, setSelectedOwners] = useState<Set<string>>(
+    new Set(persisted?.selectedOwners ?? []),
+  );
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
