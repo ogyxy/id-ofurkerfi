@@ -435,6 +435,44 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     return { steps: c, sub: subC };
   }, [deals]);
 
+  // Payday status counts — computed over deals narrowed by stage/substage/owner,
+  // but before Payday filters, so each pill shows "what would I see if I clicked this".
+  const paydayCounts = useMemo(() => {
+    let base = deals;
+    if (activeStep === "defect_reorder") {
+      base = base.filter((d) => d.stage === "defect_reorder" && !isDefectResolved(d));
+    } else if (activeStep === "afhent") {
+      base = base.filter(
+        (d) => d.stage === "delivered" || (d.stage === "defect_reorder" && isDefectResolved(d)),
+      );
+      if (activeSubstage === "delivered") base = base.filter((d) => !!d.payday_invoice_id);
+      else if (activeSubstage === "delivered_missing_invoice") base = base.filter((d) => !d.payday_invoice_id);
+    } else if (activeStep === "cancelled") {
+      base = base.filter((d) => d.stage === "cancelled");
+    } else if (activeStep === "inquiry") {
+      base = base.filter((d) => d.stage === "inquiry");
+    } else if (activeStep === "tilbod") {
+      const sub = activeSubstage ?? null;
+      base = base.filter((d) => (sub ? d.stage === sub : TILBOD_SUB.includes(d.stage)));
+    } else if (activeStep === "pontun") {
+      const sub = activeSubstage ?? null;
+      base = base.filter((d) => (sub ? d.stage === sub : PONTUN_SUB.includes(d.stage)));
+    }
+    if (selectedOwners.size > 0) {
+      base = base.filter((d) => d.owner && selectedOwners.has(d.owner.id));
+    }
+    if (activeStep !== "cancelled") {
+      base = base.filter((d) => d.stage !== "cancelled");
+    }
+    const inv: Record<InvoiceStatus, number> = { not_invoiced: 0, partial: 0, full: 0 };
+    const pay: Record<PaymentStatus, number> = { unpaid: 0, partial: 0, paid: 0 };
+    base.forEach((d) => {
+      inv[d.invoice_status]++;
+      if (d.payday_invoice_id) pay[d.payment_status]++;
+    });
+    return { inv, pay };
+  }, [deals, activeStep, activeSubstage, selectedOwners]);
+
   const ownersWithDeals = useMemo(() => {
     const ids = new Set<string>();
     deals.forEach((d) => {
