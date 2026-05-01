@@ -170,8 +170,12 @@ export function CreatePoDrawer({
     }
     const supplier = suppliers.find((s) => s.id === supplierId);
     if (!supplier) return;
+    const dealIdToUse = fixedDealId ?? linkedDealId;
+    if (!dealIdToUse) {
+      toast.error(t.purchaseOrder.requireDealHelp);
+      return;
+    }
     setSaving(true);
-    const dealIdToUse = fixedDealId ?? (linkedDealId || null);
     const { data, error } = await supabase
       .from("purchase_orders")
       .insert({
