@@ -930,13 +930,17 @@ export type Database = {
         Row: {
           actual_delivery_date: string | null
           amount: number | null
+          archived: boolean
           created_at: string
           currency: string
-          deal_id: string | null
+          deal_id: string
           exchange_rate: number | null
           expected_delivery_date: string | null
           id: string
+          invoice_approved_at: string | null
+          invoice_approved_by: string | null
           invoice_received_date: string | null
+          invoice_registered_by: string | null
           notes: string | null
           order_date: string | null
           paid_date: string | null
@@ -957,13 +961,17 @@ export type Database = {
         Insert: {
           actual_delivery_date?: string | null
           amount?: number | null
+          archived?: boolean
           created_at?: string
           currency?: string
-          deal_id?: string | null
+          deal_id: string
           exchange_rate?: number | null
           expected_delivery_date?: string | null
           id?: string
+          invoice_approved_at?: string | null
+          invoice_approved_by?: string | null
           invoice_received_date?: string | null
+          invoice_registered_by?: string | null
           notes?: string | null
           order_date?: string | null
           paid_date?: string | null
@@ -984,13 +992,17 @@ export type Database = {
         Update: {
           actual_delivery_date?: string | null
           amount?: number | null
+          archived?: boolean
           created_at?: string
           currency?: string
-          deal_id?: string | null
+          deal_id?: string
           exchange_rate?: number | null
           expected_delivery_date?: string | null
           id?: string
+          invoice_approved_at?: string | null
+          invoice_approved_by?: string | null
           invoice_received_date?: string | null
+          invoice_registered_by?: string | null
           notes?: string | null
           order_date?: string | null
           paid_date?: string | null
@@ -1014,6 +1026,20 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_invoice_approved_by_fkey"
+            columns: ["invoice_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_invoice_registered_by_fkey"
+            columns: ["invoice_registered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
