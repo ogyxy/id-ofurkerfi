@@ -136,7 +136,12 @@ export function QuoteBuilderModal({
           .eq("company_id", company.id),
       ]);
 
-      setLines((linesRes.data ?? []) as DealLineRow[]);
+      setLines(
+        (linesRes.data ?? []).map((r) => ({
+          ...(r as Omit<DealLineRow, "size_breakdown">),
+          size_breakdown: parseSizeBreakdown((r as { size_breakdown?: unknown }).size_breakdown),
+        })) as DealLineRow[],
+      );
 
       const buildRow = async (
         row: { id: string; storage_path: string; original_filename: string | null; file_size_bytes: number | null },
