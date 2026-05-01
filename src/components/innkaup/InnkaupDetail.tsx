@@ -346,6 +346,41 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
       receivedDate: d,
       createdBy: currentProfileId,
     });
+    // Sync SO: advance to ready_for_pickup if ALL active POs are now received.
+    if (po.deal_id) {
+      const { data: dealRow } = await supabase
+        .from("deals")
+        .select("stage")
+        .eq("id", po.deal_id)
+        .maybeSingle();
+      if (dealRow?.stage) {
+        const linked = await fetchLinkedPos(supabase, po.deal_id);
+        // Reflect this PO's just-set received_date in the in-memory list
+        const adjusted = linked.map((p) =>
+          p.id === po.id ? { ...p, received_date: d, status: "received" as const } : p,
+        );
+        const plan = planSoAfterPoReceived(dealRow.stage, adjusted);
+        if (plan.action === "advance") {
+          await supabase
+            .from("deals")
+            .update({ stage: "ready_for_pickup" })
+            .eq("id", po.deal_id);
+          await supabase.from("activities").insert({
+            deal_id: po.deal_id,
+            type: "stage_change",
+            body: "ready_for_pickup",
+            created_by: currentProfileId,
+          });
+        } else if (plan.action === "wait" && plan.outstanding) {
+          toast.info(
+            t.purchaseOrder.awaitingOtherPos.replace(
+              "{count}",
+              String(plan.outstanding),
+            ),
+          );
+        }
+      }
+    }
   };
 
   const handleApproveInvoice = async () => {
