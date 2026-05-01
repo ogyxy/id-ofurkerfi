@@ -284,12 +284,13 @@ function YfirlitContent({
       const { data: pendingPos } = await supabase
         .from("purchase_orders")
         .select(
-          `id, po_number, invoice_registered_by, invoice_approved_at, invoice_received_date,
+          `id, po_number, invoice_registered_by, invoice_approved_at, invoice_received_date, status,
            deal:deals!inner(id, so_number, name, owner_id, archived,
              company:companies(id, name))`,
         )
         .not("invoice_received_date", "is", null)
         .is("invoice_approved_at", null)
+        .neq("status", "cancelled")
         .eq("archived", false);
       (pendingPos ?? []).forEach((p: any) => {
         const d = p.deal;
