@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
-  ChevronLeft,
-  ChevronRight,
   LayoutDashboard,
   Menu,
   Package,
