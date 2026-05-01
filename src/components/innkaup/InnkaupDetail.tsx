@@ -888,6 +888,33 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Confirm: revert PO while SO is delivered (SO does not move) */}
+      <AlertDialog
+        open={confirmRevertWhileDelivered}
+        onOpenChange={setConfirmRevertWhileDelivered}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.purchaseOrder.revertPoFromDeliveredSoTitle}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.purchaseOrder.revertPoFromDeliveredSoBody}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setConfirmRevertWhileDelivered(false);
+                await performRevertToPantad();
+              }}
+              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+            >
+              {t.actions.confirm}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Invoice register/edit drawer */}
       <InvoiceDrawer
         open={invoiceDrawerOpen}
