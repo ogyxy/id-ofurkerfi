@@ -78,6 +78,11 @@ import { PoTrackingNumbersInline } from "./PoTrackingNumbersInline";
 import { POStageStepper } from "@/components/po-detail/POStageStepper";
 import { POStepperActions } from "@/components/po-detail/POStepperActions";
 import { InvoiceDrawer } from "@/components/po-detail/InvoiceDrawer";
+import {
+  fetchLinkedPos,
+  planSoAfterPoReceived,
+  planSoAfterPoReverted,
+} from "@/lib/poSoSync";
 
 type PO = Database["public"]["Tables"]["purchase_orders"]["Row"];
 type Supplier = Database["public"]["Tables"]["suppliers"]["Row"];
@@ -122,7 +127,9 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
   const [confirmMarkPaid, setConfirmMarkPaid] = useState(false);
+  const [confirmRevertWhileDelivered, setConfirmRevertWhileDelivered] = useState(false);
   const [logText, setLogText] = useState("");
+
 
   const load = useCallback(async () => {
     const [poRes, filesRes] = await Promise.all([
@@ -339,6 +346,41 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
       receivedDate: d,
       createdBy: currentProfileId,
     });
+    // Sync SO: advance to ready_for_pickup if ALL active POs are now received.
+    if (po.deal_id) {
+      const { data: dealRow } = await supabase
+        .from("deals")
+        .select("stage")
+        .eq("id", po.deal_id)
+        .maybeSingle();
+      if (dealRow?.stage) {
+        const linked = await fetchLinkedPos(supabase, po.deal_id);
+        // Reflect this PO's just-set received_date in the in-memory list
+        const adjusted = linked.map((p) =>
+          p.id === po.id ? { ...p, received_date: d, status: "received" as const } : p,
+        );
+        const plan = planSoAfterPoReceived(dealRow.stage, adjusted);
+        if (plan.action === "advance") {
+          await supabase
+            .from("deals")
+            .update({ stage: "ready_for_pickup" })
+            .eq("id", po.deal_id);
+          await supabase.from("activities").insert({
+            deal_id: po.deal_id,
+            type: "stage_change",
+            body: "ready_for_pickup",
+            created_by: currentProfileId,
+          });
+        } else if (plan.action === "wait" && plan.outstanding) {
+          toast.info(
+            t.purchaseOrder.awaitingOtherPos.replace(
+              "{count}",
+              String(plan.outstanding),
+            ),
+          );
+        }
+      }
+    }
   };
 
   const handleApproveInvoice = async () => {
@@ -387,7 +429,7 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
     });
   };
 
-  const handleRevertToPantad = async () => {
+  const performRevertToPantad = async () => {
     if (!po) return;
     await updatePo({
       received_date: null,
@@ -405,6 +447,43 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
       poNumber: po.po_number,
       createdBy: currentProfileId,
     });
+    // SO sync: if SO is at ready_for_pickup, revert it back to order_confirmed.
+    if (po.deal_id) {
+      const { data: dealRow } = await supabase
+        .from("deals")
+        .select("stage")
+        .eq("id", po.deal_id)
+        .maybeSingle();
+      if (dealRow?.stage === "ready_for_pickup") {
+        await supabase
+          .from("deals")
+          .update({ stage: "order_confirmed" })
+          .eq("id", po.deal_id);
+        await supabase.from("activities").insert({
+          deal_id: po.deal_id,
+          type: "stage_change",
+          body: "order_confirmed",
+          created_by: currentProfileId,
+        });
+      }
+    }
+  };
+
+  const handleRevertToPantad = async () => {
+    if (!po) return;
+    if (po.deal_id) {
+      const { data: dealRow } = await supabase
+        .from("deals")
+        .select("stage")
+        .eq("id", po.deal_id)
+        .maybeSingle();
+      const plan = planSoAfterPoReverted(dealRow?.stage ?? "inquiry");
+      if (plan.action === "confirmDeliveredKept") {
+        setConfirmRevertWhileDelivered(true);
+        return;
+      }
+    }
+    await performRevertToPantad();
   };
 
   const submitLog = async () => {
@@ -801,6 +880,33 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
             <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void handleMarkPaid()}
+              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+            >
+              {t.actions.confirm}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm: revert PO while SO is delivered (SO does not move) */}
+      <AlertDialog
+        open={confirmRevertWhileDelivered}
+        onOpenChange={setConfirmRevertWhileDelivered}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.purchaseOrder.revertPoFromDeliveredSoTitle}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.purchaseOrder.revertPoFromDeliveredSoBody}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setConfirmRevertWhileDelivered(false);
+                await performRevertToPantad();
+              }}
               className="bg-ide-navy text-white hover:bg-ide-navy-hover"
             >
               {t.actions.confirm}

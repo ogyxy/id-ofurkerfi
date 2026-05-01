@@ -29,6 +29,22 @@ import { QuoteBuilderModal } from "@/components/deal-detail/QuoteBuilderModal";
 import { DealLog, type LogEntry } from "@/components/deal-detail/DealLog";
 import { EditDealDrawer } from "@/components/deal-detail/EditDealDrawer";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  fetchLinkedPos,
+  planSoMarkArrived,
+  type LinkedPo,
+} from "@/lib/poSoSync";
+import { logPoReceived } from "@/lib/poActivityLog";
 
 type Deal = Database["public"]["Tables"]["deals"]["Row"];
 type DealStage = Database["public"]["Enums"]["deal_stage"];
@@ -96,6 +112,11 @@ function DealDetailContent() {
   const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [defectModalOpen, setDefectModalOpen] = useState(false);
   const [defectBusy, setDefectBusy] = useState(false);
+  const [cascadeDialog, setCascadeDialog] = useState<{
+    outstanding: LinkedPo[];
+    total: number;
+  } | null>(null);
+
   const [parentDeal, setParentDeal] = useState<{
     id: string;
     so_number: string;
@@ -260,12 +281,8 @@ function DealDetailContent() {
     [deal, currentProfile],
   );
 
-  const updateStage = async (next: Deal["stage"]) => {
+  const performStageUpdate = async (next: Deal["stage"]) => {
     if (!deal) return;
-    if (next === "defect_reorder") {
-      setDefectModalOpen(true);
-      return;
-    }
     const patch: Partial<Deal> =
       next === "delivered"
         ? { stage: next, delivered_at: new Date().toISOString().split("T")[0] }
@@ -281,6 +298,48 @@ function DealDetailContent() {
     await logStageChange(next);
     toast.success(t.status.savedSuccessfully);
     await load();
+  };
+
+  const cascadeReceiveAllPos = async (outstanding: LinkedPo[]) => {
+    if (!deal) return;
+    const today = new Date().toISOString().split("T")[0];
+    for (const p of outstanding) {
+      await supabase
+        .from("purchase_orders")
+        .update({ received_date: today, status: "received" })
+        .eq("id", p.id);
+      await logPoReceived({
+        dealId: deal.id,
+        poNumber: p.po_number,
+        receivedDate: today,
+        createdBy: currentProfile?.id ?? null,
+      });
+      // Extra note attributing the cascade
+      await supabase.from("activities").insert({
+        deal_id: deal.id,
+        type: "note",
+        body: `${p.po_number}: ${t.purchaseOrder.cascadeReceivedNote}`,
+        created_by: currentProfile?.id ?? null,
+      });
+    }
+  };
+
+  const updateStage = async (next: Deal["stage"]) => {
+    if (!deal) return;
+    if (next === "defect_reorder") {
+      setDefectModalOpen(true);
+      return;
+    }
+    // Intercept "Komin í hús" to cascade with PO state
+    if (next === "ready_for_pickup" && deal.stage === "order_confirmed") {
+      const linked = await fetchLinkedPos(supabase, deal.id);
+      const plan = planSoMarkArrived(linked);
+      if (plan.action === "confirmCascade") {
+        setCascadeDialog({ outstanding: plan.outstanding, total: plan.total });
+        return;
+      }
+    }
+    await performStageUpdate(next);
   };
 
   const confirmDefectTransition = async (description: string) => {
@@ -475,6 +534,53 @@ function DealDetailContent() {
           void load();
         }}
       />
+
+      {/* SO mark-arrived cascade: 3-button dialog when POs are still outstanding */}
+      <AlertDialog
+        open={!!cascadeDialog}
+        onOpenChange={(o) => !o && setCascadeDialog(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t.deal.trackingsoPartialDeliveryTitle}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {cascadeDialog
+                ? t.deal.trackingsoPartialDeliveryBody
+                    .replace("{outstanding}", String(cascadeDialog.outstanding.length))
+                    .replace("{total}", String(cascadeDialog.total))
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+            <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const d = cascadeDialog;
+                setCascadeDialog(null);
+                if (!d) return;
+                await performStageUpdate("ready_for_pickup");
+              }}
+            >
+              {t.deal.trackingsoPartialDeliverySoOnly}
+            </Button>
+            <Button
+              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+              onClick={async () => {
+                const d = cascadeDialog;
+                setCascadeDialog(null);
+                if (!d) return;
+                await cascadeReceiveAllPos(d.outstanding);
+                await performStageUpdate("ready_for_pickup");
+              }}
+            >
+              {t.deal.trackingsoPartialDeliveryMarkAll}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
