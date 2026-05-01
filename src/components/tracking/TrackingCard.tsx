@@ -354,6 +354,9 @@ export function TrackingCard(props: Props) {
                   {showPoBadge && po && (
                     <span className="font-mono text-[11px] text-muted-foreground">
                       · {po.po_number}
+                      {(po.supplier_record?.name ?? po.supplier) && (
+                        <span className="font-sans"> · {po.supplier_record?.name ?? po.supplier}</span>
+                      )}
                     </span>
                   )}
                 </a>
