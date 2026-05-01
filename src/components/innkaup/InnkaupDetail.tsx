@@ -203,6 +203,24 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
     } else {
       setActivities([]);
     }
+
+    // Load profile names for invoice_registered_by + invoice_approved_by
+    const profileIds = [data.invoice_registered_by, data.invoice_approved_by].filter(
+      (x): x is string => Boolean(x),
+    );
+    if (profileIds.length > 0) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .in("id", profileIds);
+      const map: Record<string, string> = {};
+      (profs ?? []).forEach((p: ProfileMini) => {
+        if (p.id) map[p.id] = p.name ?? "";
+      });
+      setProfileNames(map);
+    } else {
+      setProfileNames({});
+    }
     setLoading(false);
   }, [poId]);
 
