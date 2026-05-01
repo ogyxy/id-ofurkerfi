@@ -135,7 +135,6 @@ export async function generateQuotePdf(data: QuoteData): Promise<ArrayBuffer> {
   doc.setFontSize(10);
   const meta: Array<[string, string]> = [
     ["Tilboð nr.", data.quoteNumber],
-    ["Viðskiptanúmer", (data.company.kennitala ?? "").replace(/\D/g, "") || "—"],
     ["Gildir til", formatDayMonthYear(data.validUntil)],
     ["Tilvísun/verk", data.dealName],
   ];
