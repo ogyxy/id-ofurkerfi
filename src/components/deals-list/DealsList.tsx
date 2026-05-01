@@ -568,6 +568,13 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
   };
 
   const openDeal = (id: string) => {
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem(SCROLL_STORAGE_KEY, String(window.scrollY));
+      } catch {
+        /* ignore */
+      }
+    }
     rememberDealReturnPath("/deals");
     navigate({ to: "/deals/$id", params: { id } });
   };
