@@ -36,6 +36,7 @@ type DealRow = {
   payment_status: PaymentStatus;
   defect_resolution: DefectResolution;
   tracking_numbers: string[];
+  payday_invoice_id: string | null;
   archived: boolean;
   created_at: string;
   company: { id: string; name: string } | null;
@@ -92,9 +93,10 @@ function stepLabel(step: StepKey): string {
 }
 
 // Substep badge for a stage (shown inside the deal card stage button)
-function stageSubstepLabel(stage: DealStage): string | null {
+function stageSubstepLabel(stage: DealStage, paydayInvoiceId?: string | null): string | null {
   if (stage === "quote_sent") return t.deal.substepSent;
   if (stage === "ready_for_pickup") return t.deal.substepInHouse;
+  if (stage === "delivered" && !paydayInvoiceId) return t.deal.substepMissingInvoice;
   return null;
 }
 
@@ -126,6 +128,7 @@ const SELECT = `
   payment_status,
   defect_resolution,
   tracking_numbers,
+  payday_invoice_id,
   archived,
   created_at,
   company:companies(id, name),
@@ -894,9 +897,11 @@ const POPOVER_GROUPS: Array<{ step: StepKey; stages: DealStage[] }> = [
 
 function StagePopover({
   current,
+  paydayInvoiceId,
   onChange,
 }: {
   current: DealStage;
+  paydayInvoiceId?: string | null;
   onChange: (s: DealStage) => void | Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
@@ -904,7 +909,7 @@ function StagePopover({
   const [busy, setBusy] = useState(false);
 
   const styles = STAGE_STYLES[current];
-  const sub = stageSubstepLabel(current);
+  const sub = stageSubstepLabel(current, paydayInvoiceId);
   const triggerLabel = stepLabel(stageToStep(current));
 
   const close = () => {
@@ -1068,7 +1073,7 @@ function DealCard({
           <CopySoButton soNumber={deal.so_number} companyName={deal.company?.name} />
         </div>
         <div onClick={(e) => e.stopPropagation()}>
-          <StagePopover current={deal.stage} onChange={onStageChange} />
+          <StagePopover current={deal.stage} paydayInvoiceId={deal.payday_invoice_id} onChange={onStageChange} />
         </div>
         {showDefectBadge && (
           <div className="flex flex-wrap gap-1">
