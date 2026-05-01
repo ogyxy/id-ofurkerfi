@@ -466,18 +466,13 @@ function DealDetailContent() {
         onEdit={() => setEditOpen(true)}
       />
 
-      {(deal.stage === "inquiry" ||
-        deal.stage === "quote_in_progress" ||
-        deal.stage === "quote_sent" ||
-        deal.stage === "order_confirmed" ||
-        deal.stage === "ready_for_pickup" ||
-        (deal.tracking_numbers ?? []).length > 0) && (
-        <TrackingCard
-          mode="deal"
+      {pos.length > 0 || (deal.tracking_numbers ?? []).length > 0 ? (
+        <PurchaseOrdersSection
           dealId={deal.id}
-          initial={deal.tracking_numbers ?? []}
+          pos={pos}
+          trackingNumbers={deal.tracking_numbers ?? []}
         />
-      )}
+      ) : null}
 
       {(deal.stage === "delivered" ||
         deal.stage === "defect_reorder" ||
