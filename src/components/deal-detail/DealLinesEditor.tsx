@@ -61,6 +61,7 @@ export type EditableLine = {
   unit_price_isk: number;
   manualPrice: boolean;
   notes: string;
+  size_breakdown: SizeBreakdown | null;
   emptyQty?: boolean;
   emptyCost?: boolean;
 };
@@ -83,6 +84,7 @@ export function fromDbLine(row: DealLineRow): EditableLine {
     unit_price_isk: Number(row.unit_price_isk),
     manualPrice: false,
     notes: row.notes ?? "",
+    size_breakdown: parseSizeBreakdown((row as unknown as { size_breakdown?: unknown }).size_breakdown),
   };
 }
 
