@@ -231,9 +231,14 @@ export function TrackingCard(props: Props) {
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 px-2 font-mono text-xs"
+              className="h-8 px-2 text-xs"
             >
-              {selectedPo.po_number}
+              <span className="font-mono">{selectedPo.po_number}</span>
+              {(selectedPo.supplier_record?.name ?? selectedPo.supplier) && (
+                <span className="ml-1.5 text-muted-foreground">
+                  · {selectedPo.supplier_record?.name ?? selectedPo.supplier}
+                </span>
+              )}
               <ChevronDown className="ml-1 h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
@@ -241,15 +246,21 @@ export function TrackingCard(props: Props) {
             <div className="px-2 py-1 text-[11px] text-muted-foreground">
               {t.deal.trackingPickPo}
             </div>
-            {activePos.map((p) => (
-              <DropdownMenuItem
-                key={p.id}
-                onClick={() => setSelectedPoId(p.id)}
-                className="font-mono text-xs"
-              >
-                {p.po_number}
-              </DropdownMenuItem>
-            ))}
+            {activePos.map((p) => {
+              const sup = p.supplier_record?.name ?? p.supplier;
+              return (
+                <DropdownMenuItem
+                  key={p.id}
+                  onClick={() => setSelectedPoId(p.id)}
+                  className="text-xs"
+                >
+                  <span className="font-mono">{p.po_number}</span>
+                  {sup && (
+                    <span className="ml-1.5 text-muted-foreground">· {sup}</span>
+                  )}
+                </DropdownMenuItem>
+              );
+            })}
           </DropdownMenuContent>
         </DropdownMenu>
       )}
