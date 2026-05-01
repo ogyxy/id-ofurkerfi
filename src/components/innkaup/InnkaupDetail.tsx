@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
   CalendarIcon,
+  Check,
   CheckCircle2,
   Download,
   FileText,
@@ -44,6 +45,12 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -65,9 +72,11 @@ import { cn } from "@/lib/utils";
 import { pathSafe, formatFileSize } from "@/lib/formatters";
 import { goBack } from "@/lib/dealReturn";
 import {
+  HAPPY_PATH_PO_STATUSES,
   PO_CURRENCIES,
   PO_FILE_TYPES,
   poFileTypeLabel,
+  type POStatus,
   type PoFileType,
 } from "@/lib/poConstants";
 import {
