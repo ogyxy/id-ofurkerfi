@@ -542,7 +542,7 @@ function DealDetailContent() {
         }}
       />
 
-      {/* SO mark-arrived cascade: 3-button dialog when POs are still outstanding */}
+      {/* SO mark-arrived: only shown when SO has 2+ active POs */}
       <AlertDialog
         open={!!cascadeDialog}
         onOpenChange={(o) => !o && setCascadeDialog(null)}
@@ -550,29 +550,19 @@ function DealDetailContent() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {t.deal.trackingsoPartialDeliveryTitle}
+              {t.deal.confirmAllPosArrivedTitle}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {cascadeDialog
-                ? t.deal.trackingsoPartialDeliveryBody
-                    .replace("{outstanding}", String(cascadeDialog.outstanding.length))
-                    .replace("{total}", String(cascadeDialog.total))
+                ? t.deal.confirmAllPosArrivedBody.replace(
+                    "{count}",
+                    String(cascadeDialog.total),
+                  )
                 : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+          <AlertDialogFooter>
             <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
-            <Button
-              variant="outline"
-              onClick={async () => {
-                const d = cascadeDialog;
-                setCascadeDialog(null);
-                if (!d) return;
-                await performStageUpdate("ready_for_pickup");
-              }}
-            >
-              {t.deal.trackingsoPartialDeliverySoOnly}
-            </Button>
             <Button
               className="bg-ide-navy text-white hover:bg-ide-navy-hover"
               onClick={async () => {
@@ -583,7 +573,7 @@ function DealDetailContent() {
                 await performStageUpdate("ready_for_pickup");
               }}
             >
-              {t.deal.trackingsoPartialDeliveryMarkAll}
+              {t.deal.confirmAllPosArrivedConfirm}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
