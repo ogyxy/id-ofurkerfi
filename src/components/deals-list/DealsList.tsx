@@ -36,6 +36,7 @@ type DealRow = {
   payment_status: PaymentStatus;
   defect_resolution: DefectResolution;
   tracking_numbers: string[];
+  payday_invoice_id: string | null;
   archived: boolean;
   created_at: string;
   company: { id: string; name: string } | null;
