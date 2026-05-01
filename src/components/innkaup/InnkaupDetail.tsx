@@ -429,7 +429,7 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
     });
   };
 
-  const handleRevertToPantad = async () => {
+  const performRevertToPantad = async () => {
     if (!po) return;
     await updatePo({
       received_date: null,
@@ -447,6 +447,43 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
       poNumber: po.po_number,
       createdBy: currentProfileId,
     });
+    // SO sync: if SO is at ready_for_pickup, revert it back to order_confirmed.
+    if (po.deal_id) {
+      const { data: dealRow } = await supabase
+        .from("deals")
+        .select("stage")
+        .eq("id", po.deal_id)
+        .maybeSingle();
+      if (dealRow?.stage === "ready_for_pickup") {
+        await supabase
+          .from("deals")
+          .update({ stage: "order_confirmed" })
+          .eq("id", po.deal_id);
+        await supabase.from("activities").insert({
+          deal_id: po.deal_id,
+          type: "stage_change",
+          body: "order_confirmed",
+          created_by: currentProfileId,
+        });
+      }
+    }
+  };
+
+  const handleRevertToPantad = async () => {
+    if (!po) return;
+    if (po.deal_id) {
+      const { data: dealRow } = await supabase
+        .from("deals")
+        .select("stage")
+        .eq("id", po.deal_id)
+        .maybeSingle();
+      const plan = planSoAfterPoReverted(dealRow?.stage ?? "inquiry");
+      if (plan.action === "confirmDeliveredKept") {
+        setConfirmRevertWhileDelivered(true);
+        return;
+      }
+    }
+    await performRevertToPantad();
   };
 
   const submitLog = async () => {
