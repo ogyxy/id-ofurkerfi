@@ -765,77 +765,29 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                 variant="sub"
               />
             ))}
-          {activeStep === "afhent" && (() => {
-            const afhentDeals = deals.filter(
-              (d) =>
-                d.stage === "delivered" ||
-                (d.stage === "defect_reorder" && isDefectResolved(d)),
-            );
-            const withInvoice = afhentDeals.filter((d) => !!d.payday_invoice_id).length;
-            const missingInvoice = afhentDeals.filter((d) => !d.payday_invoice_id).length;
-            return (
-              <>
-                <StagePill
-                  label={stepLabel("afhent")}
-                  count={withInvoice}
-                  active={activeSubstage === "delivered"}
-                  onClick={() =>
-                    setActiveSubstage((prev) => (prev === "delivered" ? null : "delivered"))
-                  }
-                  showClose={activeSubstage === "delivered"}
-                  variant="sub"
-                />
-                <StagePill
-                  label={`${stepLabel("afhent")} · ${t.deal.substepMissingInvoice}`}
-                  count={missingInvoice}
-                  active={activeSubstage === "delivered_missing_invoice"}
-                  onClick={() =>
-                    setActiveSubstage((prev) =>
-                      prev === "delivered_missing_invoice" ? null : "delivered_missing_invoice",
-                    )
-                  }
-                  showClose={activeSubstage === "delivered_missing_invoice"}
-                  variant="sub"
-                />
-              </>
-            );
-          })()}
         </div>
       </div>
 
-      {/* Payday-derived status filter pills (invoice + payment) */}
+      {/* Payday-derived status filter pills (delivered deals only) */}
       <div className="mb-4">
         <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
           {t.deal.filterPaydayRowLabel}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {(["not_invoiced", "full"] as InvoiceStatus[]).map((s) => {
-            const isActive = activeInvoiceStatus === s;
-            if (activeInvoiceStatus && !isActive) return null;
+          {([
+            { key: "not_invoiced" as const, label: t.invoiceStatus.not_invoiced },
+            { key: "unpaid" as const, label: t.paymentStatus.unpaid },
+            { key: "paid" as const, label: t.paymentStatus.paid },
+          ]).map(({ key, label }) => {
+            const isActive = activePaydayStatus === key;
+            if (activePaydayStatus && !isActive) return null;
             return (
               <StagePill
-                key={`inv-${s}`}
-                label={t.invoiceStatus[s]}
-                count={paydayCounts.inv[s]}
+                key={`pds-${key}`}
+                label={label}
+                count={paydayCounts[key]}
                 active={isActive}
-                onClick={() => setActiveInvoiceStatus((prev) => (prev === s ? null : s))}
-                showClose={isActive}
-              />
-            );
-          })}
-          {!activeInvoiceStatus && !activePaymentStatus && (
-            <span className="px-1 text-muted-foreground" aria-hidden>·</span>
-          )}
-          {(["unpaid", "partial", "paid"] as PaymentStatus[]).map((s) => {
-            const isActive = activePaymentStatus === s;
-            if (activePaymentStatus && !isActive) return null;
-            return (
-              <StagePill
-                key={`pay-${s}`}
-                label={t.paymentStatus[s]}
-                count={paydayCounts.pay[s]}
-                active={isActive}
-                onClick={() => setActivePaymentStatus((prev) => (prev === s ? null : s))}
+                onClick={() => setActivePaydayStatus((prev) => (prev === key ? null : key))}
                 showClose={isActive}
               />
             );
