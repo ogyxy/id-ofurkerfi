@@ -128,11 +128,14 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
   } | null>(null);
   const [files, setFiles] = useState<PoFile[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [profileNames, setProfileNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [confirmStatus, setConfirmStatus] = useState<POStatus | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [invoiceDrawerOpen, setInvoiceDrawerOpen] = useState(false);
+  const [confirmMarkPaid, setConfirmMarkPaid] = useState(false);
   const [logText, setLogText] = useState("");
 
   const load = useCallback(async () => {
