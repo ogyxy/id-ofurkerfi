@@ -1,53 +1,32 @@
-import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import type { Database } from "@/integrations/supabase/types";
 import { t, formatDate, formatIsk } from "@/lib/sala_translations_is";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PO_STATUS_STYLES } from "@/lib/poConstants";
-import { CreatePoDrawer } from "@/components/innkaup/CreatePoDrawer";
 import { rememberDealReturnPath } from "@/lib/dealReturn";
+import { TrackingCard } from "@/components/tracking/TrackingCard";
 
 type PORow = Database["public"]["Tables"]["purchase_orders"]["Row"];
 
 interface Props {
   dealId: string;
   pos: PORow[];
-  currentProfileId: string | null;
-  onChanged: () => Promise<void>;
+  trackingNumbers: string[];
 }
 
-export function PurchaseOrdersSection({
-  dealId,
-  pos,
-  currentProfileId,
-  onChanged,
-}: Props) {
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const hasPos = pos.length > 0;
-
+/**
+ * Merged "Innkaup" card shown on the deal detail page.
+ *
+ * Contains the PO list (top) and the tracking-numbers section (bottom).
+ * The "Bæta við PO" button lives in StepperActions (the stepper action
+ * row), not here — this card only appears once at least one PO exists
+ * (or legacy tracking numbers are present on the deal).
+ */
+export function PurchaseOrdersSection({ dealId, pos, trackingNumbers }: Props) {
   return (
-    <div className="rounded-md border border-border bg-card p-4 shadow-sm">
-      {/* Header */}
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="text-sm font-semibold">{t.purchaseOrder.title}</div>
-        <Button
-          variant={hasPos ? "outline" : "default"}
-          size={hasPos ? "sm" : "default"}
-          onClick={() => setDrawerOpen(true)}
-          className={
-            hasPos ? undefined : "bg-ide-navy text-white hover:bg-ide-navy-hover"
-          }
-        >
-          {t.purchaseOrder.createFromDeal}
-        </Button>
-      </div>
-
-      {!hasPos ? (
-        <div className="text-sm text-muted-foreground">
-          {t.purchaseOrder.noOrdersOnDeal}
-        </div>
-      ) : (
+    <div className="rounded-md border border-border bg-card p-4 shadow-sm space-y-4">
+      <div>
+        <div className="mb-3 text-sm font-semibold">{t.purchaseOrder.title}</div>
         <div className="space-y-2">
           {pos.map((po) => {
             const style = PO_STATUS_STYLES[po.status];
@@ -97,16 +76,27 @@ export function PurchaseOrdersSection({
             );
           })}
         </div>
-      )}
+      </div>
 
-      <CreatePoDrawer
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        fixedDealId={dealId}
-        currentProfileId={currentProfileId}
-        onCreated={() => void onChanged()}
-        navigateOnCreate={true}
-      />
+      <div className="border-t border-border pt-4">
+        <TrackingCardEmbedded dealId={dealId} initial={trackingNumbers} />
+      </div>
     </div>
   );
+}
+
+/**
+ * Tracking section embedded inside the merged Innkaup card.
+ * Reuses the existing TrackingCard but strips its outer card chrome
+ * by wrapping it — the TrackingCard renders its own padded card, so
+ * we just render it raw here.
+ */
+function TrackingCardEmbedded({
+  dealId,
+  initial,
+}: {
+  dealId: string;
+  initial: string[];
+}) {
+  return <TrackingCard mode="deal" dealId={dealId} initial={initial} />;
 }
