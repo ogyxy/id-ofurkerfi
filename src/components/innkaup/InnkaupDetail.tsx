@@ -340,6 +340,87 @@ export function InnkaupDetail({ poId, currentProfileId }: Props) {
     }
   };
 
+  // ---- New action handlers (3-step stepper) ----
+  const today = () => new Date().toISOString().split("T")[0];
+
+  const handleMarkReceived = async () => {
+    if (!po) return;
+    const d = today();
+    await updatePo({ received_date: d, status: "received" });
+    await logPoReceived({
+      dealId: po.deal_id,
+      poNumber: po.po_number,
+      receivedDate: d,
+      createdBy: currentProfileId,
+    });
+  };
+
+  const handleApproveInvoice = async () => {
+    if (!po) return;
+    await updatePo({
+      invoice_approved_at: new Date().toISOString(),
+      invoice_approved_by: currentProfileId,
+    });
+    await logPoInvoiceApproved({
+      dealId: po.deal_id,
+      poNumber: po.po_number,
+      createdBy: currentProfileId,
+    });
+  };
+
+  const handleMarkPaid = async () => {
+    if (!po) return;
+    const d = today();
+    await updatePo({ paid_date: d, status: "paid" });
+    await logPoPaid({
+      dealId: po.deal_id,
+      poNumber: po.po_number,
+      paidDate: d,
+      createdBy: currentProfileId,
+    });
+    setConfirmMarkPaid(false);
+  };
+
+  const handleRevertApproval = async () => {
+    if (!po) return;
+    await updatePo({ invoice_approved_at: null, invoice_approved_by: null });
+    await logPoInvoiceApprovalRevoked({
+      dealId: po.deal_id,
+      poNumber: po.po_number,
+      createdBy: currentProfileId,
+    });
+  };
+
+  const handleRevertToMottekid = async () => {
+    if (!po) return;
+    await updatePo({ paid_date: null, status: "received" });
+    await logPoPaymentRevoked({
+      dealId: po.deal_id,
+      poNumber: po.po_number,
+      createdBy: currentProfileId,
+    });
+  };
+
+  const handleRevertToPantad = async () => {
+    if (!po) return;
+    await updatePo({
+      received_date: null,
+      paid_date: null,
+      invoice_received_date: null,
+      supplier_invoice_number: null,
+      supplier_invoice_amount: null,
+      invoice_approved_at: null,
+      invoice_approved_by: null,
+      invoice_registered_by: null,
+      status: "ordered",
+    });
+    await logPoRevertedToOrdered({
+      dealId: po.deal_id,
+      poNumber: po.po_number,
+      createdBy: currentProfileId,
+    });
+  };
+
   const submitLog = async () => {
     const body = logText.trim();
     if (!body || !po?.deal_id) return;
