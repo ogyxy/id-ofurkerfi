@@ -96,3 +96,69 @@ export async function logPoPaid(opts: {
     createdBy: opts.createdBy,
   });
 }
+
+export async function logPoInvoiceRegistered(opts: {
+  dealId: string | null;
+  poNumber: string;
+  invoiceNumber: string | null;
+  createdBy: string | null;
+}) {
+  await logPoActivity({
+    dealId: opts.dealId,
+    poNumber: opts.poNumber,
+    body: `reikningur skráður${opts.invoiceNumber ? ` (${opts.invoiceNumber})` : ""}`,
+    createdBy: opts.createdBy,
+  });
+}
+
+export async function logPoInvoiceApproved(opts: {
+  dealId: string | null;
+  poNumber: string;
+  createdBy: string | null;
+}) {
+  await logPoActivity({
+    dealId: opts.dealId,
+    poNumber: opts.poNumber,
+    body: `reikningur samþykktur`,
+    createdBy: opts.createdBy,
+  });
+}
+
+export async function logPoInvoiceApprovalRevoked(opts: {
+  dealId: string | null;
+  poNumber: string;
+  createdBy: string | null;
+}) {
+  await logPoActivity({
+    dealId: opts.dealId,
+    poNumber: opts.poNumber,
+    body: `samþykki reiknings afturkallað`,
+    createdBy: opts.createdBy,
+  });
+}
+
+export async function logPoPaymentRevoked(opts: {
+  dealId: string | null;
+  poNumber: string;
+  createdBy: string | null;
+}) {
+  await logPoActivity({
+    dealId: opts.dealId,
+    poNumber: opts.poNumber,
+    body: `greiðsla afturkölluð`,
+    createdBy: opts.createdBy,
+  });
+}
+
+export async function logPoRevertedToOrdered(opts: {
+  dealId: string | null;
+  poNumber: string;
+  createdBy: string | null;
+}) {
+  await logPoActivity({
+    dealId: opts.dealId,
+    poNumber: opts.poNumber,
+    body: `endursett í pöntunarstöðu`,
+    createdBy: opts.createdBy,
+  });
+}
