@@ -445,8 +445,9 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
         )}
       </div>
 
-      {/* Per-row tracking */}
-      <div className="mt-3 rounded-md bg-background/40 p-2">
+      {/* Per-row tracking — single tracking number per PO; the "+ Bæta við" placeholder
+          replaces the section title to save vertical space. */}
+      <div className="mt-2">
         <TrackingCard
           mode="po"
           poId={po.id}
