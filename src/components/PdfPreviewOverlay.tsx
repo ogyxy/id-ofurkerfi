@@ -186,11 +186,13 @@ export function PdfPreviewOverlay({ url, title, filename, open, onClose }: Props
       <div
         ref={containerRef}
         className="flex flex-1 items-start justify-center overflow-auto p-6"
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
       >
         <div
           ref={viewerRef}
           className="w-full max-w-[1200px]"
-          onMouseDown={(e) => e.stopPropagation()}
         >
           {loading && (
             <div className="flex h-[60vh] items-center justify-center text-white/80">
