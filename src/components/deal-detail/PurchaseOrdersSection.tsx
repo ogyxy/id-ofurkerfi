@@ -58,12 +58,41 @@ interface Props {
  *
  * The PO detail screen is gone — everything happens inline here.
  */
+type PoFile = Database["public"]["Tables"]["po_files"]["Row"];
+
 export function PurchaseOrdersSection({
   dealId,
   pos,
   currentProfileId,
   onChanged,
 }: Props) {
+  const [filesByPo, setFilesByPo] = useState<Record<string, PoFile[]>>({});
+
+  useEffect(() => {
+    const ids = pos.map((p) => p.id);
+    if (ids.length === 0) {
+      setFilesByPo({});
+      return;
+    }
+    let cancelled = false;
+    void supabase
+      .from("po_files")
+      .select("*")
+      .in("po_id", ids)
+      .order("uploaded_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (cancelled || error || !data) return;
+        const grouped: Record<string, PoFile[]> = {};
+        for (const f of data as PoFile[]) {
+          (grouped[f.po_id] ??= []).push(f);
+        }
+        setFilesByPo(grouped);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pos]);
+
   return (
     <div className="rounded-md border border-border bg-card p-4 shadow-sm">
       <div className="mb-3 text-sm font-semibold">{t.purchaseOrder.title}</div>
@@ -75,6 +104,7 @@ export function PurchaseOrdersSection({
             dealId={dealId}
             currentProfileId={currentProfileId}
             onChanged={onChanged}
+            files={filesByPo[po.id] ?? []}
           />
         ))}
       </div>
