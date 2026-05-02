@@ -530,6 +530,57 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Phase 2 drawers */}
+      <InvoiceDrawer
+        open={invoiceOpen}
+        onOpenChange={setInvoiceOpen}
+        po={po}
+        dealId={dealId}
+        currentProfileId={currentProfileId}
+        editMode={invoiceEditMode}
+        onSaved={onChanged}
+      />
+      <ApproveInvoiceDialog
+        open={approveOpen}
+        onOpenChange={setApproveOpen}
+        po={po}
+        dealId={dealId}
+        currentProfileId={currentProfileId}
+        onSaved={onChanged}
+      />
+      <MarkPaidDrawer
+        open={paidOpen}
+        onOpenChange={setPaidOpen}
+        po={po}
+        dealId={dealId}
+        currentProfileId={currentProfileId}
+        onSaved={onChanged}
+      />
+      <EditExchangeDrawer
+        open={exchangeOpen}
+        onOpenChange={setExchangeOpen}
+        po={po}
+        dealId={dealId}
+        currentProfileId={currentProfileId}
+        onSaved={onChanged}
+      />
+      <EditLinesDrawer
+        open={linesOpen}
+        onOpenChange={setLinesOpen}
+        po={po}
+        dealId={dealId}
+        currentProfileId={currentProfileId}
+        onSaved={onChanged}
+      />
+      <DeletePoDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        po={po}
+        dealId={dealId}
+        currentProfileId={currentProfileId}
+        onSaved={onChanged}
+      />
     </div>
   );
 }
