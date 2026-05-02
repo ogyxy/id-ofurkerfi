@@ -406,6 +406,13 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
             hasInvoice={hasInvoice}
             poStatus={po.status}
             onRevertClick={() => setRevertOpen(true)}
+            onEditExchange={() => setExchangeOpen(true)}
+            onEditLines={() => setLinesOpen(true)}
+            onEditInvoice={() => {
+              setInvoiceEditMode(true);
+              setInvoiceOpen(true);
+            }}
+            onDelete={() => setDeleteOpen(true)}
           />
         </div>
       </div>
