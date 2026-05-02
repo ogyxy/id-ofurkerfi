@@ -692,6 +692,15 @@ export const t = {
     coreFieldsEditTitle:            'Breyta innkaupapöntun',
     orderConfirmationUpload:        'Pöntunarstaðfesting (PDF)',
     orderConfirmationOptional:      'Valfrjálst',
+    pdfPreviewDownload:             'Hlaða niður',
+    pdfPreviewClose:                'Loka',
+    pdfPreviewLoadError:            'Gat ekki opnað skjal',
+    pdfPreviewZoomIn:               'Stækka',
+    pdfPreviewZoomOut:              'Minnka',
+    pdfPreviewZoomReset:            'Sjálfgefin stærð',
+    fileMenuPickLabel:              'Veldu skjal',
+    fileLabelOrderConfirmation:     'Staðfesting',
+    fileLabelInvoice:               'Reikningur frá birgi',
   },
 
   supplier: {
