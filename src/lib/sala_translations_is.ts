@@ -709,6 +709,7 @@ export const t = {
     fileMenuPickLabel:              'Veldu skjal',
     fileLabelOrderConfirmation:     'Staðfesting',
     fileLabelInvoice:               'Reikningur frá birgi',
+    actionViewInvoice:              'Skoða reikning',
   },
 
   supplier: {
