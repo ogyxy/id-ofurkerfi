@@ -267,6 +267,7 @@ export function ApproveInvoiceDialog({
   const [loadingPreview, setLoadingPreview] = useState(false);
 
   const openInvoicePreview = async () => {
+    onOpenChange(false);
     if (loadingPreview) return;
     setLoadingPreview(true);
     const { data: files, error } = await supabase
