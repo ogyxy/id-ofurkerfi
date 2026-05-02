@@ -225,9 +225,6 @@ export function DealHeader({
           )}
         </div>
       </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
