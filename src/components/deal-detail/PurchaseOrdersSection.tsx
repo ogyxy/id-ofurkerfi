@@ -317,15 +317,18 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
 
     if (po.status === "ordered") {
       return (
-        <Button
-          size="sm"
-          disabled={busy}
-          onClick={markGoodsArrived}
-          className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-        >
-          <Truck className="mr-1.5 h-3.5 w-3.5" />
-          {t.purchaseOrder.actionGoodsArrived}
-        </Button>
+        <>
+          <Button
+            size="sm"
+            disabled={busy}
+            onClick={markGoodsArrived}
+            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+          >
+            <Truck className="mr-1.5 h-3.5 w-3.5" />
+            {t.purchaseOrder.actionGoodsArrived}
+          </Button>
+          {!isDelivered && deliveredButton(false)}
+        </>
       );
     }
 
@@ -359,7 +362,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
       );
     }
 
-    // "Merkja sem afhent" — secondary alongside an invoice action,
+    // "Sala afhent" — secondary alongside an invoice action,
     // primary when nothing else is happening (paid + not afhent).
     if (!isDelivered) {
       const primary = isPaid; // only primary when no invoice button is showing
