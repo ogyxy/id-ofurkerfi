@@ -1126,10 +1126,12 @@ const POPOVER_GROUPS: Array<{ step: StepKey; stages: DealStage[] }> = [
 function StagePopover({
   current,
   paydayInvoiceId,
+  trackingNumbers,
   onChange,
 }: {
   current: DealStage;
   paydayInvoiceId?: string | null;
+  trackingNumbers?: string[] | null;
   onChange: (s: DealStage) => void | Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
@@ -1137,7 +1139,7 @@ function StagePopover({
   const [busy, setBusy] = useState(false);
 
   const styles = STAGE_STYLES[current];
-  const sub = stageSubstepLabel(current, paydayInvoiceId);
+  const sub = stageSubstepLabel(current, paydayInvoiceId, trackingNumbers);
   const triggerLabel = stepLabel(stageToStep(current));
 
   const close = () => {
