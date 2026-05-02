@@ -42,6 +42,7 @@ import { CreatePoDrawer } from "@/components/innkaup/CreatePoDrawer";
 import { PdfPreviewOverlay } from "@/components/PdfPreviewOverlay";
 import { markPoInvoiceViewed } from "@/lib/poInvoiceViewed";
 import { CopyTextButton } from "@/components/deals-list/DealsList";
+import { LabeledPill } from "@/components/deal-detail/LabeledPill";
 
 type PORow = Database["public"]["Tables"]["purchase_orders"]["Row"];
 
