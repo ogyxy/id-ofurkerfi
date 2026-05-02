@@ -271,6 +271,15 @@ export function ApproveInvoiceDialog({
   const [previewName, setPreviewName] = useState<string | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
 
+  const [viewed, setViewed] = useState(() => hasViewedPoInvoice(po.id));
+
+  useEffect(() => {
+    setViewed(hasViewedPoInvoice(po.id));
+    return subscribePoInvoiceViewed(() => {
+      setViewed(hasViewedPoInvoice(po.id));
+    });
+  }, [po.id, open]);
+
   const openInvoicePreview = async () => {
     onOpenChange(false);
     if (loadingPreview) return;
