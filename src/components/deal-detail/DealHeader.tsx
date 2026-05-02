@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
+import { Mail, Phone, User } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { t, formatDate } from "@/lib/sala_translations_is";
 import { rememberCompanyReturnPath } from "@/lib/dealReturn";
 import { Button } from "@/components/ui/button";
 import { formatPhone } from "@/lib/formatters";
-import { cn } from "@/lib/utils";
+import { LabeledPill, type PillTone } from "@/components/deal-detail/LabeledPill";
 
 import { CopySoButton, CopyTextButton } from "@/components/deals-list/DealsList";
 
@@ -25,17 +26,31 @@ interface Props {
   company: Company;
   contact: Contact | null;
   ownerName: string | null;
+  quoteValidUntil?: string | null;
   onEdit: () => void;
 }
 
+function startOfToday(): Date {
+  const t = new Date();
+  t.setHours(0, 0, 0, 0);
+  return t;
+}
 
-function isOverdue(date: string | null, stage: Deal["stage"]) {
-  if (!date) return false;
-  if (stage === "delivered" || stage === "cancelled") return false;
+function daysUntil(date: string | null | undefined): number | null {
+  if (!date) return null;
   const d = new Date(date);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return d < today;
+  d.setHours(0, 0, 0, 0);
+  const today = startOfToday();
+  return Math.round((d.getTime() - today.getTime()) / 86400000);
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 export function DealHeader({
@@ -43,50 +58,131 @@ export function DealHeader({
   company,
   contact,
   ownerName,
+  quoteValidUntil,
   onEdit,
 }: Props) {
-  const overdue = isOverdue(deal.promised_delivery_date, deal.stage);
   const contactName = contact
     ? [contact.first_name, contact.last_name].filter(Boolean).join(" ")
     : "";
 
+  // ---- Stage-aware timing pills ----
+  const stage = deal.stage;
+  const isOrderStage = stage === "order_confirmed" || stage === "ready_for_pickup";
+  const showDeadline = stage !== "delivered" && stage !== "cancelled";
+  const showQuoteExpiry = stage === "quote_sent" && !!quoteValidUntil;
+  const showEstimated =
+    isOrderStage && !!deal.estimated_delivery_date;
+
+  // Tone calculations
+  const deadlineDays = daysUntil(deal.promised_delivery_date);
+  const deadlineTone: PillTone =
+    deadlineDays != null && deadlineDays < 0 && stage !== "delivered" && stage !== "cancelled"
+      ? "danger"
+      : "neutral";
+
+  const quoteDays = daysUntil(quoteValidUntil ?? null);
+  const quoteTone: PillTone =
+    quoteDays == null
+      ? "neutral"
+      : quoteDays <= 0
+        ? "danger"
+        : quoteDays <= 2
+          ? "warning"
+          : "neutral";
+
+  const estimatedTone: PillTone = (() => {
+    if (!deal.estimated_delivery_date || !deal.promised_delivery_date) return "neutral";
+    const est = new Date(deal.estimated_delivery_date);
+    const prom = new Date(deal.promised_delivery_date);
+    return est > prom ? "warning" : "neutral";
+  })();
+
   return (
     <div className="rounded-md border border-border bg-card p-6 shadow-sm">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="space-y-2 min-w-0">
-          <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
-            <span>{deal.so_number}</span>
+      {/* Top row: reference numbers + edit button */}
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[12px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <span>SO–{deal.so_number}</span>
             <CopySoButton soNumber={deal.so_number} companyName={company.name} />
-          </div>
+          </span>
           {deal.payday_invoice_number && (
-            <div className="-mt-1 flex items-center gap-1 font-mono text-xs text-muted-foreground">
-              <span>Payday Reikningsnúmer - {deal.payday_invoice_number}</span>
-              <CopyTextButton text={deal.payday_invoice_number} label="Payday-reikningsnúmer" />
-            </div>
+            <>
+              <span className="opacity-50">·</span>
+              <span className="inline-flex items-center gap-1">
+                <span>Payday #{deal.payday_invoice_number}</span>
+                <CopyTextButton text={deal.payday_invoice_number} label="Payday-reikningsnúmer" />
+              </span>
+            </>
           )}
-          <h1 className="text-2xl font-semibold text-foreground md:text-3xl">
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onEdit}
+          className="h-7 px-3 text-[12px]"
+        >
+          {t.actions.edit}
+        </Button>
+      </div>
+
+      {/* Two-column grid */}
+      <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-[1.5fr_1fr] md:gap-8">
+        {/* Left column: identity + contact */}
+        <div className="min-w-0 space-y-3 md:border-r md:border-border md:pr-8">
+          <h1 className="text-2xl font-medium leading-tight text-foreground md:text-[26px]">
             {deal.name}
           </h1>
-          <Link
-            to="/companies/$id"
-            params={{ id: company.id }}
-            onClick={() => rememberCompanyReturnPath()}
-            className="inline-block text-sm font-medium text-ide-navy hover:underline"
-          >
-            {company.name}
-          </Link>
-          {company.billing_company && (
-            <div className="text-xs text-muted-foreground">
-              {t.newCompany.invoiceTo}: {company.billing_company.name}
+
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-[11px] font-semibold text-blue-800">
+              {getInitials(company.name)}
+            </span>
+            <div className="flex flex-wrap items-baseline gap-x-2 text-sm">
+              <Link
+                to="/companies/$id"
+                params={{ id: company.id }}
+                onClick={() => rememberCompanyReturnPath()}
+                className="font-medium text-ide-navy hover:underline"
+              >
+                {company.name}
+              </Link>
+              {company.billing_company && (
+                <span className="text-xs text-muted-foreground">
+                  {t.newCompany.invoiceTo}: {company.billing_company.name}
+                </span>
+              )}
             </div>
-          )}
+          </div>
+
           {contact && (
-            <div className="text-xs text-muted-foreground">
-              {contactName}
-              {contact.email && <> · {contact.email}</>}
-              {contact.phone && <> · {formatPhone(contact.phone)}</>}
+            <div className="space-y-1 text-xs text-muted-foreground">
+              {contactName && (
+                <div className="inline-flex items-center gap-1.5">
+                  <User className="h-4 w-4" />
+                  <span>{contactName}</span>
+                </div>
+              )}
+              {contact.email && (
+                <div>
+                  <a
+                    href={`mailto:${contact.email}`}
+                    className="inline-flex items-center gap-1.5 text-ide-navy hover:underline"
+                  >
+                    <Mail className="h-4 w-4" />
+                    {contact.email}
+                  </a>
+                </div>
+              )}
+              {contact.phone && (
+                <div className="inline-flex items-center gap-1.5">
+                  <Phone className="h-4 w-4" />
+                  {formatPhone(contact.phone)}
+                </div>
+              )}
             </div>
           )}
+
           {ownerName && (
             <div className="text-xs text-muted-foreground">
               {t.deal.owner_id}: {ownerName}
@@ -94,87 +190,29 @@ export function DealHeader({
           )}
         </div>
 
-        <div className="flex flex-col gap-2 md:items-end">
-          <div className="text-sm">
-            <span className="text-muted-foreground">
-              {t.deal.promised_delivery_date}:{" "}
-            </span>
-            <span
-              className={cn(
-                "font-medium",
-                overdue && "text-destructive",
-              )}
-            >
-              {formatDate(deal.promised_delivery_date) || "—"}
-            </span>
-          </div>
-          {deal.estimated_delivery_date && (
-            <div className="text-sm">
-              <span className="text-muted-foreground">
-                {t.deal.estimated_delivery_date}:{" "}
-              </span>
-              <span className="font-medium">
-                {formatDate(deal.estimated_delivery_date)}
-              </span>
-            </div>
+        {/* Right column: timing pills */}
+        <div className="flex flex-col items-start gap-1.5 md:items-end">
+          {showDeadline && deal.promised_delivery_date && (
+            <LabeledPill
+              label="Deadline"
+              value={formatDate(deal.promised_delivery_date)}
+              tone={deadlineTone}
+            />
           )}
-          <div className="flex flex-wrap gap-2 md:justify-end">
-            {deal.stage !== "delivered" &&
-              deal.stage !== "cancelled" &&
-              deal.promised_delivery_date &&
-              (() => {
-                const promised = new Date(deal.promised_delivery_date);
-                const estimated = deal.estimated_delivery_date
-                  ? new Date(deal.estimated_delivery_date)
-                  : null;
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const willMiss = estimated
-                  ? estimated > promised
-                  : promised < today;
-                return willMiss ? (
-                  <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700">
-                    {t.deal.notDelivered}
-                  </span>
-                ) : null;
-              })()}
-            {(() => {
-              const hasInvoice = !!deal.payday_invoice_id;
-              const showNotInvoiced = !hasInvoice && deal.stage === "delivered";
-              const showPaid = hasInvoice && deal.payment_status === "paid";
-              const showUnpaid =
-                hasInvoice &&
-                (deal.payment_status === "unpaid" ||
-                  deal.payment_status === "partial");
-              return (
-                <>
-                  {showNotInvoiced && (
-                    <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700">
-                      {t.invoiceStatus.not_invoiced}
-                    </span>
-                  )}
-                  {hasInvoice && (
-                    <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
-                      {t.invoiceStatus.full}
-                    </span>
-                  )}
-                  {showPaid && (
-                    <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                      {t.paymentStatus.paid}
-                    </span>
-                  )}
-                  {showUnpaid && (
-                    <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
-                      {t.paymentStatus.unpaid}
-                    </span>
-                  )}
-                </>
-              );
-            })()}
-          </div>
-          <Button variant="outline" onClick={onEdit}>
-            {t.actions.edit}
-          </Button>
+          {showQuoteExpiry && (
+            <LabeledPill
+              label="Tilboð rennur út"
+              value={formatDate(quoteValidUntil!)}
+              tone={quoteTone}
+            />
+          )}
+          {showEstimated && (
+            <LabeledPill
+              label="Áætluð móttaka"
+              value={formatDate(deal.estimated_delivery_date)}
+              tone={estimatedTone}
+            />
+          )}
         </div>
       </div>
     </div>

@@ -154,8 +154,10 @@ function DealDetailContent() {
     })();
   }, []);
 
+  const [quoteValidUntil, setQuoteValidUntil] = useState<string | null>(null);
+
   const load = useCallback(async () => {
-    const [dealRes, linesRes, posRes, logRes] = await Promise.all([
+    const [dealRes, linesRes, posRes, logRes, quoteRes] = await Promise.all([
       supabase
         .from("deals")
         .select(
@@ -181,7 +183,16 @@ function DealDetailContent() {
         .eq("deal_id", id)
         .in("type", ["note", "stage_change", "defect_note"])
         .order("created_at", { ascending: false }),
+      supabase
+        .from("quotes")
+        .select("valid_until, sent_at, created_at")
+        .eq("deal_id", id)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
+
+    setQuoteValidUntil(((quoteRes.data as { valid_until: string | null } | null)?.valid_until) ?? null);
 
     if (!dealRes.data) {
       setNotFound(true);
@@ -492,6 +503,7 @@ function DealDetailContent() {
         company={company}
         contact={contact}
         ownerName={ownerName}
+        quoteValidUntil={quoteValidUntil}
         onEdit={() => setEditOpen(true)}
       />
 

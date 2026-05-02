@@ -42,6 +42,7 @@ import { CreatePoDrawer } from "@/components/innkaup/CreatePoDrawer";
 import { PdfPreviewOverlay } from "@/components/PdfPreviewOverlay";
 import { markPoInvoiceViewed } from "@/lib/poInvoiceViewed";
 import { CopyTextButton } from "@/components/deals-list/DealsList";
+import { LabeledPill } from "@/components/deal-detail/LabeledPill";
 
 type PORow = Database["public"]["Tables"]["purchase_orders"]["Row"];
 
@@ -273,25 +274,21 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
     opts?: { subdued?: boolean; emphasized?: boolean; tone?: "purple" | "green" },
   ) => {
     if (!value) return null;
-    const toneClass =
-      opts?.tone === "purple"
-        ? "bg-purple-100 text-purple-800 border border-purple-200"
-        : opts?.tone === "green"
-          ? "bg-green-100 text-green-800 border border-green-200"
-          : "bg-background/60";
+    const tone =
+      opts?.tone === "green"
+        ? "success"
+        : opts?.tone === "purple"
+          ? "purple"
+          : opts?.emphasized
+            ? "success"
+            : "neutral";
     return (
-      <span
-        className={cn(
-          "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px]",
-          toneClass,
-          !opts?.tone && opts?.subdued && "text-muted-foreground/70",
-          !opts?.tone && opts?.emphasized && "font-medium text-foreground",
-          !opts?.tone && !opts?.subdued && !opts?.emphasized && "text-muted-foreground",
-        )}
-      >
-        <span className="uppercase tracking-wide opacity-80">{label}:</span>
-        <span className="tabular-nums">{formatDate(value)}</span>
-      </span>
+      <LabeledPill
+        label={label}
+        value={formatDate(value)}
+        tone={tone as "success" | "purple" | "neutral"}
+        className={opts?.subdued ? "opacity-70" : undefined}
+      />
     );
   };
 
@@ -505,13 +502,12 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
           </>
         )}
         {isDelivered && (
-          <span className="inline-flex items-center gap-1 rounded-md border border-green-300 bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-900">
-            <CheckCircle2 className="h-3 w-3" />
-            Afhent
-            <span className="tabular-nums">
-              {formatDate(po.delivered_to_customer_at)}
-            </span>
-          </span>
+          <LabeledPill
+            label="Afhent"
+            value={formatDate(po.delivered_to_customer_at)}
+            tone="success"
+            icon={<CheckCircle2 className="h-3 w-3" />}
+          />
         )}
       </div>
 
