@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MoreHorizontal, Truck, CheckCircle2, Plus, Download } from "lucide-react";
+import { MoreHorizontal, Truck, CheckCircle2, Plus, Download, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
