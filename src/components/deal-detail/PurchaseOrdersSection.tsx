@@ -270,27 +270,15 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
     );
   };
 
-  // Phase 2 stub — disabled buttons with tooltip
-  const phase2Button = (label: string, primary: boolean) => (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span tabIndex={0}>
-            <Button
-              size="sm"
-              variant={primary ? "default" : "outline"}
-              disabled
-              className={
-                primary ? "bg-ide-navy text-white hover:bg-ide-navy-hover" : undefined
-              }
-            >
-              {label}
-            </Button>
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="top">{t.purchaseOrder.phase2Tooltip}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+  const actionButton = (label: string, primary: boolean, onClick: () => void) => (
+    <Button
+      size="sm"
+      variant={primary ? "default" : "outline"}
+      onClick={onClick}
+      className={primary ? "bg-ide-navy text-white hover:bg-ide-navy-hover" : undefined}
+    >
+      {label}
+    </Button>
   );
 
   const deliveredButton = (primary: boolean) => (
@@ -331,19 +319,26 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
     if (isReceived && !hasInvoice) {
       buttons.push(
         <span key="reg-inv">
-          {phase2Button(t.purchaseOrder.actionRegisterInvoice, true)}
+          {actionButton(t.purchaseOrder.actionRegisterInvoice, true, () => {
+            setInvoiceEditMode(false);
+            setInvoiceOpen(true);
+          })}
         </span>,
       );
     } else if (isReceived && hasInvoice && !isInvoiceApproved) {
       buttons.push(
         <span key="approve-inv">
-          {phase2Button(t.purchaseOrder.actionApproveInvoice, true)}
+          {actionButton(t.purchaseOrder.actionApproveInvoice, true, () =>
+            setApproveOpen(true),
+          )}
         </span>,
       );
     } else if (isReceived && isInvoiceApproved && !isPaid) {
       buttons.push(
         <span key="mark-paid">
-          {phase2Button(t.purchaseOrder.actionMarkPaid, true)}
+          {actionButton(t.purchaseOrder.actionMarkPaid, true, () =>
+            setPaidOpen(true),
+          )}
         </span>,
       );
     }
