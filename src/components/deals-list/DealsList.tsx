@@ -94,8 +94,13 @@ function stepLabel(step: StepKey): string {
 }
 
 // Substep badge for a stage (shown inside the deal card stage button)
-function stageSubstepLabel(stage: DealStage, paydayInvoiceId?: string | null): string | null {
+function stageSubstepLabel(
+  stage: DealStage,
+  paydayInvoiceId?: string | null,
+  trackingNumbers?: string[] | null,
+): string | null {
   if (stage === "quote_sent") return t.deal.substepSent;
+  if (stage === "order_confirmed" && (trackingNumbers?.length ?? 0) > 0) return t.deal.substepOnTheWay;
   if (stage === "ready_for_pickup") return t.deal.substepInHouse;
   if (stage === "delivered" && !paydayInvoiceId) return t.deal.substepMissingInvoice;
   return null;
@@ -1121,10 +1126,12 @@ const POPOVER_GROUPS: Array<{ step: StepKey; stages: DealStage[] }> = [
 function StagePopover({
   current,
   paydayInvoiceId,
+  trackingNumbers,
   onChange,
 }: {
   current: DealStage;
   paydayInvoiceId?: string | null;
+  trackingNumbers?: string[] | null;
   onChange: (s: DealStage) => void | Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
@@ -1132,7 +1139,7 @@ function StagePopover({
   const [busy, setBusy] = useState(false);
 
   const styles = STAGE_STYLES[current];
-  const sub = stageSubstepLabel(current, paydayInvoiceId);
+  const sub = stageSubstepLabel(current, paydayInvoiceId, trackingNumbers);
   const triggerLabel = stepLabel(stageToStep(current));
 
   const close = () => {
@@ -1296,7 +1303,7 @@ function DealCard({
           <CopySoButton soNumber={deal.so_number} companyName={deal.company?.name} />
         </div>
         <div onClick={(e) => e.stopPropagation()}>
-          <StagePopover current={deal.stage} paydayInvoiceId={deal.payday_invoice_id} onChange={onStageChange} />
+          <StagePopover current={deal.stage} paydayInvoiceId={deal.payday_invoice_id} trackingNumbers={deal.tracking_numbers} onChange={onStageChange} />
         </div>
         {showDefectBadge && (
           <div className="flex flex-wrap gap-1">

@@ -402,6 +402,7 @@ export const t = {
     substepSent:              'Sent',
     substepInHouse:           'Í húsi',
     substepMissingInvoice:    'Vantar reikning',
+    substepOnTheWay:          'Á leiðinni',
     markAsSent:               'Tilboð sent',
     markAsSentConfirm:        "Þegar tilboð er sett í 'sent' verða sölulínur læstar. Halda áfram?",
     markAsSentConfirmYes:     'Já, senda',
