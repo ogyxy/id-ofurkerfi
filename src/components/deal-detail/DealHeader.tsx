@@ -28,22 +28,6 @@ interface Props {
   onEdit: () => void;
 }
 
-const invoiceColors: Record<
-  Database["public"]["Enums"]["invoice_status"],
-  string
-> = {
-  not_invoiced: "bg-gray-100 text-gray-700",
-  full: "bg-green-100 text-green-700",
-};
-
-const paymentColors: Record<
-  Database["public"]["Enums"]["payment_status"],
-  string
-> = {
-  unpaid: "bg-amber-100 text-amber-800",
-  partial: "bg-blue-100 text-blue-800",
-  paid: "bg-green-100 text-green-800",
-};
 
 function isOverdue(date: string | null, stage: Deal["stage"]) {
   if (!date) return false;
