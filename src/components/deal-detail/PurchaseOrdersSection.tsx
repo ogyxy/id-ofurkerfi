@@ -458,10 +458,17 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
             })}
             {po.status === "invoiced" && (
               <span className="inline-flex items-center gap-1">
-                {datePill(
-                  t.purchaseOrder.invoiceRegisteredShort,
-                  po.invoice_received_date,
-                )}
+                {isInvoiceApproved
+                  ? datePill(
+                      t.purchaseOrder.pillInvoiceApproved,
+                      po.invoice_approved_at
+                        ? po.invoice_approved_at.split("T")[0]
+                        : null,
+                    )
+                  : datePill(
+                      t.purchaseOrder.invoiceRegisteredShort,
+                      po.invoice_received_date,
+                    )}
                 {invoiceMismatch && (
                   <TooltipProvider>
                     <Tooltip>
