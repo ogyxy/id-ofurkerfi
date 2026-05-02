@@ -633,7 +633,7 @@ export const t = {
     pillOrderedEnRoute:      'Pantað (á leiðinni)',
     rowMenuEditPo:           'Breyta PO',
     descriptionLabel:        'Lýsing',
-    descriptionPlaceholder:  'T.d. Vörur sem var ekki hægt að panta fyrr en núna',
+    descriptionPlaceholder:  'T.d. "Peysur", "Bollar" o.s.frv.',
     confirmOrderTitle:       'Staðfesta pöntun?',
     confirmOrderBody:        'Viltu bæta við PO strax?',
     confirmOrderWithoutPo:   'Staðfesta án PO',
