@@ -3,17 +3,22 @@ import { t } from "@/lib/sala_translations_is";
 import { formatDate } from "@/lib/sala_translations_is";
 import type { POStatus } from "./poConstants";
 
+type LogPoPrefix = "Innkaup" | "Reikningur";
+
 interface LogPoActivityArgs {
   dealId: string | null | undefined;
   companyId?: string | null | undefined;
   poNumber: string;
   body: string;
   createdBy: string | null;
+  prefix?: LogPoPrefix;
 }
 
 /**
  * Insert a note activity onto the linked deal so PO actions show in the deal log.
  * No-op when there is no linked deal.
+ *
+ * Body format: "{prefix} · {PO#}: {body}"  (default prefix = "Innkaup")
  */
 async function logPoActivity({
   dealId,
@@ -21,6 +26,7 @@ async function logPoActivity({
   poNumber,
   body,
   createdBy,
+  prefix = "Innkaup",
 }: LogPoActivityArgs) {
   if (!dealId) return;
   let resolvedCompanyId = companyId ?? null;
@@ -36,7 +42,7 @@ async function logPoActivity({
     deal_id: dealId,
     company_id: resolvedCompanyId,
     type: "note",
-    body: `${poNumber}: ${body}`,
+    body: `${prefix} · ${poNumber}: ${body}`,
     created_by: createdBy,
   });
 }
