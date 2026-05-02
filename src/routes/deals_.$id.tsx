@@ -679,6 +679,43 @@ function DealDetailContent() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Confirm-order: quote_sent → order_confirmed */}
+      <AlertDialog
+        open={confirmOrderOpen}
+        onOpenChange={setConfirmOrderOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.deal.confirmOrderTitle}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.deal.confirmOrderBody}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                setConfirmOrderOpen(false);
+                await performStageUpdate("order_confirmed");
+              }}
+            >
+              {t.deal.confirmOrderWithoutPo}
+            </Button>
+            <Button
+              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+              onClick={async () => {
+                setConfirmOrderOpen(false);
+                await performStageUpdate("order_confirmed");
+                setCreatePoOpen(true);
+              }}
+            >
+              {t.deal.confirmOrderWithPo}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <LinkPaydayInvoiceModal
         open={linkPaydayOpen}
         onOpenChange={setLinkPaydayOpen}
