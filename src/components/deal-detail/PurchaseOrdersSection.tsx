@@ -268,16 +268,23 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
   const datePill = (
     label: string,
     value: string | null,
-    opts?: { subdued?: boolean; emphasized?: boolean },
+    opts?: { subdued?: boolean; emphasized?: boolean; tone?: "purple" | "green" },
   ) => {
     if (!value) return null;
+    const toneClass =
+      opts?.tone === "purple"
+        ? "bg-purple-100 text-purple-800 border border-purple-200"
+        : opts?.tone === "green"
+          ? "bg-green-100 text-green-800 border border-green-200"
+          : "bg-background/60";
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1 rounded-md bg-background/60 px-2 py-0.5 text-[11px]",
-          opts?.subdued && "text-muted-foreground/70",
-          opts?.emphasized && "font-medium text-foreground",
-          !opts?.subdued && !opts?.emphasized && "text-muted-foreground",
+          "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px]",
+          toneClass,
+          !opts?.tone && opts?.subdued && "text-muted-foreground/70",
+          !opts?.tone && opts?.emphasized && "font-medium text-foreground",
+          !opts?.tone && !opts?.subdued && !opts?.emphasized && "text-muted-foreground",
         )}
       >
         <span className="uppercase tracking-wide opacity-80">{label}:</span>
@@ -454,7 +461,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
               subdued: true,
             })}
             {datePill(t.purchaseOrder.received_date, po.received_date, {
-              emphasized: true,
+              tone: "purple",
             })}
             {po.status === "invoiced" && (
               <span className="inline-flex items-center gap-1">
@@ -464,6 +471,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
                       po.invoice_approved_at
                         ? po.invoice_approved_at.split("T")[0]
                         : null,
+                      { tone: "green" },
                     )
                   : datePill(
                       t.purchaseOrder.invoiceRegisteredShort,
