@@ -94,8 +94,13 @@ function stepLabel(step: StepKey): string {
 }
 
 // Substep badge for a stage (shown inside the deal card stage button)
-function stageSubstepLabel(stage: DealStage, paydayInvoiceId?: string | null): string | null {
+function stageSubstepLabel(
+  stage: DealStage,
+  paydayInvoiceId?: string | null,
+  trackingNumbers?: string[] | null,
+): string | null {
   if (stage === "quote_sent") return t.deal.substepSent;
+  if (stage === "order_confirmed" && (trackingNumbers?.length ?? 0) > 0) return t.deal.substepOnTheWay;
   if (stage === "ready_for_pickup") return t.deal.substepInHouse;
   if (stage === "delivered" && !paydayInvoiceId) return t.deal.substepMissingInvoice;
   return null;
