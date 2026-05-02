@@ -31,7 +31,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { TrackingCard } from "@/components/tracking/TrackingCard";
-import { logPoReceived } from "@/lib/poActivityLog";
+import { logPoReceived, logPoDeliveredToCustomer, logPoRevertedToOrdered } from "@/lib/poActivityLog";
+import {
+  InvoiceDrawer,
+  ApproveInvoiceDialog,
+  MarkPaidDrawer,
+  EditExchangeDrawer,
+  EditLinesDrawer,
+  DeletePoDialog,
+} from "@/components/deal-detail/PoActionDrawers";
 
 type PORow = Database["public"]["Tables"]["purchase_orders"]["Row"];
 
