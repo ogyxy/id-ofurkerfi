@@ -144,6 +144,23 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
 
   const [revertOpen, setRevertOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [invoiceEditMode, setInvoiceEditMode] = useState(false);
+  const [approveOpen, setApproveOpen] = useState(false);
+  const [paidOpen, setPaidOpen] = useState(false);
+  const [exchangeOpen, setExchangeOpen] = useState(false);
+  const [linesOpen, setLinesOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  // Invoice mismatch warning (shown next to invoice-registered date pill)
+  const invoiceAmount = po.supplier_invoice_amount != null
+    ? Number(po.supplier_invoice_amount)
+    : null;
+  const orderedAmount = Number(po.amount ?? 0);
+  const invoiceDiff = invoiceAmount != null
+    ? +(invoiceAmount - orderedAmount).toFixed(2)
+    : 0;
+  const invoiceMismatch = invoiceAmount != null && Math.abs(invoiceDiff) > 0.01;
 
   // ---------------------------------------------------------------------------
   // Actions wired in Phase 1
