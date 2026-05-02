@@ -213,8 +213,6 @@ export function DealHeader({
               tone={estimatedTone}
             />
           )}
-          {/* Suppress unused var warning */}
-          <span className="hidden">{isQuoteStage ? "" : ""}</span>
         </div>
       </div>
     </div>
