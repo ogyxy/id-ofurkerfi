@@ -154,8 +154,10 @@ function DealDetailContent() {
     })();
   }, []);
 
+  const [quoteValidUntil, setQuoteValidUntil] = useState<string | null>(null);
+
   const load = useCallback(async () => {
-    const [dealRes, linesRes, posRes, logRes] = await Promise.all([
+    const [dealRes, linesRes, posRes, logRes, quoteRes] = await Promise.all([
       supabase
         .from("deals")
         .select(
