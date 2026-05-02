@@ -188,12 +188,10 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
       setBusy(false);
       return;
     }
-    // Saga entry — Phase 2 will format with "Innkaup ·" prefix
-    await supabase.from("activities").insert({
-      deal_id: dealId,
-      type: "note",
-      body: `${po.po_number}: afhent viðskiptavini`,
-      created_by: currentProfileId,
+    await logPoDeliveredToCustomer({
+      dealId,
+      poNumber: po.po_number,
+      createdBy: currentProfileId,
     });
     toast.success(t.status.savedSuccessfully);
     setBusy(false);
