@@ -745,7 +745,7 @@ function FileDownloadButtons({ files }: { files: PoFile[] }) {
                   onClick={handleIconClick}
                   aria-label={triggerLabel}
                 >
-                  <Download className="h-4 w-4" />
+                  <Eye className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top">
