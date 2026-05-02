@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { t, formatNumber } from "@/lib/sala_translations_is";
+import { t } from "@/lib/sala_translations_is";
 import { pathSafe } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,8 +30,6 @@ import {
   logPoInvoiceEdited,
   logPoInvoiceApproved,
   logPoPaid,
-  logPoLinesEdited,
-  logPoExchangeRateEdited,
   logPoDeleted,
 } from "@/lib/poActivityLog";
 
