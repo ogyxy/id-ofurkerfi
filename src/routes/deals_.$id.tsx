@@ -246,6 +246,26 @@ function DealDetailContent() {
     load();
   }, [load]);
 
+  // Scroll to / highlight the PO row when navigated to with #po-:id hash.
+  // Triggered after data loads and whenever the hash changes.
+  useEffect(() => {
+    if (loading) return;
+    const applyHash = () => {
+      const hash = window.location.hash;
+      if (!hash.startsWith("#po-")) return;
+      const el = document.getElementById(hash.slice(1));
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-ide-navy", "ring-offset-2");
+      window.setTimeout(() => {
+        el.classList.remove("ring-2", "ring-ide-navy", "ring-offset-2");
+      }, 2000);
+    };
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, [loading, pos.length]);
+
   // Live exchange rates
   useEffect(() => {
     let cancelled = false;
