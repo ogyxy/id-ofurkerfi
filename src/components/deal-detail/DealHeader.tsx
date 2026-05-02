@@ -129,7 +129,7 @@ export function DealHeader({
       {/* Two-column grid */}
       <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-[1.5fr_1fr] md:gap-8">
         {/* Left column: identity + contact */}
-        <div className="min-w-0 space-y-3 md:border-r md:border-border md:pr-8">
+        <div className="min-w-0 space-y-3">
           <h1 className="text-2xl font-medium leading-tight text-foreground md:text-[26px]">
             {deal.name}
           </h1>
@@ -182,36 +182,46 @@ export function DealHeader({
               )}
             </div>
           )}
-
-          {ownerName && (
-            <div className="text-xs text-muted-foreground">
-              {t.deal.owner_id}: {ownerName}
-            </div>
-          )}
         </div>
 
-        {/* Right column: timing pills */}
-        <div className="flex flex-col items-start gap-1.5 md:items-end">
-          {showDeadline && deal.promised_delivery_date && (
-            <LabeledPill
-              label="Deadline"
-              value={formatDate(deal.promised_delivery_date)}
-              tone={deadlineTone}
-            />
-          )}
-          {showQuoteExpiry && (
-            <LabeledPill
-              label="Tilboð rennur út"
-              value={formatDate(quoteValidUntil!)}
-              tone={quoteTone}
-            />
-          )}
-          {showEstimated && (
-            <LabeledPill
-              label="Áætluð móttaka"
-              value={formatDate(deal.estimated_delivery_date)}
-              tone={estimatedTone}
-            />
+        {/* Right column: timing pills + söluaðili */}
+        <div className="flex flex-col gap-4 border-t border-border pt-4 md:border-t-0 md:border-l md:border-border/60 md:pl-6 md:pt-0">
+          <div className="flex flex-col items-start gap-1.5 md:items-end">
+            {showDeadline && deal.promised_delivery_date && (
+              <LabeledPill
+                label="Deadline"
+                value={formatDate(deal.promised_delivery_date)}
+                tone={deadlineTone}
+              />
+            )}
+            {showQuoteExpiry && (
+              <LabeledPill
+                label="Tilboð rennur út"
+                value={formatDate(quoteValidUntil!)}
+                tone={quoteTone}
+              />
+            )}
+            {showEstimated && (
+              <LabeledPill
+                label="Áætluð móttaka"
+                value={formatDate(deal.estimated_delivery_date)}
+                tone={estimatedTone}
+              />
+            )}
+          </div>
+
+          {ownerName && (
+            <div className="flex flex-col gap-1.5 md:items-end">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                {t.deal.owner_id}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-[11px] font-semibold text-amber-800">
+                  {getInitials(ownerName)}
+                </span>
+                <span className="text-sm font-medium text-foreground">{ownerName}</span>
+              </div>
+            </div>
           )}
         </div>
       </div>
