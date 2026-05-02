@@ -40,6 +40,7 @@ import {
   EditLinesDrawer,
   DeletePoDialog,
 } from "@/components/deal-detail/PoActionDrawers";
+import { PdfPreviewOverlay } from "@/components/PdfPreviewOverlay";
 
 type PORow = Database["public"]["Tables"]["purchase_orders"]["Row"];
 
