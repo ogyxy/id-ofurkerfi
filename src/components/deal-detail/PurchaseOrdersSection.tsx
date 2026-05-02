@@ -117,9 +117,10 @@ interface RowProps {
   dealId: string;
   currentProfileId: string | null;
   onChanged: () => void | Promise<void>;
+  files: PoFile[];
 }
 
-function PoRow({ po, dealId, currentProfileId, onChanged }: RowProps) {
+function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
   const style = PO_STATUS_STYLES[po.status];
   const total = Number(po.amount ?? 0) + Number(po.shipping_cost ?? 0);
   const totalIsk = po.exchange_rate ? total * Number(po.exchange_rate) : null;
