@@ -710,6 +710,7 @@ export const t = {
     fileLabelOrderConfirmation:     'Staðfesting',
     fileLabelInvoice:               'Reikningur frá birgi',
     actionViewInvoice:              'Skoða reikning',
+    invoiceNotViewedWarning:        'Þú hefur ekki opnað reikninginn. Skoða hann áður en hann er samþykktur?',
   },
 
   supplier: {
