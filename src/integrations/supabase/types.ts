@@ -976,6 +976,8 @@ export type Database = {
           created_at: string
           currency: string
           deal_id: string
+          delivered_to_customer_at: string | null
+          delivered_to_customer_by: string | null
           exchange_rate: number | null
           expected_delivery_date: string | null
           id: string
@@ -1007,6 +1009,8 @@ export type Database = {
           created_at?: string
           currency?: string
           deal_id: string
+          delivered_to_customer_at?: string | null
+          delivered_to_customer_by?: string | null
           exchange_rate?: number | null
           expected_delivery_date?: string | null
           id?: string
@@ -1038,6 +1042,8 @@ export type Database = {
           created_at?: string
           currency?: string
           deal_id?: string
+          delivered_to_customer_at?: string | null
+          delivered_to_customer_by?: string | null
           exchange_rate?: number | null
           expected_delivery_date?: string | null
           id?: string
@@ -1068,6 +1074,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_delivered_to_customer_by_fkey"
+            columns: ["delivered_to_customer_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
