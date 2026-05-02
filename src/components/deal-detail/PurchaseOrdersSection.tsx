@@ -273,25 +273,21 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
     opts?: { subdued?: boolean; emphasized?: boolean; tone?: "purple" | "green" },
   ) => {
     if (!value) return null;
-    const toneClass =
-      opts?.tone === "purple"
-        ? "bg-purple-100 text-purple-800 border border-purple-200"
-        : opts?.tone === "green"
-          ? "bg-green-100 text-green-800 border border-green-200"
-          : "bg-background/60";
+    const tone =
+      opts?.tone === "green"
+        ? "success"
+        : opts?.tone === "purple"
+          ? "purple"
+          : opts?.emphasized
+            ? "success"
+            : "neutral";
     return (
-      <span
-        className={cn(
-          "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px]",
-          toneClass,
-          !opts?.tone && opts?.subdued && "text-muted-foreground/70",
-          !opts?.tone && opts?.emphasized && "font-medium text-foreground",
-          !opts?.tone && !opts?.subdued && !opts?.emphasized && "text-muted-foreground",
-        )}
-      >
-        <span className="uppercase tracking-wide opacity-80">{label}:</span>
-        <span className="tabular-nums">{formatDate(value)}</span>
-      </span>
+      <LabeledPill
+        label={label}
+        value={formatDate(value)}
+        tone={tone as "success" | "purple" | "neutral"}
+        className={opts?.subdued ? "opacity-70" : undefined}
+      />
     );
   };
 
