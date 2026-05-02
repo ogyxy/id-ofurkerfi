@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MoreHorizontal, Truck, CheckCircle2, Download, AlertTriangle } from "lucide-react";
+import { MoreHorizontal, Truck, CheckCircle2, Eye, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +40,7 @@ import {
 } from "@/components/deal-detail/PoActionDrawers";
 import { CreatePoDrawer } from "@/components/innkaup/CreatePoDrawer";
 import { PdfPreviewOverlay } from "@/components/PdfPreviewOverlay";
+import { markPoInvoiceViewed } from "@/lib/poInvoiceViewed";
 
 type PORow = Database["public"]["Tables"]["purchase_orders"]["Row"];
 
@@ -712,9 +713,15 @@ function FileDownloadButtons({ files }: { files: PoFile[] }) {
     if (isPdf(f)) {
       setPreviewFile(f);
       setPreviewUrl(url);
+      if (f.file_type === "invoice" && f.po_id) {
+        markPoInvoiceViewed(f.po_id);
+      }
     } else {
       // Non-PDF file: fall back to direct download / open in new tab.
       window.open(url, "_blank", "noopener,noreferrer");
+      if (f.file_type === "invoice" && f.po_id) {
+        markPoInvoiceViewed(f.po_id);
+      }
     }
   };
 
@@ -745,7 +752,7 @@ function FileDownloadButtons({ files }: { files: PoFile[] }) {
                   onClick={handleIconClick}
                   aria-label={triggerLabel}
                 >
-                  <Download className="h-4 w-4" />
+                  <Eye className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top">
@@ -766,7 +773,7 @@ function FileDownloadButtons({ files }: { files: PoFile[] }) {
                   className="h-8 w-8"
                   aria-label={triggerLabel}
                 >
-                  <Download className="h-4 w-4" />
+                  <Eye className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">

@@ -5,6 +5,11 @@ import { PdfPreviewOverlay } from "@/components/PdfPreviewOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
+import {
+  hasViewedPoInvoice,
+  markPoInvoiceViewed,
+  subscribePoInvoiceViewed,
+} from "@/lib/poInvoiceViewed";
 import { pathSafe } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -266,6 +271,15 @@ export function ApproveInvoiceDialog({
   const [previewName, setPreviewName] = useState<string | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
 
+  const [viewed, setViewed] = useState(() => hasViewedPoInvoice(po.id));
+
+  useEffect(() => {
+    setViewed(hasViewedPoInvoice(po.id));
+    return subscribePoInvoiceViewed(() => {
+      setViewed(hasViewedPoInvoice(po.id));
+    });
+  }, [po.id, open]);
+
   const openInvoicePreview = async () => {
     onOpenChange(false);
     if (loadingPreview) return;
@@ -304,6 +318,7 @@ export function ApproveInvoiceDialog({
     }
     setPreviewUrl(url);
     setPreviewName(f.original_filename ?? null);
+    markPoInvoiceViewed(po.id);
   };
 
   const confirm = async () => {
@@ -341,6 +356,11 @@ export function ApproveInvoiceDialog({
               {po.po_number} · {po.supplier_invoice_number ?? "—"}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {!viewed && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {t.purchaseOrder.invoiceNotViewedWarning}
+            </div>
+          )}
           <AlertDialogFooter>
             <Button
               type="button"
