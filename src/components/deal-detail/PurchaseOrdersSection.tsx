@@ -446,7 +446,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged }: RowProps) {
             <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
             <AlertDialogAction
               onClick={revertToOrdered}
-              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+              className="bg-orange-600 text-white hover:bg-orange-700"
             >
               {t.purchaseOrder.revertConfirmYes}
             </AlertDialogAction>
