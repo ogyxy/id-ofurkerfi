@@ -192,17 +192,34 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
   const markDeliveredToCustomer = async () => {
     if (busy) return;
     setBusy(true);
+    const today = new Date().toISOString().split("T")[0];
+    // Direct-to-customer case: if PO is still in ordered state, also mark as
+    // received (set received_date + status) before stamping delivered_to_customer_at.
+    const wasOrdered = po.status === "ordered";
+    const patch: Partial<PORow> = {
+      delivered_to_customer_at: new Date().toISOString(),
+      delivered_to_customer_by: currentProfileId,
+    };
+    if (wasOrdered) {
+      patch.status = "received";
+      patch.received_date = today;
+    }
     const { error } = await supabase
       .from("purchase_orders")
-      .update({
-        delivered_to_customer_at: new Date().toISOString(),
-        delivered_to_customer_by: currentProfileId,
-      })
+      .update(patch)
       .eq("id", po.id);
     if (error) {
       toast.error(t.status.somethingWentWrong);
       setBusy(false);
       return;
+    }
+    if (wasOrdered) {
+      await logPoReceived({
+        dealId,
+        poNumber: po.po_number,
+        receivedDate: today,
+        createdBy: currentProfileId,
+      });
     }
     await logPoDeliveredToCustomer({
       dealId,
