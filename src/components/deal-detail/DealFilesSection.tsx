@@ -180,6 +180,7 @@ export function DealFilesSection({
         title={t.upload.title}
         fileTypes={DEAL_FILE_TYPES.map((ft) => ({ value: ft, label: t.fileType[ft] }))}
         smartGuess={smartGuessDealFileType}
+        defaultFileType="mockup"
         uploadOne={async (file, fileType) => {
           const safe = pathSafe(companyName);
           const ts = Math.floor(Date.now() / 1000);
