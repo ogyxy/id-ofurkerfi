@@ -590,14 +590,22 @@ interface RowMenuProps {
   hasInvoice: boolean;
   poStatus: Database["public"]["Enums"]["po_status"];
   onRevertClick: () => void;
+  onEditExchange: () => void;
+  onEditLines: () => void;
+  onEditInvoice: () => void;
+  onDelete: () => void;
 }
 
-function RowMenu({ isReceived, hasInvoice, poStatus, onRevertClick }: RowMenuProps) {
-  // Phase 2 will wire the editor drawers; for now they are visible but no-op.
-  const stub = () => {
-    toast.info(t.purchaseOrder.phase2Tooltip);
-  };
-
+function RowMenu({
+  isReceived,
+  hasInvoice,
+  poStatus,
+  onRevertClick,
+  onEditExchange,
+  onEditLines,
+  onEditInvoice,
+  onDelete,
+}: RowMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -606,14 +614,14 @@ function RowMenu({ isReceived, hasInvoice, poStatus, onRevertClick }: RowMenuPro
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onClick={stub}>
+        <DropdownMenuItem onClick={onEditExchange}>
           {t.purchaseOrder.rowMenuEditExchange}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={stub}>
+        <DropdownMenuItem onClick={onEditLines}>
           {t.purchaseOrder.rowMenuEditLines}
         </DropdownMenuItem>
         {hasInvoice && (
-          <DropdownMenuItem onClick={stub}>
+          <DropdownMenuItem onClick={onEditInvoice}>
             {t.purchaseOrder.rowMenuEditInvoice}
           </DropdownMenuItem>
         )}
@@ -628,7 +636,7 @@ function RowMenu({ isReceived, hasInvoice, poStatus, onRevertClick }: RowMenuPro
         {poStatus === "ordered" && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={stub} className="text-red-600">
+            <DropdownMenuItem onClick={onDelete} className="text-red-600">
               {t.purchaseOrder.rowMenuDelete}
             </DropdownMenuItem>
           </>
