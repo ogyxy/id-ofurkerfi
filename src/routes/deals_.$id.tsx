@@ -364,6 +364,12 @@ function DealDetailContent() {
       setDefectModalOpen(true);
       return;
     }
+    // Intercept "Staðfesta pöntun" (quote_sent → order_confirmed) to offer
+    // the option to immediately add a PO.
+    if (next === "order_confirmed" && deal.stage === "quote_sent") {
+      setConfirmOrderOpen(true);
+      return;
+    }
     // Intercept "Komin í hús" to cascade with PO state
     if (next === "ready_for_pickup" && deal.stage === "order_confirmed") {
       const linked = await fetchLinkedPos(supabase, deal.id);
