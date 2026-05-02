@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { MoreHorizontal, Truck, CheckCircle2, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { MoreHorizontal, Truck, CheckCircle2, Plus, Download } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,12 +58,41 @@ interface Props {
  *
  * The PO detail screen is gone — everything happens inline here.
  */
+type PoFile = Database["public"]["Tables"]["po_files"]["Row"];
+
 export function PurchaseOrdersSection({
   dealId,
   pos,
   currentProfileId,
   onChanged,
 }: Props) {
+  const [filesByPo, setFilesByPo] = useState<Record<string, PoFile[]>>({});
+
+  useEffect(() => {
+    const ids = pos.map((p) => p.id);
+    if (ids.length === 0) {
+      setFilesByPo({});
+      return;
+    }
+    let cancelled = false;
+    void supabase
+      .from("po_files")
+      .select("*")
+      .in("po_id", ids)
+      .order("uploaded_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (cancelled || error || !data) return;
+        const grouped: Record<string, PoFile[]> = {};
+        for (const f of data as PoFile[]) {
+          (grouped[f.po_id] ??= []).push(f);
+        }
+        setFilesByPo(grouped);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pos]);
+
   return (
     <div className="rounded-md border border-border bg-card p-4 shadow-sm">
       <div className="mb-3 text-sm font-semibold">{t.purchaseOrder.title}</div>
@@ -75,6 +104,7 @@ export function PurchaseOrdersSection({
             dealId={dealId}
             currentProfileId={currentProfileId}
             onChanged={onChanged}
+            files={filesByPo[po.id] ?? []}
           />
         ))}
       </div>
@@ -87,9 +117,10 @@ interface RowProps {
   dealId: string;
   currentProfileId: string | null;
   onChanged: () => void | Promise<void>;
+  files: PoFile[];
 }
 
-function PoRow({ po, dealId, currentProfileId, onChanged }: RowProps) {
+function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
   const style = PO_STATUS_STYLES[po.status];
   const total = Number(po.amount ?? 0) + Number(po.shipping_cost ?? 0);
   const totalIsk = po.exchange_rate ? total * Number(po.exchange_rate) : null;
@@ -352,6 +383,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged }: RowProps) {
               {po.currency} {formatNumber(total, 2)}
             </div>
           </div>
+          <FileDownloadButtons files={files} />
           <RowMenu
             isReceived={isReceived}
             hasInvoice={hasInvoice}
@@ -421,6 +453,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged }: RowProps) {
           dealId={dealId}
           initial={po.tracking_numbers ?? []}
           bare
+          inlineHeader
         />
       </div>
 
@@ -507,5 +540,66 @@ function RowMenu({ isReceived, hasInvoice, poStatus, onRevertClick }: RowMenuPro
         )}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/**
+ * Per-PO download buttons. Renders one icon button per uploaded file
+ * (e.g. order confirmation uploaded at PO creation, supplier invoice in Phase 2).
+ * Files are stored in the private "po_files" bucket — we generate a short-lived
+ * signed URL and trigger a download in a new tab.
+ */
+function FileDownloadButtons({ files }: { files: PoFile[] }) {
+  if (!files || files.length === 0) return null;
+
+  const labelFor = (f: PoFile): string => {
+    if (f.file_type === "order_confirmation") return "Pöntunarstaðfesting";
+    if (f.file_type === "invoice") return "Reikningur";
+    return f.original_filename ?? "Skjal";
+  };
+
+  const handleDownload = async (f: PoFile) => {
+    if (!f.storage_path) {
+      if (f.file_url) window.open(f.file_url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    const { data, error } = await supabase.storage
+      .from("po_files")
+      .createSignedUrl(f.storage_path, 60);
+    if (error || !data?.signedUrl) {
+      toast.error(t.status.somethingWentWrong);
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <TooltipProvider>
+      <div className="flex items-center gap-1">
+        {files.map((f) => (
+          <Tooltip key={f.id}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => void handleDownload(f)}
+                aria-label={`Sækja ${labelFor(f)}`}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              {labelFor(f)}
+              {f.original_filename && (
+                <span className="ml-1 text-muted-foreground">
+                  · {f.original_filename}
+                </span>
+              )}
+            </TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+    </TooltipProvider>
   );
 }
