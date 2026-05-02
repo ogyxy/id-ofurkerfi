@@ -40,6 +40,7 @@ import {
 } from "@/components/deal-detail/PoActionDrawers";
 import { CreatePoDrawer } from "@/components/innkaup/CreatePoDrawer";
 import { PdfPreviewOverlay } from "@/components/PdfPreviewOverlay";
+import { markPoInvoiceViewed } from "@/lib/poInvoiceViewed";
 
 type PORow = Database["public"]["Tables"]["purchase_orders"]["Row"];
 
