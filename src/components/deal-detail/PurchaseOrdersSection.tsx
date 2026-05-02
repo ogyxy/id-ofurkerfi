@@ -457,9 +457,6 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
         )}
         {(po.status === "received" || po.status === "invoiced") && (
           <>
-            {datePill(t.purchaseOrder.orderedShort, po.order_date, {
-              subdued: true,
-            })}
             {datePill(t.purchaseOrder.received_date, po.received_date, {
               tone: "purple",
             })}
