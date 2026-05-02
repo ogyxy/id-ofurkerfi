@@ -129,6 +129,7 @@ function DealDetailContent() {
     outstanding: LinkedPo[];
     total: number;
   } | null>(null);
+  const [confirmOrderOpen, setConfirmOrderOpen] = useState(false);
 
   const [parentDeal, setParentDeal] = useState<{
     id: string;
@@ -361,6 +362,12 @@ function DealDetailContent() {
     if (!deal) return;
     if (next === "defect_reorder") {
       setDefectModalOpen(true);
+      return;
+    }
+    // Intercept "Staðfesta pöntun" (quote_sent → order_confirmed) to offer
+    // the option to immediately add a PO.
+    if (next === "order_confirmed" && deal.stage === "quote_sent") {
+      setConfirmOrderOpen(true);
       return;
     }
     // Intercept "Komin í hús" to cascade with PO state
@@ -667,6 +674,43 @@ function DealDetailContent() {
               }}
             >
               {t.deal.confirmAllPosArrivedConfirm}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm-order: quote_sent → order_confirmed */}
+      <AlertDialog
+        open={confirmOrderOpen}
+        onOpenChange={setConfirmOrderOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.purchaseOrder.confirmOrderTitle}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.purchaseOrder.confirmOrderBody}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                setConfirmOrderOpen(false);
+                await performStageUpdate("order_confirmed");
+              }}
+            >
+              {t.purchaseOrder.confirmOrderWithoutPo}
+            </Button>
+            <Button
+              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+              onClick={async () => {
+                setConfirmOrderOpen(false);
+                await performStageUpdate("order_confirmed");
+                setCreatePoOpen(true);
+              }}
+            >
+              {t.purchaseOrder.confirmOrderWithPo}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
