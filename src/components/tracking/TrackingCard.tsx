@@ -321,13 +321,16 @@ export function TrackingCard(props: Props) {
   );
 
   const inline = props.inlineHeader === true;
+  // In PO mode we only allow a single tracking number per PO.
+  // (The "add" affordance disappears as soon as one is set.)
+  const singleSlot = props.mode === "po";
+  const canAddMore = !singleSlot || tags.length === 0;
 
-  const headerRow = (
-    <div className={cn("flex items-center justify-between gap-3", inline ? "mb-2" : "mb-3")}>
+  const headerRow = inline ? null : (
+    <div className="mb-3 flex items-center justify-between gap-3">
       <h2 className="text-sm font-semibold text-foreground">
         {t.purchaseOrder.trackingSectionTitle}
       </h2>
-      {inline && !adding && <div className="shrink-0">{addAffordance}</div>}
     </div>
   );
 
@@ -342,7 +345,7 @@ export function TrackingCard(props: Props) {
               {inputBlock}
               {error && <span className="text-xs text-destructive">{error}</span>}
             </div>
-          ) : inline ? null : (
+          ) : (
             addAffordance
           )}
         </div>
@@ -383,8 +386,9 @@ export function TrackingCard(props: Props) {
               </div>
             );
           })}
-          {!inline && <div className="pt-1">{adding ? inputBlock : addAffordance}</div>}
-          {inline && adding && <div className="pt-1">{inputBlock}</div>}
+          {canAddMore && (
+            <div className="pt-1">{adding ? inputBlock : addAffordance}</div>
+          )}
           {adding && error && (
             <span className="text-xs text-destructive">{error}</span>
           )}
