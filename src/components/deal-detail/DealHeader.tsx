@@ -185,7 +185,7 @@ export function DealHeader({
         </div>
 
         {/* Right column: timing pills (top) + söluaðili (bottom) */}
-        <div className="flex flex-col justify-between gap-4 border-t border-border pt-4 md:border-t-0 md:border-l md:border-border/60 md:pl-6 md:pt-0">
+        <div className="flex flex-col justify-between gap-4 border-t border-border pt-4 md:border-t-0 md:border-l md:border-border md:pl-6 md:pt-0">
           <div className="flex flex-col items-start gap-1.5 md:items-end">
             {showDeadline && deal.promised_delivery_date && (
               <LabeledPill
