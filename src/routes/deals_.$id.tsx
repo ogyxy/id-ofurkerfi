@@ -686,9 +686,9 @@ function DealDetailContent() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t.deal.confirmOrderTitle}</AlertDialogTitle>
+            <AlertDialogTitle>{t.purchaseOrder.confirmOrderTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t.deal.confirmOrderBody}
+              {t.purchaseOrder.confirmOrderBody}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -700,7 +700,7 @@ function DealDetailContent() {
                 await performStageUpdate("order_confirmed");
               }}
             >
-              {t.deal.confirmOrderWithoutPo}
+              {t.purchaseOrder.confirmOrderWithoutPo}
             </Button>
             <Button
               className="bg-ide-navy text-white hover:bg-ide-navy-hover"
@@ -710,7 +710,7 @@ function DealDetailContent() {
                 setCreatePoOpen(true);
               }}
             >
-              {t.deal.confirmOrderWithPo}
+              {t.purchaseOrder.confirmOrderWithPo}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
