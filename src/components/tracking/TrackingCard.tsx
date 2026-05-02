@@ -44,6 +44,8 @@ type Props = (
 ) & {
   /** When true, render without the outer card chrome (for embedding inside another card). */
   bare?: boolean;
+  /** When true, render the section title and the "+ add" affordance on the same line to save vertical space. */
+  inlineHeader?: boolean;
 };
 
 /**
