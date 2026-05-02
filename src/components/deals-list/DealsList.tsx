@@ -1303,7 +1303,7 @@ function DealCard({
           <CopySoButton soNumber={deal.so_number} companyName={deal.company?.name} />
         </div>
         <div onClick={(e) => e.stopPropagation()}>
-          <StagePopover current={deal.stage} paydayInvoiceId={deal.payday_invoice_id} onChange={onStageChange} />
+          <StagePopover current={deal.stage} paydayInvoiceId={deal.payday_invoice_id} trackingNumbers={deal.tracking_numbers} onChange={onStageChange} />
         </div>
         {showDefectBadge && (
           <div className="flex flex-wrap gap-1">
