@@ -139,7 +139,7 @@ export function DealLog({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Log</h2>
+        <h2 className="text-lg font-semibold">{t.log.title}</h2>
       </div>
 
       {/* Input */}

@@ -246,6 +246,26 @@ function DealDetailContent() {
     load();
   }, [load]);
 
+  // Scroll to / highlight the PO row when navigated to with #po-:id hash.
+  // Triggered after data loads and whenever the hash changes.
+  useEffect(() => {
+    if (loading) return;
+    const applyHash = () => {
+      const hash = window.location.hash;
+      if (!hash.startsWith("#po-")) return;
+      const el = document.getElementById(hash.slice(1));
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-ide-navy", "ring-offset-2");
+      window.setTimeout(() => {
+        el.classList.remove("ring-2", "ring-ide-navy", "ring-offset-2");
+      }, 2000);
+    };
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, [loading, pos.length]);
+
   // Live exchange rates
   useEffect(() => {
     let cancelled = false;
@@ -468,14 +488,6 @@ function DealDetailContent() {
         onEdit={() => setEditOpen(true)}
       />
 
-      {pos.length > 0 || (deal.tracking_numbers ?? []).length > 0 ? (
-        <PurchaseOrdersSection
-          dealId={deal.id}
-          pos={pos}
-          trackingNumbers={deal.tracking_numbers ?? []}
-        />
-      ) : null}
-
       {(deal.stage === "delivered" ||
         deal.stage === "defect_reorder" ||
         deal.payday_invoice_id) && (
@@ -486,6 +498,15 @@ function DealDetailContent() {
           onChanged={load}
         />
       )}
+
+      {pos.length > 0 ? (
+        <PurchaseOrdersSection
+          dealId={deal.id}
+          pos={pos}
+          currentProfileId={currentProfile?.id ?? null}
+          onChanged={load}
+        />
+      ) : null}
 
       <DealLinesEditor
         dealId={deal.id}
@@ -505,7 +526,34 @@ function DealDetailContent() {
         onChange={updateStage}
         onOpenQuoteBuilder={() => setQuoteBuilderOpen(true)}
         onOpenCreatePo={() => setCreatePoOpen(true)}
-        poCount={pos.length}
+        poCount={pos.filter((p) => p.status !== "cancelled").length}
+        undeliveredPoCount={
+          pos.filter(
+            (p) => p.status !== "cancelled" && !p.delivered_to_customer_at,
+          ).length
+        }
+        onBulkMarkDelivered={async () => {
+          const targets = pos.filter(
+            (p) => p.status !== "cancelled" && !p.delivered_to_customer_at,
+          );
+          for (const p of targets) {
+            await supabase
+              .from("purchase_orders")
+              .update({
+                delivered_to_customer_at: new Date().toISOString(),
+                delivered_to_customer_by: currentProfile?.id ?? null,
+              })
+              .eq("id", p.id);
+            await supabase.from("activities").insert({
+              deal_id: deal.id,
+              type: "note",
+              body: `${p.po_number}: afhent viðskiptavini`,
+              created_by: currentProfile?.id ?? null,
+            });
+          }
+          toast.success(t.status.savedSuccessfully);
+          await load();
+        }}
         legacyAllowProgressionWithoutPo={deal.created_at < PO_GATE_CUTOFF}
       />
 

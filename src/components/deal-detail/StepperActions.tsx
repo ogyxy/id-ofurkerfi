@@ -1,4 +1,4 @@
-import { Package, PackageOpen, FileText, CheckCircle2, Check, Plus } from "lucide-react";
+import { FileText, CheckCircle2, Check, Plus } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
@@ -12,23 +12,35 @@ interface Props {
   onOpenCreatePo?: () => void;
   /** Number of purchase orders on the deal (drives order_confirmed UI shape). */
   poCount: number;
-  /** Legacy escape hatch: deals created before the PO gate cutoff always show
-   *  the goods-arrived / delivered buttons even with zero POs. */
+  /**
+   * Number of POs not yet marked afhent to customer (delivered_to_customer_at IS NULL),
+   * excluding cancelled. Drives whether the bulk "Merkja sem afhent" button shows.
+   */
+  undeliveredPoCount: number;
+  /** Triggered when the user clicks the bulk "Merkja allar sem afhent" button. */
+  onBulkMarkDelivered?: () => void;
+  /** Legacy escape hatch for very old deals with zero POs. */
   legacyAllowProgressionWithoutPo?: boolean;
 }
 
 /**
- * Action buttons that sit below the deal lines editor and drive the
- * substep / next-step transitions for the 3-step stepper.
+ * Action buttons that sit below the deal lines editor.
  *
- * - quote_in_progress: [Útbúa tilboð] (opens quote builder)
- * - quote_sent       : [Tilboð sent ✓ chip] [Lagfæra tilboð] [Staðfesta pöntun]
- * - order_confirmed  :
- *     • 0 POs (new deals)  → [Bæta við PO]                       (PO gate)
- *     • 0 POs (legacy)     → [Bæta við PO] [Vörur komnar í hús] [Merkja sem afhent]
- *     • ≥1 PO              → [Bæta við PO] [Vörur komnar í hús] [Merkja sem afhent]
- * - ready_for_pickup : [Skila í pöntunarstöðu] [Merkja sem afhent]
- * - inquiry / delivered / defect_reorder / cancelled: nothing
+ * After the PO-workflow consolidation:
+ *   - "Vörur komnar í hús" is now strictly a per-PO action — it does NOT
+ *     appear at the deal level anymore.
+ *   - "Merkja sem afhent" appears at the deal level ONLY as a bulk shortcut
+ *     when the deal has 2+ POs and at least one is still not afhent.
+ *     Single-PO deals use the per-row button instead.
+ *
+ * Stage map:
+ *   quote_in_progress: [Útbúa tilboð]
+ *   quote_sent       : [Tilboð sent ✓ chip] [Lagfæra tilboð] [Staðfesta pöntun]
+ *   order_confirmed  :
+ *       0 POs  → [Bæta við PO] (primary, gate)
+ *       1 PO   → [Bæta við PO]
+ *       2+ POs with at least one undelivered → [Bæta við PO] [Merkja allar sem afhent]
+ *   ready_for_pickup : [Skila í pöntunarstöðu] (no deal-level afhent here either)
  */
 export function StepperActions({
   stage,
@@ -36,6 +48,8 @@ export function StepperActions({
   onOpenQuoteBuilder,
   onOpenCreatePo,
   poCount,
+  undeliveredPoCount,
+  onBulkMarkDelivered,
   legacyAllowProgressionWithoutPo,
 }: Props) {
   if (
@@ -76,9 +90,8 @@ export function StepperActions({
       )}
 
       {stage === "order_confirmed" && (() => {
-        const showProgression = poCount > 0 || legacyAllowProgressionWithoutPo;
         const poButtonIsPrimary = poCount === 0 && !legacyAllowProgressionWithoutPo;
-
+        const showBulkDelivered = poCount >= 2 && undeliveredPoCount > 0;
         return (
           <>
             <Button
@@ -89,34 +102,32 @@ export function StepperActions({
               <Plus className="mr-1.5 h-4 w-4" />
               {t.purchaseOrder.createFromDeal}
             </Button>
-            {showProgression && (
-              <>
-                <Button variant="outline" onClick={() => onChange("ready_for_pickup")}>
-                  <Package className="mr-1.5 h-4 w-4" />
-                  {t.deal.markGoodsArrived}
-                </Button>
-                <Button onClick={() => onChange("delivered")} className={navy}>
-                  <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                  {t.deal.markAsDelivered}
-                </Button>
-              </>
+            {showBulkDelivered && (
+              <Button onClick={() => onBulkMarkDelivered?.()} className={navy}>
+                <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                {t.purchaseOrder.actionMarkAllDeliveredToCustomer}
+              </Button>
             )}
           </>
         );
       })()}
 
-      {stage === "ready_for_pickup" && (
-        <>
-          <Button variant="outline" onClick={() => onChange("order_confirmed")}>
-            <PackageOpen className="mr-1.5 h-4 w-4" />
-            {t.deal.revertGoodsArrived}
-          </Button>
-          <Button onClick={() => onChange("delivered")} className={navy}>
-            <CheckCircle2 className="mr-1.5 h-4 w-4" />
-            {t.deal.markAsDelivered}
-          </Button>
-        </>
-      )}
+      {stage === "ready_for_pickup" && (() => {
+        const showBulkDelivered = poCount >= 2 && undeliveredPoCount > 0;
+        return (
+          <>
+            <Button variant="outline" onClick={() => onChange("order_confirmed")}>
+              {t.deal.revertGoodsArrived}
+            </Button>
+            {showBulkDelivered && (
+              <Button onClick={() => onBulkMarkDelivered?.()} className={navy}>
+                <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                {t.purchaseOrder.actionMarkAllDeliveredToCustomer}
+              </Button>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }

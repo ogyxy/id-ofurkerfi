@@ -796,7 +796,11 @@ function TaskRow({ task }: { task: TaskItem }) {
   const meta = TASK_META[task.type];
   const handleClick = () => {
     if (task.type === "po_invoice_approval" && task.poId) {
-      navigate({ to: "/innkaup/$id", params: { id: task.poId } });
+      navigate({
+        to: "/deals/$id",
+        params: { id: task.deal.id },
+        hash: `po-${task.poId}`,
+      });
     } else {
       navigate({ to: "/deals/$id", params: { id: task.deal.id } });
     }

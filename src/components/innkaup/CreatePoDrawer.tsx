@@ -350,8 +350,12 @@ export function CreatePoDrawer({
     });
     onOpenChange(false);
     onCreated?.(data.id);
-    if (navigateOnCreate) {
-      navigate({ to: "/innkaup/$id", params: { id: data.id } });
+    if (navigateOnCreate && dealIdToUse) {
+      navigate({
+        to: "/deals/$id",
+        params: { id: dealIdToUse },
+        hash: `po-${data.id}`,
+      });
     }
   };
 

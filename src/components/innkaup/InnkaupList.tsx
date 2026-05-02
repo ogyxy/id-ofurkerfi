@@ -183,9 +183,15 @@ export function InnkaupList({ currentProfileId }: Props) {
       .filter((g) => g.rows.length > 0);
   }, [filtered, activeStatus]);
 
-  const handleRowClick = (poId: string) => {
+  const handleRowClick = (po: PORow) => {
     rememberDealReturnPath("/innkaup");
-    navigate({ to: "/innkaup/$id", params: { id: poId } });
+    if (po.deal) {
+      navigate({
+        to: "/deals/$id",
+        params: { id: po.deal.id },
+        hash: `po-${po.id}`,
+      });
+    }
   };
 
   return (
@@ -324,7 +330,7 @@ export function InnkaupList({ currentProfileId }: Props) {
                   <PoRow
                     key={p.id}
                     po={p}
-                    onClick={() => handleRowClick(p.id)}
+                    onClick={() => handleRowClick(p)}
                     onStatusChange={async (next) => {
                       await changePoStatus(p, next, currentProfileId);
                       await load();
@@ -341,7 +347,7 @@ export function InnkaupList({ currentProfileId }: Props) {
             <PoRow
               key={p.id}
               po={p}
-              onClick={() => handleRowClick(p.id)}
+              onClick={() => handleRowClick(p)}
               onStatusChange={async (next) => {
                 await changePoStatus(p, next, currentProfileId);
                 await load();
