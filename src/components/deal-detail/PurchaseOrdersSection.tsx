@@ -385,16 +385,21 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
         backgroundColor: style.bg,
       }}
     >
-      {/* Top line: PO# · supplier · ref · badges · menu */}
+      {/* Top line: PO# · supplier (+ ref subtitle) · Lýsing · status · menu */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="font-mono text-xs text-muted-foreground">
           {po.po_number}
         </span>
-        <span className="font-medium text-foreground">{po.supplier}</span>
-        {po.supplier_reference && (
-          <span className="text-xs text-muted-foreground">
-            {po.supplier_reference}
-          </span>
+        <div className="flex flex-col leading-tight">
+          <span className="font-medium text-foreground">{po.supplier}</span>
+          {po.supplier_reference && (
+            <span className="text-[10px] text-muted-foreground">
+              {t.purchaseOrder.supplier_reference}: {po.supplier_reference}
+            </span>
+          )}
+        </div>
+        {po.notes && (
+          <span className="text-xs text-foreground/80">{po.notes}</span>
         )}
         <span
           className={cn(
@@ -402,13 +407,10 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
             style.badge,
           )}
         >
-          {t.poStatus[po.status]}
+          {po.status === "ordered" && hasTracking
+            ? t.purchaseOrder.pillOrderedEnRoute
+            : t.poStatus[po.status]}
         </span>
-        {hasTracking && !isDelivered && (
-          <span className="inline-flex items-center rounded-md border border-sky-300 bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-900">
-            {t.purchaseOrder.pillEnRoute}
-          </span>
-        )}
 
         <div className="ml-auto flex items-center gap-2">
           <div className="text-right">
@@ -425,8 +427,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
             hasInvoice={hasInvoice}
             poStatus={po.status}
             onRevertClick={() => setRevertOpen(true)}
-            onEditExchange={() => setExchangeOpen(true)}
-            onEditLines={() => setLinesOpen(true)}
+            onEditPo={() => setEditPoOpen(true)}
             onEditInvoice={() => {
               setInvoiceEditMode(true);
               setInvoiceOpen(true);
