@@ -7,6 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Sheet,
@@ -505,6 +506,16 @@ export function CreatePoDrawer({
             <Input
               value={supplierRef}
               onChange={(e) => setSupplierRef(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label>{t.purchaseOrder.descriptionLabel}</Label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder={t.purchaseOrder.descriptionPlaceholder}
+              rows={2}
             />
           </div>
 
