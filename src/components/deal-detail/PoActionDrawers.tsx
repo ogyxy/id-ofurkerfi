@@ -371,6 +371,7 @@ export function ApproveInvoiceDialog({
           onClose={() => {
             setPreviewUrl(null);
             setPreviewName(null);
+            onOpenChange(true);
           }}
         />
       )}
