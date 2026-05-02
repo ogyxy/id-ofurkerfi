@@ -103,7 +103,7 @@ export function DealHeader({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[12px] text-muted-foreground">
           <span className="inline-flex items-center gap-1">
-            <span>SO–{deal.so_number}</span>
+            <span>{deal.so_number}</span>
             <CopySoButton soNumber={deal.so_number} companyName={company.name} />
           </span>
           {deal.payday_invoice_number && (
