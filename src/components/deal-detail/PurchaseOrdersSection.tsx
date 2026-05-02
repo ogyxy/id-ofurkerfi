@@ -383,6 +383,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
               {po.currency} {formatNumber(total, 2)}
             </div>
           </div>
+          <FileDownloadButtons files={files} />
           <RowMenu
             isReceived={isReceived}
             hasInvoice={hasInvoice}
