@@ -572,21 +572,14 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
         currentProfileId={currentProfileId}
         onSaved={onChanged}
       />
-      <EditExchangeDrawer
-        open={exchangeOpen}
-        onOpenChange={setExchangeOpen}
-        po={po}
-        dealId={dealId}
+      <CreatePoDrawer
+        open={editPoOpen}
+        onOpenChange={setEditPoOpen}
+        fixedDealId={dealId}
         currentProfileId={currentProfileId}
-        onSaved={onChanged}
-      />
-      <EditLinesDrawer
-        open={linesOpen}
-        onOpenChange={setLinesOpen}
-        po={po}
-        dealId={dealId}
-        currentProfileId={currentProfileId}
-        onSaved={onChanged}
+        editPo={po}
+        navigateOnCreate={false}
+        onCreated={() => void onChanged()}
       />
       <DeletePoDialog
         open={deleteOpen}
@@ -605,8 +598,7 @@ interface RowMenuProps {
   hasInvoice: boolean;
   poStatus: Database["public"]["Enums"]["po_status"];
   onRevertClick: () => void;
-  onEditExchange: () => void;
-  onEditLines: () => void;
+  onEditPo: () => void;
   onEditInvoice: () => void;
   onDelete: () => void;
 }
@@ -616,8 +608,7 @@ function RowMenu({
   hasInvoice,
   poStatus,
   onRevertClick,
-  onEditExchange,
-  onEditLines,
+  onEditPo,
   onEditInvoice,
   onDelete,
 }: RowMenuProps) {
@@ -629,11 +620,8 @@ function RowMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onClick={onEditExchange}>
-          {t.purchaseOrder.rowMenuEditExchange}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={onEditLines}>
-          {t.purchaseOrder.rowMenuEditLines}
+        <DropdownMenuItem onClick={onEditPo}>
+          {t.purchaseOrder.rowMenuEditPo}
         </DropdownMenuItem>
         {hasInvoice && (
           <DropdownMenuItem onClick={onEditInvoice}>
