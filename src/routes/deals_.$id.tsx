@@ -526,7 +526,34 @@ function DealDetailContent() {
         onChange={updateStage}
         onOpenQuoteBuilder={() => setQuoteBuilderOpen(true)}
         onOpenCreatePo={() => setCreatePoOpen(true)}
-        poCount={pos.length}
+        poCount={pos.filter((p) => p.status !== "cancelled").length}
+        undeliveredPoCount={
+          pos.filter(
+            (p) => p.status !== "cancelled" && !p.delivered_to_customer_at,
+          ).length
+        }
+        onBulkMarkDelivered={async () => {
+          const targets = pos.filter(
+            (p) => p.status !== "cancelled" && !p.delivered_to_customer_at,
+          );
+          for (const p of targets) {
+            await supabase
+              .from("purchase_orders")
+              .update({
+                delivered_to_customer_at: new Date().toISOString(),
+                delivered_to_customer_by: currentProfile?.id ?? null,
+              })
+              .eq("id", p.id);
+            await supabase.from("activities").insert({
+              deal_id: deal.id,
+              type: "note",
+              body: `${p.po_number}: afhent viðskiptavini`,
+              created_by: currentProfile?.id ?? null,
+            });
+          }
+          toast.success(t.status.savedSuccessfully);
+          await load();
+        }}
         legacyAllowProgressionWithoutPo={deal.created_at < PO_GATE_CUTOFF}
       />
 
