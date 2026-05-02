@@ -330,7 +330,7 @@ export function InnkaupList({ currentProfileId }: Props) {
                   <PoRow
                     key={p.id}
                     po={p}
-                    onClick={() => handleRowClick(p.id)}
+                    onClick={() => handleRowClick(p)}
                     onStatusChange={async (next) => {
                       await changePoStatus(p, next, currentProfileId);
                       await load();
@@ -347,7 +347,7 @@ export function InnkaupList({ currentProfileId }: Props) {
             <PoRow
               key={p.id}
               po={p}
-              onClick={() => handleRowClick(p.id)}
+              onClick={() => handleRowClick(p)}
               onStatusChange={async (next) => {
                 await changePoStatus(p, next, currentProfileId);
                 await load();

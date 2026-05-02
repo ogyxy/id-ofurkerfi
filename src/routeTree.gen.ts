@@ -16,7 +16,6 @@ import { Route as HonnunRouteImport } from './routes/honnun'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as InnkaupIdRouteImport } from './routes/innkaup_.$id'
 import { Route as DealsIdRouteImport } from './routes/deals_.$id'
 import { Route as CompaniesIdRouteImport } from './routes/companies_.$id'
 
@@ -55,11 +54,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const InnkaupIdRoute = InnkaupIdRouteImport.update({
-  id: '/innkaup_/$id',
-  path: '/innkaup/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DealsIdRoute = DealsIdRouteImport.update({
   id: '/deals_/$id',
   path: '/deals/$id',
@@ -81,7 +75,6 @@ export interface FileRoutesByFullPath {
   '/yfirlit': typeof YfirlitRoute
   '/companies/$id': typeof CompaniesIdRoute
   '/deals/$id': typeof DealsIdRoute
-  '/innkaup/$id': typeof InnkaupIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -93,7 +86,6 @@ export interface FileRoutesByTo {
   '/yfirlit': typeof YfirlitRoute
   '/companies/$id': typeof CompaniesIdRoute
   '/deals/$id': typeof DealsIdRoute
-  '/innkaup/$id': typeof InnkaupIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -106,7 +98,6 @@ export interface FileRoutesById {
   '/yfirlit': typeof YfirlitRoute
   '/companies_/$id': typeof CompaniesIdRoute
   '/deals_/$id': typeof DealsIdRoute
-  '/innkaup_/$id': typeof InnkaupIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -120,7 +111,6 @@ export interface FileRouteTypes {
     | '/yfirlit'
     | '/companies/$id'
     | '/deals/$id'
-    | '/innkaup/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -132,7 +122,6 @@ export interface FileRouteTypes {
     | '/yfirlit'
     | '/companies/$id'
     | '/deals/$id'
-    | '/innkaup/$id'
   id:
     | '__root__'
     | '/'
@@ -144,7 +133,6 @@ export interface FileRouteTypes {
     | '/yfirlit'
     | '/companies_/$id'
     | '/deals_/$id'
-    | '/innkaup_/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -157,7 +145,6 @@ export interface RootRouteChildren {
   YfirlitRoute: typeof YfirlitRoute
   CompaniesIdRoute: typeof CompaniesIdRoute
   DealsIdRoute: typeof DealsIdRoute
-  InnkaupIdRoute: typeof InnkaupIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -211,13 +198,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/innkaup_/$id': {
-      id: '/innkaup_/$id'
-      path: '/innkaup/$id'
-      fullPath: '/innkaup/$id'
-      preLoaderRoute: typeof InnkaupIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/deals_/$id': {
       id: '/deals_/$id'
       path: '/deals/$id'
@@ -245,7 +225,6 @@ const rootRouteChildren: RootRouteChildren = {
   YfirlitRoute: YfirlitRoute,
   CompaniesIdRoute: CompaniesIdRoute,
   DealsIdRoute: DealsIdRoute,
-  InnkaupIdRoute: InnkaupIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
