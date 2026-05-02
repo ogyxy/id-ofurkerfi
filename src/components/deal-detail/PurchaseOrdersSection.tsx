@@ -507,12 +507,9 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
         {isDelivered && (
           <span className="inline-flex items-center gap-1 rounded-md border border-green-300 bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-900">
             <CheckCircle2 className="h-3 w-3" />
-            <span className="leading-tight">
-              Afhent
-              <br />
-              <span className="tabular-nums">
-                {formatDate(po.delivered_to_customer_at)}
-              </span>
+            Afhent
+            <span className="tabular-nums">
+              {formatDate(po.delivered_to_customer_at)}
             </span>
           </span>
         )}
