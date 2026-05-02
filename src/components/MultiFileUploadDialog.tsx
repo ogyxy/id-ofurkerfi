@@ -42,6 +42,8 @@ interface MultiFileUploadDialogProps {
   title: string;
   fileTypes: UploadFileType[];
   smartGuess: (filename: string) => string;
+  /** When provided, all newly added files default to this file_type instead of using smartGuess. */
+  defaultFileType?: string;
   /** Upload a single file. Should throw on error. */
   uploadOne: (file: File, fileType: string) => Promise<void>;
   /** Called once after a batch finishes, with summary. */
@@ -60,6 +62,7 @@ export function MultiFileUploadDialog({
   title,
   fileTypes,
   smartGuess,
+  defaultFileType,
   uploadOne,
   onBatchComplete,
   onAnySuccess,
@@ -88,7 +91,7 @@ export function MultiFileUploadDialog({
     const newEntries: FileEntry[] = arr.map((file) => ({
       id: nextId(),
       file,
-      fileType: smartGuess(file.name),
+      fileType: defaultFileType ?? smartGuess(file.name),
       status: "pending",
     }));
     setEntries((prev) => [...prev, ...newEntries]);
