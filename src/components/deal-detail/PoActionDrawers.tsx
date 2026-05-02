@@ -5,6 +5,11 @@ import { PdfPreviewOverlay } from "@/components/PdfPreviewOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
+import {
+  hasViewedPoInvoice,
+  markPoInvoiceViewed,
+  subscribePoInvoiceViewed,
+} from "@/lib/poInvoiceViewed";
 import { pathSafe } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
