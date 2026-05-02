@@ -7,6 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Sheet,
@@ -97,6 +98,7 @@ export function CreatePoDrawer({
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [supplierId, setSupplierId] = useState<string>("");
   const [supplierRef, setSupplierRef] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
   const [orderDate, setOrderDate] = useState<string>(todayIso());
   const [expectedDate, setExpectedDate] = useState<string>("");
   const [currency, setCurrency] = useState<string>("EUR");
@@ -156,6 +158,7 @@ export function CreatePoDrawer({
     if (editPo) {
       setSupplierId(editPo.supplier_id ?? "");
       setSupplierRef(editPo.supplier_reference ?? "");
+      setNotes(editPo.notes ?? "");
       setOrderDate(editPo.order_date ?? todayIso());
       setExpectedDate(editPo.expected_delivery_date ?? "");
       setCurrency(editPo.currency);
@@ -167,6 +170,7 @@ export function CreatePoDrawer({
     } else {
       setSupplierId("");
       setSupplierRef("");
+      setNotes("");
       setOrderDate(todayIso());
       setExpectedDate("");
       setCurrency("EUR");
@@ -283,6 +287,7 @@ export function CreatePoDrawer({
       supplier_id: supplierId,
       supplier: supplier.name,
       supplier_reference: supplierRef.trim() || null,
+      notes: notes.trim() || null,
       order_date: orderDate || null,
       expected_delivery_date: expectedDate || null,
       currency,
@@ -501,6 +506,16 @@ export function CreatePoDrawer({
             <Input
               value={supplierRef}
               onChange={(e) => setSupplierRef(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label>{t.purchaseOrder.descriptionLabel}</Label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder={t.purchaseOrder.descriptionPlaceholder}
+              rows={2}
             />
           </div>
 

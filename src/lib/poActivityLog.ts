@@ -196,7 +196,7 @@ export async function logPoDeliveredToCustomer(opts: {
   await logPoActivity({
     dealId: opts.dealId,
     poNumber: opts.poNumber,
-    body: `afhent viðskiptavini`,
+    body: `sala afhent`,
     createdBy: opts.createdBy,
   });
 }

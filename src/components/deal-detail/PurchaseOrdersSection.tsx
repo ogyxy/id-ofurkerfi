@@ -36,10 +36,9 @@ import {
   InvoiceDrawer,
   ApproveInvoiceDialog,
   MarkPaidDrawer,
-  EditExchangeDrawer,
-  EditLinesDrawer,
   DeletePoDialog,
 } from "@/components/deal-detail/PoActionDrawers";
+import { CreatePoDrawer } from "@/components/innkaup/CreatePoDrawer";
 import { PdfPreviewOverlay } from "@/components/PdfPreviewOverlay";
 
 type PORow = Database["public"]["Tables"]["purchase_orders"]["Row"];
@@ -149,8 +148,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
   const [invoiceEditMode, setInvoiceEditMode] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
   const [paidOpen, setPaidOpen] = useState(false);
-  const [exchangeOpen, setExchangeOpen] = useState(false);
-  const [linesOpen, setLinesOpen] = useState(false);
+  const [editPoOpen, setEditPoOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Invoice mismatch warning (shown next to invoice-registered date pill)
@@ -194,17 +192,34 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
   const markDeliveredToCustomer = async () => {
     if (busy) return;
     setBusy(true);
+    const today = new Date().toISOString().split("T")[0];
+    // Direct-to-customer case: if PO is still in ordered state, also mark as
+    // received (set received_date + status) before stamping delivered_to_customer_at.
+    const wasOrdered = po.status === "ordered";
+    const patch: Partial<PORow> = {
+      delivered_to_customer_at: new Date().toISOString(),
+      delivered_to_customer_by: currentProfileId,
+    };
+    if (wasOrdered) {
+      patch.status = "received";
+      patch.received_date = today;
+    }
     const { error } = await supabase
       .from("purchase_orders")
-      .update({
-        delivered_to_customer_at: new Date().toISOString(),
-        delivered_to_customer_by: currentProfileId,
-      })
+      .update(patch)
       .eq("id", po.id);
     if (error) {
       toast.error(t.status.somethingWentWrong);
       setBusy(false);
       return;
+    }
+    if (wasOrdered) {
+      await logPoReceived({
+        dealId,
+        poNumber: po.po_number,
+        receivedDate: today,
+        createdBy: currentProfileId,
+      });
     }
     await logPoDeliveredToCustomer({
       dealId,
@@ -302,15 +317,18 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
 
     if (po.status === "ordered") {
       return (
-        <Button
-          size="sm"
-          disabled={busy}
-          onClick={markGoodsArrived}
-          className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-        >
-          <Truck className="mr-1.5 h-3.5 w-3.5" />
-          {t.purchaseOrder.actionGoodsArrived}
-        </Button>
+        <>
+          <Button
+            size="sm"
+            disabled={busy}
+            onClick={markGoodsArrived}
+            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+          >
+            <Truck className="mr-1.5 h-3.5 w-3.5" />
+            {t.purchaseOrder.actionGoodsArrived}
+          </Button>
+          {!isDelivered && deliveredButton(false)}
+        </>
       );
     }
 
@@ -344,7 +362,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
       );
     }
 
-    // "Merkja sem afhent" — secondary alongside an invoice action,
+    // "Sala afhent" — secondary alongside an invoice action,
     // primary when nothing else is happening (paid + not afhent).
     if (!isDelivered) {
       const primary = isPaid; // only primary when no invoice button is showing
@@ -367,16 +385,21 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
         backgroundColor: style.bg,
       }}
     >
-      {/* Top line: PO# · supplier · ref · badges · menu */}
+      {/* Top line: PO# · supplier (+ ref subtitle) · Lýsing · status · menu */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="font-mono text-xs text-muted-foreground">
           {po.po_number}
         </span>
-        <span className="font-medium text-foreground">{po.supplier}</span>
-        {po.supplier_reference && (
-          <span className="text-xs text-muted-foreground">
-            {po.supplier_reference}
-          </span>
+        <div className="flex flex-col leading-tight">
+          <span className="font-medium text-foreground">{po.supplier}</span>
+          {po.supplier_reference && (
+            <span className="text-[10px] text-muted-foreground">
+              {t.purchaseOrder.supplier_reference}: {po.supplier_reference}
+            </span>
+          )}
+        </div>
+        {po.notes && (
+          <span className="text-xs text-foreground/80">{po.notes}</span>
         )}
         <span
           className={cn(
@@ -384,13 +407,10 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
             style.badge,
           )}
         >
-          {t.poStatus[po.status]}
+          {po.status === "ordered" && hasTracking
+            ? t.purchaseOrder.pillOrderedEnRoute
+            : t.poStatus[po.status]}
         </span>
-        {hasTracking && !isDelivered && (
-          <span className="inline-flex items-center rounded-md border border-sky-300 bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-900">
-            {t.purchaseOrder.pillEnRoute}
-          </span>
-        )}
 
         <div className="ml-auto flex items-center gap-2">
           <div className="text-right">
@@ -407,8 +427,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
             hasInvoice={hasInvoice}
             poStatus={po.status}
             onRevertClick={() => setRevertOpen(true)}
-            onEditExchange={() => setExchangeOpen(true)}
-            onEditLines={() => setLinesOpen(true)}
+            onEditPo={() => setEditPoOpen(true)}
             onEditInvoice={() => {
               setInvoiceEditMode(true);
               setInvoiceOpen(true);
@@ -437,11 +456,6 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
             {datePill(t.purchaseOrder.received_date, po.received_date, {
               emphasized: true,
             })}
-            {datePill(
-              t.purchaseOrder.estimatedDeliveryShort,
-              po.expected_delivery_date,
-              { subdued: true },
-            )}
             {po.status === "invoiced" && (
               <span className="inline-flex items-center gap-1">
                 {datePill(
@@ -558,21 +572,14 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
         currentProfileId={currentProfileId}
         onSaved={onChanged}
       />
-      <EditExchangeDrawer
-        open={exchangeOpen}
-        onOpenChange={setExchangeOpen}
-        po={po}
-        dealId={dealId}
+      <CreatePoDrawer
+        open={editPoOpen}
+        onOpenChange={setEditPoOpen}
+        fixedDealId={dealId}
         currentProfileId={currentProfileId}
-        onSaved={onChanged}
-      />
-      <EditLinesDrawer
-        open={linesOpen}
-        onOpenChange={setLinesOpen}
-        po={po}
-        dealId={dealId}
-        currentProfileId={currentProfileId}
-        onSaved={onChanged}
+        editPo={po}
+        navigateOnCreate={false}
+        onCreated={() => void onChanged()}
       />
       <DeletePoDialog
         open={deleteOpen}
@@ -591,8 +598,7 @@ interface RowMenuProps {
   hasInvoice: boolean;
   poStatus: Database["public"]["Enums"]["po_status"];
   onRevertClick: () => void;
-  onEditExchange: () => void;
-  onEditLines: () => void;
+  onEditPo: () => void;
   onEditInvoice: () => void;
   onDelete: () => void;
 }
@@ -602,8 +608,7 @@ function RowMenu({
   hasInvoice,
   poStatus,
   onRevertClick,
-  onEditExchange,
-  onEditLines,
+  onEditPo,
   onEditInvoice,
   onDelete,
 }: RowMenuProps) {
@@ -615,11 +620,8 @@ function RowMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onClick={onEditExchange}>
-          {t.purchaseOrder.rowMenuEditExchange}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={onEditLines}>
-          {t.purchaseOrder.rowMenuEditLines}
+        <DropdownMenuItem onClick={onEditPo}>
+          {t.purchaseOrder.rowMenuEditPo}
         </DropdownMenuItem>
         {hasInvoice && (
           <DropdownMenuItem onClick={onEditInvoice}>

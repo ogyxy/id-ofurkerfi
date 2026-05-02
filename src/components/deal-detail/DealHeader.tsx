@@ -28,22 +28,6 @@ interface Props {
   onEdit: () => void;
 }
 
-const invoiceColors: Record<
-  Database["public"]["Enums"]["invoice_status"],
-  string
-> = {
-  not_invoiced: "bg-gray-100 text-gray-700",
-  full: "bg-green-100 text-green-700",
-};
-
-const paymentColors: Record<
-  Database["public"]["Enums"]["payment_status"],
-  string
-> = {
-  unpaid: "bg-amber-100 text-amber-800",
-  partial: "bg-blue-100 text-blue-800",
-  paid: "bg-green-100 text-green-800",
-};
 
 function isOverdue(date: string | null, stage: Deal["stage"]) {
   if (!date) return false;
@@ -154,22 +138,39 @@ export function DealHeader({
                   </span>
                 ) : null;
               })()}
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                invoiceColors[deal.invoice_status],
-              )}
-            >
-              {t.invoiceStatus[deal.invoice_status]}
-            </span>
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                paymentColors[deal.payment_status],
-              )}
-            >
-              {t.paymentStatus[deal.payment_status]}
-            </span>
+            {(() => {
+              const hasInvoice = !!deal.payday_invoice_id;
+              const showNotInvoiced = !hasInvoice && deal.stage === "delivered";
+              const showPaid = hasInvoice && deal.payment_status === "paid";
+              const showUnpaid =
+                hasInvoice &&
+                (deal.payment_status === "unpaid" ||
+                  deal.payment_status === "partial");
+              return (
+                <>
+                  {showNotInvoiced && (
+                    <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700">
+                      {t.invoiceStatus.not_invoiced}
+                    </span>
+                  )}
+                  {hasInvoice && (
+                    <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
+                      {t.invoiceStatus.full}
+                    </span>
+                  )}
+                  {showPaid && (
+                    <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                      {t.paymentStatus.paid}
+                    </span>
+                  )}
+                  {showUnpaid && (
+                    <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                      {t.paymentStatus.unpaid}
+                    </span>
+                  )}
+                </>
+              );
+            })()}
           </div>
           <Button variant="outline" onClick={onEdit}>
             {t.actions.edit}

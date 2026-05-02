@@ -508,19 +508,6 @@ function DealDetailContent() {
         />
       ) : null}
 
-      <DealLinesEditor
-        dealId={deal.id}
-        lines={lines}
-        setLines={setLines}
-        defaultMarkupPct={defaultMarkupPct}
-        setDefaultMarkupPct={setDefaultMarkupPct}
-        rates={rates}
-        ratesError={ratesError}
-        onSaveDefaultMarkup={saveDefaultMarkup}
-        onSaved={load}
-        readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
-      />
-
       <StepperActions
         stage={deal.stage}
         onChange={updateStage}
@@ -547,7 +534,7 @@ function DealDetailContent() {
             await supabase.from("activities").insert({
               deal_id: deal.id,
               type: "note",
-              body: `${p.po_number}: afhent viðskiptavini`,
+              body: `Innkaup · ${p.po_number}: sala afhent`,
               created_by: currentProfile?.id ?? null,
             });
           }
@@ -555,6 +542,19 @@ function DealDetailContent() {
           await load();
         }}
         legacyAllowProgressionWithoutPo={deal.created_at < PO_GATE_CUTOFF}
+      />
+
+      <DealLinesEditor
+        dealId={deal.id}
+        lines={lines}
+        setLines={setLines}
+        defaultMarkupPct={defaultMarkupPct}
+        setDefaultMarkupPct={setDefaultMarkupPct}
+        rates={rates}
+        ratesError={ratesError}
+        onSaveDefaultMarkup={saveDefaultMarkup}
+        onSaved={load}
+        readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
       />
 
       <DealSummary
