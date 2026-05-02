@@ -36,10 +36,9 @@ import {
   InvoiceDrawer,
   ApproveInvoiceDialog,
   MarkPaidDrawer,
-  EditExchangeDrawer,
-  EditLinesDrawer,
   DeletePoDialog,
 } from "@/components/deal-detail/PoActionDrawers";
+import { CreatePoDrawer } from "@/components/innkaup/CreatePoDrawer";
 import { PdfPreviewOverlay } from "@/components/PdfPreviewOverlay";
 
 type PORow = Database["public"]["Tables"]["purchase_orders"]["Row"];
@@ -149,8 +148,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
   const [invoiceEditMode, setInvoiceEditMode] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
   const [paidOpen, setPaidOpen] = useState(false);
-  const [exchangeOpen, setExchangeOpen] = useState(false);
-  const [linesOpen, setLinesOpen] = useState(false);
+  const [editPoOpen, setEditPoOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Invoice mismatch warning (shown next to invoice-registered date pill)
