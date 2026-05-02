@@ -713,9 +713,15 @@ function FileDownloadButtons({ files }: { files: PoFile[] }) {
     if (isPdf(f)) {
       setPreviewFile(f);
       setPreviewUrl(url);
+      if (f.file_type === "invoice" && f.po_id) {
+        markPoInvoiceViewed(f.po_id);
+      }
     } else {
       // Non-PDF file: fall back to direct download / open in new tab.
       window.open(url, "_blank", "noopener,noreferrer");
+      if (f.file_type === "invoice" && f.po_id) {
+        markPoInvoiceViewed(f.po_id);
+      }
     }
   };
 
