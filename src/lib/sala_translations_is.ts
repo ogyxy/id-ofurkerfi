@@ -725,7 +725,7 @@ export const t = {
   // Log feed (deal detail)
   // ---------------------------------------------------------------------------
   log: {
-    title:           'Log',
+    title:           'Saga',
     placeholder:     'Skráðu athugasemd...',
     send:            'Senda',
     stageChanged:    'Sala færð í',
