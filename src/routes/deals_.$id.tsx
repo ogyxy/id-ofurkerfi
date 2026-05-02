@@ -468,14 +468,6 @@ function DealDetailContent() {
         onEdit={() => setEditOpen(true)}
       />
 
-      {pos.length > 0 || (deal.tracking_numbers ?? []).length > 0 ? (
-        <PurchaseOrdersSection
-          dealId={deal.id}
-          pos={pos}
-          trackingNumbers={deal.tracking_numbers ?? []}
-        />
-      ) : null}
-
       {(deal.stage === "delivered" ||
         deal.stage === "defect_reorder" ||
         deal.payday_invoice_id) && (
@@ -486,6 +478,15 @@ function DealDetailContent() {
           onChanged={load}
         />
       )}
+
+      {pos.length > 0 ? (
+        <PurchaseOrdersSection
+          dealId={deal.id}
+          pos={pos}
+          currentProfileId={currentProfile?.id ?? null}
+          onChanged={load}
+        />
+      ) : null}
 
       <DealLinesEditor
         dealId={deal.id}
