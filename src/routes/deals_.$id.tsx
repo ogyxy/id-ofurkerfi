@@ -129,6 +129,7 @@ function DealDetailContent() {
     outstanding: LinkedPo[];
     total: number;
   } | null>(null);
+  const [confirmOrderOpen, setConfirmOrderOpen] = useState(false);
 
   const [parentDeal, setParentDeal] = useState<{
     id: string;
