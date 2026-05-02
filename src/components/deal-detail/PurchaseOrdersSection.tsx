@@ -461,7 +461,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
               subdued: true,
             })}
             {datePill(t.purchaseOrder.received_date, po.received_date, {
-              emphasized: true,
+              tone: "purple",
             })}
             {po.status === "invoiced" && (
               <span className="inline-flex items-center gap-1">
