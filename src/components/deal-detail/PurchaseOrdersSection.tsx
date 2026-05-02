@@ -456,11 +456,6 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
             {datePill(t.purchaseOrder.received_date, po.received_date, {
               emphasized: true,
             })}
-            {datePill(
-              t.purchaseOrder.estimatedDeliveryShort,
-              po.expected_delivery_date,
-              { subdued: true },
-            )}
             {po.status === "invoiced" && (
               <span className="inline-flex items-center gap-1">
                 {datePill(
