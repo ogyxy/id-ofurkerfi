@@ -41,6 +41,7 @@ import {
 import { CreatePoDrawer } from "@/components/innkaup/CreatePoDrawer";
 import { PdfPreviewOverlay } from "@/components/PdfPreviewOverlay";
 import { markPoInvoiceViewed } from "@/lib/poInvoiceViewed";
+import { CopyTextButton } from "@/components/deals-list/DealsList";
 
 type PORow = Database["public"]["Tables"]["purchase_orders"]["Row"];
 
@@ -393,16 +394,14 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
         backgroundColor: style.bg,
       }}
     >
-      {/* Top line: PO# · supplier (+ ref subtitle) · Lýsing · status · menu */}
+      {/* Top line: supplier_reference (id) · supplier · Lýsing · status · menu */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="font-mono text-xs text-muted-foreground">
-          {po.po_number}
-        </span>
         <div className="flex flex-col leading-tight">
           <span className="font-medium text-foreground">{po.supplier}</span>
           {po.supplier_reference && (
-            <span className="text-[10px] text-muted-foreground">
-              {t.purchaseOrder.supplier_reference}: {po.supplier_reference}
+            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+              {po.supplier_reference}
+              <CopyTextButton text={po.supplier_reference} label={po.supplier_reference} />
             </span>
           )}
         </div>
