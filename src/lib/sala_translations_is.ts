@@ -696,7 +696,7 @@ export const t = {
     revertPoFromDeliveredSoBody:    'Halda áfram að skila þessum PO í pöntunarstöðu án þess að breyta sölunni?',
     cascadeReceivedNote:            'Móttekið sjálfvirkt þegar sala var merkt komin í hús',
     trackingSectionTitle:           'Tracking',
-    trackingAddButton:              '+ Bæta við tracking númer',
+    trackingAddButton:              '+ Bæta við tracking númeri',
     coreFieldsEditTitle:            'Breyta innkaupapöntun',
     orderConfirmationUpload:        'Pöntunarstaðfesting (PDF)',
     orderConfirmationOptional:      'Valfrjálst',
