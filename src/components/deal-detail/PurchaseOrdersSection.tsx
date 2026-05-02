@@ -542,3 +542,64 @@ function RowMenu({ isReceived, hasInvoice, poStatus, onRevertClick }: RowMenuPro
     </DropdownMenu>
   );
 }
+
+/**
+ * Per-PO download buttons. Renders one icon button per uploaded file
+ * (e.g. order confirmation uploaded at PO creation, supplier invoice in Phase 2).
+ * Files are stored in the private "po_files" bucket — we generate a short-lived
+ * signed URL and trigger a download in a new tab.
+ */
+function FileDownloadButtons({ files }: { files: PoFile[] }) {
+  if (!files || files.length === 0) return null;
+
+  const labelFor = (f: PoFile): string => {
+    if (f.file_type === "order_confirmation") return "Pöntunarstaðfesting";
+    if (f.file_type === "invoice") return "Reikningur";
+    return f.original_filename ?? "Skjal";
+  };
+
+  const handleDownload = async (f: PoFile) => {
+    if (!f.storage_path) {
+      if (f.file_url) window.open(f.file_url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    const { data, error } = await supabase.storage
+      .from("po_files")
+      .createSignedUrl(f.storage_path, 60);
+    if (error || !data?.signedUrl) {
+      toast.error(t.status.somethingWentWrong);
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <TooltipProvider>
+      <div className="flex items-center gap-1">
+        {files.map((f) => (
+          <Tooltip key={f.id}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => void handleDownload(f)}
+                aria-label={`Sækja ${labelFor(f)}`}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              {labelFor(f)}
+              {f.original_filename && (
+                <span className="ml-1 text-muted-foreground">
+                  · {f.original_filename}
+                </span>
+              )}
+            </TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+    </TooltipProvider>
+  );
+}
