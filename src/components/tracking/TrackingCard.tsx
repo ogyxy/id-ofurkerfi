@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { X, ExternalLink, Plus, Check, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { t } from "@/lib/sala_translations_is";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
