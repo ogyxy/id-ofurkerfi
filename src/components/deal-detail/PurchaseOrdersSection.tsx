@@ -471,6 +471,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
                       po.invoice_approved_at
                         ? po.invoice_approved_at.split("T")[0]
                         : null,
+                      { tone: "green" },
                     )
                   : datePill(
                       t.purchaseOrder.invoiceRegisteredShort,
