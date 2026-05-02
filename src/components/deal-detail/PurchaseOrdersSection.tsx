@@ -766,7 +766,7 @@ function FileDownloadButtons({ files }: { files: PoFile[] }) {
                   className="h-8 w-8"
                   aria-label={triggerLabel}
                 >
-                  <Download className="h-4 w-4" />
+                  <Eye className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
