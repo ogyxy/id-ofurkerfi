@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Upload, Eye } from "lucide-react";
+import { PdfPreviewOverlay } from "@/components/PdfPreviewOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
@@ -261,6 +262,49 @@ export function ApproveInvoiceDialog({
   onSaved,
 }: ApproveInvoiceDialogProps) {
   const [busy, setBusy] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewName, setPreviewName] = useState<string | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+
+  const openInvoicePreview = async () => {
+    if (loadingPreview) return;
+    setLoadingPreview(true);
+    const { data: files, error } = await supabase
+      .from("po_files")
+      .select("*")
+      .eq("po_id", po.id)
+      .eq("file_type", "invoice")
+      .order("uploaded_at", { ascending: false })
+      .limit(1);
+    if (error || !files || files.length === 0) {
+      toast.error(t.status.somethingWentWrong);
+      setLoadingPreview(false);
+      return;
+    }
+    const f = files[0];
+    let url: string | null = null;
+    if (f.storage_path) {
+      const { data, error: sErr } = await supabase.storage
+        .from("po_files")
+        .createSignedUrl(f.storage_path, 60);
+      if (sErr || !data?.signedUrl) {
+        toast.error(t.status.somethingWentWrong);
+        setLoadingPreview(false);
+        return;
+      }
+      url = data.signedUrl;
+    } else {
+      url = f.file_url ?? null;
+    }
+    setLoadingPreview(false);
+    if (!url) {
+      toast.error(t.status.somethingWentWrong);
+      return;
+    }
+    setPreviewUrl(url);
+    setPreviewName(f.original_filename ?? null);
+  };
+
   const confirm = async () => {
     if (busy) return;
     setBusy(true);
@@ -287,26 +331,49 @@ export function ApproveInvoiceDialog({
     await onSaved();
   };
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t.purchaseOrder.actionApproveInvoice}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {po.po_number} · {po.supplier_invoice_number ?? "—"}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={confirm}
-            disabled={busy}
-            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
-          >
-            {t.actions.confirm}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      <AlertDialog open={open} onOpenChange={onOpenChange}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.purchaseOrder.actionApproveInvoice}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {po.po_number} · {po.supplier_invoice_number ?? "—"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={openInvoicePreview}
+              disabled={loadingPreview}
+            >
+              <Eye className="mr-1.5 h-3.5 w-3.5" />
+              {t.purchaseOrder.actionViewInvoice}
+            </Button>
+            <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirm}
+              disabled={busy}
+              className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+            >
+              {t.actions.confirm}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {previewUrl && (
+        <PdfPreviewOverlay
+          open={true}
+          url={previewUrl}
+          title={`${t.purchaseOrder.fileLabelInvoice}${previewName ? ` · ${previewName}` : ""}`}
+          filename={previewName ?? undefined}
+          onClose={() => {
+            setPreviewUrl(null);
+            setPreviewName(null);
+          }}
+        />
+      )}
+    </>
   );
 }
 
