@@ -67,7 +67,6 @@ export function DealHeader({
 
   // ---- Stage-aware timing pills ----
   const stage = deal.stage;
-  const isQuoteStage = stage === "inquiry" || stage === "quote_in_progress" || stage === "quote_sent";
   const isOrderStage = stage === "order_confirmed" || stage === "ready_for_pickup";
   const showDeadline = stage !== "delivered" && stage !== "cancelled";
   const showQuoteExpiry = stage === "quote_sent" && !!quoteValidUntil;
