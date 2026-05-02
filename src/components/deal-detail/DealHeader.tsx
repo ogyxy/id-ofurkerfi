@@ -129,7 +129,7 @@ export function DealHeader({
       {/* Two-column grid */}
       <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-[1.5fr_1fr] md:gap-8">
         {/* Left column: identity + contact */}
-        <div className="min-w-0 space-y-3">
+        <div className="min-w-0 space-y-2">
           <h1 className="text-2xl font-medium leading-tight text-foreground md:text-[26px]">
             {deal.name}
           </h1>
@@ -156,7 +156,7 @@ export function DealHeader({
           </div>
 
           {contact && (
-            <div className="space-y-1 text-xs text-muted-foreground">
+            <div className="space-y-0.5 text-xs text-muted-foreground">
               {contactName && (
                 <div className="inline-flex items-center gap-1.5">
                   <User className="h-4 w-4" />
@@ -184,8 +184,8 @@ export function DealHeader({
           )}
         </div>
 
-        {/* Right column: timing pills + söluaðili */}
-        <div className="flex flex-col gap-4 border-t border-border pt-4 md:border-t-0 md:border-l md:border-border/60 md:pl-6 md:pt-0">
+        {/* Right column: timing pills (top) + söluaðili (bottom) */}
+        <div className="flex flex-col justify-between gap-4 border-t border-border pt-4 md:border-t-0 md:border-l md:border-border/60 md:pl-6 md:pt-0">
           <div className="flex flex-col items-start gap-1.5 md:items-end">
             {showDeadline && deal.promised_delivery_date && (
               <LabeledPill
@@ -211,7 +211,7 @@ export function DealHeader({
           </div>
 
           {ownerName && (
-            <div className="flex flex-col gap-1.5 md:items-end">
+            <div className="flex flex-col gap-1 md:items-end">
               <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                 {t.deal.owner_id}
               </span>
@@ -222,6 +222,9 @@ export function DealHeader({
                 <span className="text-sm font-medium text-foreground">{ownerName}</span>
               </div>
             </div>
+          )}
+        </div>
+      </div>
           )}
         </div>
       </div>
