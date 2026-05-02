@@ -34,7 +34,7 @@ import {
 } from "@/lib/poActivityLog";
 
 type PORow = Database["public"]["Tables"]["purchase_orders"]["Row"];
-type POLine = Database["public"]["Tables"]["po_lines"]["Row"];
+
 
 function todayIso() {
   return new Date().toISOString().split("T")[0];
