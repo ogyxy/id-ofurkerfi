@@ -319,11 +319,20 @@ export function TrackingCard(props: Props) {
     </button>
   );
 
-  const body = (
-    <>
-      <h2 className="mb-3 text-sm font-semibold text-foreground">
+  const inline = props.inlineHeader === true;
+
+  const headerRow = (
+    <div className={cn("flex items-center justify-between gap-3", inline ? "mb-2" : "mb-3")}>
+      <h2 className="text-sm font-semibold text-foreground">
         {t.purchaseOrder.trackingSectionTitle}
       </h2>
+      {inline && !adding && <div className="shrink-0">{addAffordance}</div>}
+    </div>
+  );
+
+  const body = (
+    <>
+      {headerRow}
 
       {tags.length === 0 ? (
         <div>
@@ -332,7 +341,7 @@ export function TrackingCard(props: Props) {
               {inputBlock}
               {error && <span className="text-xs text-destructive">{error}</span>}
             </div>
-          ) : (
+          ) : inline ? null : (
             addAffordance
           )}
         </div>
@@ -373,7 +382,8 @@ export function TrackingCard(props: Props) {
               </div>
             );
           })}
-          <div className="pt-1">{adding ? inputBlock : addAffordance}</div>
+          {!inline && <div className="pt-1">{adding ? inputBlock : addAffordance}</div>}
+          {inline && adding && <div className="pt-1">{inputBlock}</div>}
           {adding && error && (
             <span className="text-xs text-destructive">{error}</span>
           )}
