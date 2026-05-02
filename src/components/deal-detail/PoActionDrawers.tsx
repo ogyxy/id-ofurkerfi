@@ -318,6 +318,7 @@ export function ApproveInvoiceDialog({
     }
     setPreviewUrl(url);
     setPreviewName(f.original_filename ?? null);
+    markPoInvoiceViewed(po.id);
   };
 
   const confirm = async () => {
