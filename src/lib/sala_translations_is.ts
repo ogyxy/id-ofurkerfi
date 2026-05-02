@@ -641,7 +641,7 @@ export const t = {
     rowMenuRevertToOrdered:  'Skila í pöntunarstöðu',
     rowMenuDelete:           'Eyða PO',
     revertConfirmTitle:      'Ertu viss?',
-    revertConfirmBody:       'Pöntunin verður merkt sem EKKI afhent',
+    revertConfirmBody:       'Pöntunin verður merkt sem EKKI komin í hús',
     revertConfirmYes:        'Já, skila',
     deletePoConfirmTitle:    'Eyða PO?',
     deletePoConfirmBody:     'Þessari aðgerð er ekki hægt að afturkalla.',
