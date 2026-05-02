@@ -647,62 +647,141 @@ function RowMenu({
 }
 
 /**
- * Per-PO download buttons. Renders one icon button per uploaded file
- * (e.g. order confirmation uploaded at PO creation, supplier invoice in Phase 2).
- * Files are stored in the private "po_files" bucket — we generate a short-lived
- * signed URL and trigger a download in a new tab.
+ * Per-PO file access. Renders a single download icon for the row's PO files.
+ *
+ * - 0 files → renders nothing.
+ * - 1 file  → icon click opens that file directly in the PDF preview overlay.
+ * - 2+ files → icon click opens a small popover picker with one row per file
+ *   ("Staðfesting" / "Reikningur frá birgi"); selecting one opens the overlay.
+ *
+ * The overlay itself contains a "Hlaða niður" button so the file is still
+ * one click away when needed.
  */
 function FileDownloadButtons({ files }: { files: PoFile[] }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState<PoFile | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   if (!files || files.length === 0) return null;
 
   const labelFor = (f: PoFile): string => {
-    if (f.file_type === "order_confirmation") return "Pöntunarstaðfesting";
-    if (f.file_type === "invoice") return "Reikningur";
+    if (f.file_type === "order_confirmation")
+      return t.purchaseOrder.fileLabelOrderConfirmation;
+    if (f.file_type === "invoice") return t.purchaseOrder.fileLabelInvoice;
     return f.original_filename ?? "Skjal";
   };
 
-  const handleDownload = async (f: PoFile) => {
-    if (!f.storage_path) {
-      if (f.file_url) window.open(f.file_url, "_blank", "noopener,noreferrer");
-      return;
-    }
-    const { data, error } = await supabase.storage
-      .from("po_files")
-      .createSignedUrl(f.storage_path, 60);
-    if (error || !data?.signedUrl) {
-      toast.error(t.status.somethingWentWrong);
-      return;
-    }
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  const isPdf = (f: PoFile): boolean => {
+    const name = (f.original_filename ?? f.storage_path ?? "").toLowerCase();
+    return name.endsWith(".pdf");
   };
 
+  const resolveUrl = async (f: PoFile): Promise<string | null> => {
+    if (f.storage_path) {
+      const { data, error } = await supabase.storage
+        .from("po_files")
+        .createSignedUrl(f.storage_path, 60);
+      if (error || !data?.signedUrl) {
+        toast.error(t.status.somethingWentWrong);
+        return null;
+      }
+      return data.signedUrl;
+    }
+    return f.file_url ?? null;
+  };
+
+  const openFile = async (f: PoFile) => {
+    setPickerOpen(false);
+    const url = await resolveUrl(f);
+    if (!url) return;
+    if (isPdf(f)) {
+      setPreviewFile(f);
+      setPreviewUrl(url);
+    } else {
+      // Non-PDF file: fall back to direct download / open in new tab.
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  };
+
+  const handleIconClick = () => {
+    if (files.length === 1) {
+      void openFile(files[0]);
+    } else {
+      setPickerOpen((v) => !v);
+    }
+  };
+
+  const triggerLabel =
+    files.length === 1
+      ? `Sækja ${labelFor(files[0])}`
+      : t.purchaseOrder.fileMenuPickLabel;
+
   return (
-    <TooltipProvider>
-      <div className="flex items-center gap-1">
-        {files.map((f) => (
-          <Tooltip key={f.id}>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => void handleDownload(f)}
-                aria-label={`Sækja ${labelFor(f)}`}
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              {labelFor(f)}
-              {f.original_filename && (
-                <span className="ml-1 text-muted-foreground">
-                  · {f.original_filename}
-                </span>
-              )}
-            </TooltipContent>
-          </Tooltip>
-        ))}
-      </div>
-    </TooltipProvider>
+    <>
+      <TooltipProvider>
+        <div className="flex items-center gap-1">
+          {files.length === 1 ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleIconClick}
+                  aria-label={triggerLabel}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                {labelFor(files[0])}
+                {files[0].original_filename && (
+                  <span className="ml-1 text-muted-foreground">
+                    · {files[0].original_filename}
+                  </span>
+                )}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <DropdownMenu open={pickerOpen} onOpenChange={setPickerOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label={triggerLabel}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {files.map((f) => (
+                  <DropdownMenuItem
+                    key={f.id}
+                    onClick={() => void openFile(f)}
+                  >
+                    {labelFor(f)}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </TooltipProvider>
+
+      {previewFile && previewUrl && (
+        <PdfPreviewOverlay
+          open={true}
+          url={previewUrl}
+          title={`${labelFor(previewFile)}${previewFile.original_filename ? ` · ${previewFile.original_filename}` : ""}`}
+          filename={previewFile.original_filename ?? undefined}
+          onClose={() => {
+            setPreviewFile(null);
+            setPreviewUrl(null);
+          }}
+        />
+      )}
+    </>
   );
 }
+
