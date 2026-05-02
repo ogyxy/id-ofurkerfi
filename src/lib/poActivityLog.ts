@@ -3,17 +3,22 @@ import { t } from "@/lib/sala_translations_is";
 import { formatDate } from "@/lib/sala_translations_is";
 import type { POStatus } from "./poConstants";
 
+type LogPoPrefix = "Innkaup" | "Reikningur";
+
 interface LogPoActivityArgs {
   dealId: string | null | undefined;
   companyId?: string | null | undefined;
   poNumber: string;
   body: string;
   createdBy: string | null;
+  prefix?: LogPoPrefix;
 }
 
 /**
  * Insert a note activity onto the linked deal so PO actions show in the deal log.
  * No-op when there is no linked deal.
+ *
+ * Body format: "{prefix} · {PO#}: {body}"  (default prefix = "Innkaup")
  */
 async function logPoActivity({
   dealId,
@@ -21,6 +26,7 @@ async function logPoActivity({
   poNumber,
   body,
   createdBy,
+  prefix = "Innkaup",
 }: LogPoActivityArgs) {
   if (!dealId) return;
   let resolvedCompanyId = companyId ?? null;
@@ -36,7 +42,7 @@ async function logPoActivity({
     deal_id: dealId,
     company_id: resolvedCompanyId,
     type: "note",
-    body: `${poNumber}: ${body}`,
+    body: `${prefix} · ${poNumber}: ${body}`,
     created_by: createdBy,
   });
 }
@@ -92,6 +98,7 @@ export async function logPoPaid(opts: {
   await logPoActivity({
     dealId: opts.dealId,
     poNumber: opts.poNumber,
+    prefix: "Reikningur",
     body: `greitt ${formatDate(opts.paidDate)}`,
     createdBy: opts.createdBy,
   });
@@ -106,7 +113,22 @@ export async function logPoInvoiceRegistered(opts: {
   await logPoActivity({
     dealId: opts.dealId,
     poNumber: opts.poNumber,
-    body: `reikningur skráður${opts.invoiceNumber ? ` (${opts.invoiceNumber})` : ""}`,
+    prefix: "Reikningur",
+    body: `skráður${opts.invoiceNumber ? ` (${opts.invoiceNumber})` : ""}`,
+    createdBy: opts.createdBy,
+  });
+}
+
+export async function logPoInvoiceEdited(opts: {
+  dealId: string | null;
+  poNumber: string;
+  createdBy: string | null;
+}) {
+  await logPoActivity({
+    dealId: opts.dealId,
+    poNumber: opts.poNumber,
+    prefix: "Reikningur",
+    body: `uppfærður`,
     createdBy: opts.createdBy,
   });
 }
@@ -119,7 +141,8 @@ export async function logPoInvoiceApproved(opts: {
   await logPoActivity({
     dealId: opts.dealId,
     poNumber: opts.poNumber,
-    body: `reikningur samþykktur`,
+    prefix: "Reikningur",
+    body: `samþykktur`,
     createdBy: opts.createdBy,
   });
 }
@@ -132,7 +155,8 @@ export async function logPoInvoiceApprovalRevoked(opts: {
   await logPoActivity({
     dealId: opts.dealId,
     poNumber: opts.poNumber,
-    body: `samþykki reiknings afturkallað`,
+    prefix: "Reikningur",
+    body: `samþykki afturkallað`,
     createdBy: opts.createdBy,
   });
 }
@@ -145,6 +169,7 @@ export async function logPoPaymentRevoked(opts: {
   await logPoActivity({
     dealId: opts.dealId,
     poNumber: opts.poNumber,
+    prefix: "Reikningur",
     body: `greiðsla afturkölluð`,
     createdBy: opts.createdBy,
   });
@@ -162,3 +187,57 @@ export async function logPoRevertedToOrdered(opts: {
     createdBy: opts.createdBy,
   });
 }
+
+export async function logPoDeliveredToCustomer(opts: {
+  dealId: string | null;
+  poNumber: string;
+  createdBy: string | null;
+}) {
+  await logPoActivity({
+    dealId: opts.dealId,
+    poNumber: opts.poNumber,
+    body: `afhent viðskiptavini`,
+    createdBy: opts.createdBy,
+  });
+}
+
+export async function logPoLinesEdited(opts: {
+  dealId: string | null;
+  poNumber: string;
+  createdBy: string | null;
+}) {
+  await logPoActivity({
+    dealId: opts.dealId,
+    poNumber: opts.poNumber,
+    body: `línur uppfærðar`,
+    createdBy: opts.createdBy,
+  });
+}
+
+export async function logPoExchangeRateEdited(opts: {
+  dealId: string | null;
+  poNumber: string;
+  newRate: number;
+  createdBy: string | null;
+}) {
+  await logPoActivity({
+    dealId: opts.dealId,
+    poNumber: opts.poNumber,
+    body: `gengi uppfært í ${opts.newRate}`,
+    createdBy: opts.createdBy,
+  });
+}
+
+export async function logPoDeleted(opts: {
+  dealId: string | null;
+  poNumber: string;
+  createdBy: string | null;
+}) {
+  await logPoActivity({
+    dealId: opts.dealId,
+    poNumber: opts.poNumber,
+    body: `pöntun eytt`,
+    createdBy: opts.createdBy,
+  });
+}
+
