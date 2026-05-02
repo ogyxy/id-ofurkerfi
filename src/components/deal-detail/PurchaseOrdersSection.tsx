@@ -453,6 +453,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
           dealId={dealId}
           initial={po.tracking_numbers ?? []}
           bare
+          inlineHeader
         />
       </div>
 
