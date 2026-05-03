@@ -33,6 +33,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatIsk } from "@/lib/sala_translations_is";
 import { ExportReportDialog } from "@/components/yfirlit/ExportReportDialog";
+import { useCurrentRole } from "@/hooks/useCurrentProfile";
+import { canSeeFinancials } from "@/lib/role";
 
 export const Route = createFileRoute("/yfirlit")({
   ssr: false,
@@ -170,6 +172,8 @@ function YfirlitContent({
   currentUserId: string;
   currentUserEmail: string;
 }) {
+  const role = useCurrentRole();
+  const showFinancials = canSeeFinancials(role);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [viewedUserId, setViewedUserId] = useState<string>(currentUserId);
   const [tasks, setTasks] = useState<TaskItem[]>([]);
@@ -543,6 +547,8 @@ function YfirlitContent({
         )}
       </section>
 
+      {showFinancials && (
+      <>
       {/* Pulse */}
       <section>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -724,10 +730,13 @@ function YfirlitContent({
           </ResponsiveContainer>
         </div>
       </section>
+      </>
+      )}
 
       {/* Two columns: Top customers + Recent activity */}
       <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Top customers */}
+        {showFinancials && (
         <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {t.yfirlit.topCustomersTitle}
@@ -765,6 +774,7 @@ function YfirlitContent({
             </ul>
           )}
         </div>
+        )}
 
         {/* Recent activity */}
         <div className="rounded-lg border border-border bg-card p-5 shadow-sm">

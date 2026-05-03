@@ -14,6 +14,8 @@ import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { t } from "@/lib/sala_translations_is";
 import { SidebarNavLink } from "./SidebarNavLink";
+import { useCurrentRole } from "@/hooks/useCurrentProfile";
+import { canSeeFinancials } from "@/lib/role";
 
 import ideLogo from "@/assets/ide-logo.png";
 
@@ -43,9 +45,15 @@ const navItems: Array<{
 
 export function Sidebar({ activeKey, userEmail }: SidebarProps) {
   const navigate = useNavigate();
+  const role = useCurrentRole();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
   const collapsed = !hovered;
+  const visibleNavItems = navItems.filter((item) => {
+    // Purchase orders are financial; hide from designer/viewer.
+    if (item.key === "purchaseOrders") return canSeeFinancials(role);
+    return true;
+  });
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -82,7 +90,7 @@ export function Sidebar({ activeKey, userEmail }: SidebarProps) {
       </div>
 
       <nav className="flex-1 overflow-y-auto py-2">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <SidebarNavLink
             key={item.key}
             label={item.label}
