@@ -75,6 +75,7 @@ export function InvoiceDrawer({
   const [date, setDate] = useState(todayIso());
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [mismatchOpen, setMismatchOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -92,6 +93,7 @@ export function InvoiceDrawer({
       setDate(todayIso());
     }
     setFile(null);
+    setMismatchOpen(false);
   }, [open, editMode, po]);
 
   const save = async () => {
