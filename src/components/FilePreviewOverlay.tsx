@@ -10,9 +10,9 @@ interface FilePreviewOverlayProps {
   onOpenChange: (open: boolean) => void;
   file: {
     original_filename: string | null;
-    signedUrl: string | null;
-    signedUrlDownload: string | null;
-    thumbnailUrl: string | null;
+    signedUrl?: string | null;
+    signedUrlDownload?: string | null;
+    thumbnailUrl?: string | null;
   } | null;
 }
 
@@ -88,8 +88,8 @@ export function FilePreviewOverlay({ open, onOpenChange, file }: FilePreviewOver
               isPdf={isPdf}
               isAi={isAi}
               filename={filename}
-              signedUrl={file.signedUrl}
-              thumbnailUrl={file.thumbnailUrl}
+              signedUrl={file.signedUrl ?? null}
+              thumbnailUrl={file.thumbnailUrl ?? null}
             />
           </div>
         </DialogPrimitive.Content>
