@@ -188,12 +188,14 @@ export function TrackingCard(props: Props) {
         });
         if (err) toast.error(t.status.somethingWentWrong);
         await reloadPos();
+        await props.onChanged?.();
       } else {
         const { error: err } = await supabase
           .from("purchase_orders")
           .update({ tracking_numbers: next })
           .eq("id", props.poId);
         if (err) toast.error(t.status.somethingWentWrong);
+        else await props.onChanged?.();
       }
     } else if (dealId) {
       const { error: err } = await removeTrackingNumber(supabase, {
@@ -203,6 +205,7 @@ export function TrackingCard(props: Props) {
       });
       if (err) toast.error(t.status.somethingWentWrong);
       await reloadPos();
+      await props.onChanged?.();
     }
   };
 
