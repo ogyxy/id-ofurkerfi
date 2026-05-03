@@ -570,29 +570,33 @@ function DealDetailContent() {
         legacyAllowProgressionWithoutPo={deal.created_at < PO_GATE_CUTOFF}
       />
 
-      <DealLinesEditor
-        dealId={deal.id}
-        lines={lines}
-        setLines={setLines}
-        defaultMarkupPct={defaultMarkupPct}
-        setDefaultMarkupPct={setDefaultMarkupPct}
-        rates={rates}
-        ratesError={ratesError}
-        onSaveDefaultMarkup={saveDefaultMarkup}
-        onSaved={load}
-        readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
-      />
+      {showFinancials && (
+        <DealLinesEditor
+          dealId={deal.id}
+          lines={lines}
+          setLines={setLines}
+          defaultMarkupPct={defaultMarkupPct}
+          setDefaultMarkupPct={setDefaultMarkupPct}
+          rates={rates}
+          ratesError={ratesError}
+          onSaveDefaultMarkup={saveDefaultMarkup}
+          onSaved={load}
+          readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
+        />
+      )}
 
-      <DealSummary
-        dealId={deal.id}
-        lines={lines}
-        shippingCost={shippingCost}
-        setShippingCost={setShippingCost}
-        vskStatus={company.vsk_status}
-        readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
-        refundAmountIsk={deal.refund_amount_isk as number | null}
-        defectResolution={deal.defect_resolution}
-      />
+      {showFinancials && (
+        <DealSummary
+          dealId={deal.id}
+          lines={lines}
+          shippingCost={shippingCost}
+          setShippingCost={setShippingCost}
+          vskStatus={company.vsk_status}
+          readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
+          refundAmountIsk={deal.refund_amount_isk as number | null}
+          defectResolution={deal.defect_resolution}
+        />
+      )}
 
       <DealFilesSection
         dealId={deal.id}
@@ -603,20 +607,22 @@ function DealDetailContent() {
       />
 
 
-      <DealLog
-        dealId={deal.id}
-        companyId={company.id}
-        entries={(() => {
-          const poNumbers = pos.map((p) => p.po_number);
-          return logEntries.filter((e) => {
-            if (e.type !== "note") return true;
-            const body = e.body ?? "";
-            return !poNumbers.some((n) => body.startsWith(`${n}:`));
-          });
-        })()}
-        currentProfile={currentProfile}
-        onChanged={load}
-      />
+      {showActivities && (
+        <DealLog
+          dealId={deal.id}
+          companyId={company.id}
+          entries={(() => {
+            const poNumbers = pos.map((p) => p.po_number);
+            return logEntries.filter((e) => {
+              if (e.type !== "note") return true;
+              const body = e.body ?? "";
+              return !poNumbers.some((n) => body.startsWith(`${n}:`));
+            });
+          })()}
+          currentProfile={currentProfile}
+          onChanged={load}
+        />
+      )}
 
       <EditDealDrawer
         open={editOpen}
