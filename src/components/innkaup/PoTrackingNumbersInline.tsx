@@ -19,7 +19,7 @@ interface Props {
 }
 
 function getTrackingUrl(trackingNumber: string): string {
-  return `https://www.ordertracker.com/track/${encodeURIComponent(trackingNumber)}`;
+  return `https://packageradar.com/${encodeURIComponent(trackingNumber)}`;
 }
 
 export function PoTrackingNumbersInline({ poId, dealId, initial }: Props) {
@@ -76,10 +76,7 @@ export function PoTrackingNumbersInline({ poId, dealId, initial }: Props) {
       setSiblingPos(list);
     } else {
       // No linked deal: just write the PO directly
-      const { error: err } = await supabase
-        .from("purchase_orders")
-        .update({ tracking_numbers: next })
-        .eq("id", poId);
+      const { error: err } = await supabase.from("purchase_orders").update({ tracking_numbers: next }).eq("id", poId);
       if (err) toast.error(t.status.somethingWentWrong);
     }
   };
@@ -98,10 +95,7 @@ export function PoTrackingNumbersInline({ poId, dealId, initial }: Props) {
       const list = await fetchLinkedPos(supabase, dealId);
       setSiblingPos(list);
     } else {
-      const { error: err } = await supabase
-        .from("purchase_orders")
-        .update({ tracking_numbers: next })
-        .eq("id", poId);
+      const { error: err } = await supabase.from("purchase_orders").update({ tracking_numbers: next }).eq("id", poId);
       if (err) toast.error(t.status.somethingWentWrong);
     }
   };
@@ -158,10 +152,7 @@ export function PoTrackingNumbersInline({ poId, dealId, initial }: Props) {
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-1.5">
         {tags.map((tag) => (
-          <span
-            key={tag}
-            className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
-          >
+          <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs">
             <a
               href={getTrackingUrl(tag)}
               target="_blank"
@@ -194,9 +185,7 @@ export function PoTrackingNumbersInline({ poId, dealId, initial }: Props) {
           </button>
         )}
       </div>
-      {adding && error && (
-        <span className="text-[11px] text-destructive">{error}</span>
-      )}
+      {adding && error && <span className="text-[11px] text-destructive">{error}</span>}
     </div>
   );
 }
