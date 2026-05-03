@@ -514,7 +514,7 @@ function DealDetailContent() {
         onEdit={() => setEditOpen(true)}
       />
 
-      {(deal.stage === "delivered" ||
+      {showFinancials && (deal.stage === "delivered" ||
         deal.stage === "defect_reorder" ||
         deal.payday_invoice_id) && (
         <PaydayInvoiceCard
@@ -525,7 +525,7 @@ function DealDetailContent() {
         />
       )}
 
-      {pos.length > 0 ? (
+      {showPos && pos.length > 0 ? (
         <PurchaseOrdersSection
           dealId={deal.id}
           pos={pos}
