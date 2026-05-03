@@ -192,6 +192,7 @@ export function InvoiceDrawer({
   };
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-[440px]">
         <SheetHeader>
