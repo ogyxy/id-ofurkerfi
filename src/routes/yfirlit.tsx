@@ -33,6 +33,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatIsk } from "@/lib/sala_translations_is";
 import { ExportReportDialog } from "@/components/yfirlit/ExportReportDialog";
+import { useCurrentRole } from "@/hooks/useCurrentProfile";
+import { canSeeFinancials } from "@/lib/role";
 
 export const Route = createFileRoute("/yfirlit")({
   ssr: false,
@@ -170,6 +172,8 @@ function YfirlitContent({
   currentUserId: string;
   currentUserEmail: string;
 }) {
+  const role = useCurrentRole();
+  const showFinancials = canSeeFinancials(role);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [viewedUserId, setViewedUserId] = useState<string>(currentUserId);
   const [tasks, setTasks] = useState<TaskItem[]>([]);
