@@ -504,6 +504,7 @@ function DealDetailContent() {
         contact={contact}
         ownerName={ownerName}
         quoteValidUntil={quoteValidUntil}
+        pos={pos}
         onEdit={() => setEditOpen(true)}
       />
 
