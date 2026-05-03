@@ -7,6 +7,8 @@ import { AppMain } from "@/components/AppMain";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
+import { useCurrentRole } from "@/hooks/useCurrentProfile";
+import { canSeeFinancials, canSeePurchaseOrders, canSeeActivities } from "@/lib/role";
 import { Button } from "@/components/ui/button";
 import { goBack } from "@/lib/dealReturn";
 import { StageStepper } from "@/components/deal-detail/StageStepper";
@@ -99,6 +101,10 @@ function DealDetailPage() {
 function DealDetailContent() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const role = useCurrentRole();
+  const showFinancials = canSeeFinancials(role);
+  const showPos = canSeePurchaseOrders(role);
+  const showActivities = canSeeActivities(role);
 
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
