@@ -7,6 +7,7 @@ import {
   Upload,
 } from "lucide-react";
 import { FileThumbnail } from "@/components/FileThumbnail";
+import { FilePreviewOverlay } from "@/components/FilePreviewOverlay";
 import { MultiFileUploadDialog } from "@/components/MultiFileUploadDialog";
 import { smartGuessBrandFileType } from "@/lib/uploadHelpers";
 import {
@@ -120,6 +121,7 @@ export function CompanyFilesTab({
   const [dealFiles, setDealFiles] = useState<DealFileRow[]>([]);
   const [deals, setDeals] = useState<DealLite[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState<CompanyFileRow | null>(null);
   const [activeFilter, setActiveFilter] = useState<DealFileType | null>(null);
 
   const load = useCallback(async () => {
