@@ -564,7 +564,7 @@ function EmptyState({ hasFilter, onClear }: { hasFilter: boolean; onClear: () =>
   );
 }
 
-function FileCard({ file }: { file: MergedFile }) {
+function FileCard({ file, onPreview }: { file: MergedFile; onPreview: () => void }) {
   const company = file.source === "deal" ? file.deal?.company : file.company;
   const dealLink =
     file.source === "deal" && file.deal
