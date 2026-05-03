@@ -547,6 +547,8 @@ function YfirlitContent({
         )}
       </section>
 
+      {showFinancials && (
+      <>
       {/* Pulse */}
       <section>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
