@@ -422,12 +422,33 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
 
         <div className="ml-auto flex items-center gap-2">
           <div className="text-right">
-            <div className="text-sm font-medium text-foreground tabular-nums">
-              {totalIsk !== null ? formatIsk(totalIsk) : "—"}
+            <div className="flex items-center justify-end gap-1.5 text-sm font-medium text-foreground tabular-nums">
+              {invoiceMismatch && !isInvoiceApproved && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center text-red-600">
+                        <AlertTriangle className="h-4 w-4" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      {t.purchaseOrder.invoiceMismatchTooltip}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              <span>{totalIsk !== null ? formatIsk(totalIsk) : "—"}</span>
             </div>
             <div className="text-xs text-muted-foreground tabular-nums">
               {po.currency} {formatNumber(total, 2)}
             </div>
+            {invoiceMismatch && !isInvoiceApproved && invoiceAmount != null && (
+              <div className="text-xs font-medium text-red-600 tabular-nums">
+                {t.purchaseOrder.invoiceRegisteredShort}: {po.currency}{" "}
+                {formatNumber(invoiceAmount, 2)} ({invoiceDiff > 0 ? "+" : ""}
+                {formatNumber(invoiceDiff, 2)})
+              </div>
+            )}
           </div>
           <FileDownloadButtons files={files} />
           <RowMenu
