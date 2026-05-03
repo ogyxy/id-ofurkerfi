@@ -415,6 +415,22 @@ export function ApproveInvoiceDialog({
               {po.po_number} · {po.supplier_invoice_number ?? "—"}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {(() => {
+            const ord = Number(po.amount ?? 0);
+            const inv = po.supplier_invoice_amount != null ? Number(po.supplier_invoice_amount) : null;
+            if (inv == null || Math.abs(inv - ord) <= 0.01) return null;
+            const d = +(inv - ord).toFixed(2);
+            return (
+              <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
+                <div className="font-medium">{t.purchaseOrder.invoiceMismatchTooltip}</div>
+                <div className="mt-1 text-xs">
+                  Pantað: {ord.toFixed(2)} {po.currency} · Reikningur:{" "}
+                  <strong>{inv.toFixed(2)} {po.currency}</strong> ({d > 0 ? "+" : ""}
+                  {d.toFixed(2)})
+                </div>
+              </div>
+            );
+          })()}
           {!viewed && (
             <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
               {t.purchaseOrder.invoiceNotViewedWarning}
