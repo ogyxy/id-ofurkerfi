@@ -12,12 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   fetchLinkedPos,
   findDuplicateTrackingPo,
@@ -27,7 +22,7 @@ import {
 } from "@/lib/poSoSync";
 
 function getTrackingUrl(trackingNumber: string): string {
-  return `https://www.ordertracker.com/track/${encodeURIComponent(trackingNumber)}`;
+  return `https://packageradar.com/${encodeURIComponent(trackingNumber)}`;
 }
 
 type Props = (
@@ -67,9 +62,7 @@ export function TrackingCard(props: Props) {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pos, setPos] = useState<LinkedPo[]>([]);
-  const [selectedPoId, setSelectedPoId] = useState<string | null>(
-    isPo ? props.poId : null,
-  );
+  const [selectedPoId, setSelectedPoId] = useState<string | null>(isPo ? props.poId : null);
 
   useEffect(() => setTags(props.initial), [props.initial]);
 
@@ -239,12 +232,7 @@ export function TrackingCard(props: Props) {
       {showPicker && selectedPo && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 px-2 text-xs"
-            >
+            <Button type="button" variant="outline" size="sm" className="h-8 px-2 text-xs">
               <span className="font-mono">{selectedPo.po_number}</span>
               {(selectedPo.supplier_record?.name ?? selectedPo.supplier) && (
                 <span className="ml-1.5 text-muted-foreground">
@@ -255,21 +243,13 @@ export function TrackingCard(props: Props) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <div className="px-2 py-1 text-[11px] text-muted-foreground">
-              {t.deal.trackingPickPo}
-            </div>
+            <div className="px-2 py-1 text-[11px] text-muted-foreground">{t.deal.trackingPickPo}</div>
             {activePos.map((p) => {
               const sup = p.supplier_record?.name ?? p.supplier;
               return (
-                <DropdownMenuItem
-                  key={p.id}
-                  onClick={() => setSelectedPoId(p.id)}
-                  className="text-xs"
-                >
+                <DropdownMenuItem key={p.id} onClick={() => setSelectedPoId(p.id)} className="text-xs">
                   <span className="font-mono">{p.po_number}</span>
-                  {sup && (
-                    <span className="ml-1.5 text-muted-foreground">· {sup}</span>
-                  )}
+                  {sup && <span className="ml-1.5 text-muted-foreground">· {sup}</span>}
                 </DropdownMenuItem>
               );
             })}
@@ -337,9 +317,7 @@ export function TrackingCard(props: Props) {
 
   const headerRow = inline ? null : (
     <div className="mb-3 flex items-center justify-between gap-3">
-      <h2 className="text-sm font-semibold text-foreground">
-        {t.purchaseOrder.trackingSectionTitle}
-      </h2>
+      <h2 className="text-sm font-semibold text-foreground">{t.purchaseOrder.trackingSectionTitle}</h2>
     </div>
   );
 
@@ -397,21 +375,13 @@ export function TrackingCard(props: Props) {
               </div>
             );
           })}
-          {canAddMore && (
-            <div className="pt-1">{adding ? inputBlock : addAffordance}</div>
-          )}
-          {adding && error && (
-            <span className="text-xs text-destructive">{error}</span>
-          )}
+          {canAddMore && <div className="pt-1">{adding ? inputBlock : addAffordance}</div>}
+          {adding && error && <span className="text-xs text-destructive">{error}</span>}
         </div>
       )}
     </>
   );
 
   if (props.bare) return <div>{body}</div>;
-  return (
-    <div className="rounded-md border border-border bg-card p-6 shadow-sm">
-      {body}
-    </div>
-  );
+  return <div className="rounded-md border border-border bg-card p-6 shadow-sm">{body}</div>;
 }
