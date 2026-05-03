@@ -237,6 +237,20 @@ export function DealHeader({
                 tone={estimatedTone}
               />
             )}
+            {showMottekid && (
+              <LabeledPill
+                label="Móttekið"
+                value={formatDate(lastReceivedDate)}
+                tone="purple"
+              />
+            )}
+            {showAfhent && (
+              <LabeledPill
+                label="Afhent"
+                value={formatDate(lastDeliveredDate)}
+                tone="success"
+              />
+            )}
           </div>
 
           {ownerName && (
