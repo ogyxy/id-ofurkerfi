@@ -190,7 +190,7 @@ export function MultiFileUploadDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && !uploading && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
