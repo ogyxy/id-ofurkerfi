@@ -47,6 +47,10 @@ type Props = (
   bare?: boolean;
   /** When true, render the section title and the "+ add" affordance on the same line to save vertical space. */
   inlineHeader?: boolean;
+  /** Called after a successful add/remove so parent state can refetch. */
+  onChanged?: () => void | Promise<void>;
+  /** When false, the X-remove button next to each tracking number is hidden. */
+  canRemove?: boolean;
 };
 
 /**
@@ -159,6 +163,7 @@ export function TrackingCard(props: Props) {
         setTags(props.initial);
       }
       await reloadPos();
+      await props.onChanged?.();
     } else if (isPo) {
       // PO with no linked deal: write directly
       const { error: err } = await supabase
@@ -166,6 +171,7 @@ export function TrackingCard(props: Props) {
         .update({ tracking_numbers: next })
         .eq("id", props.poId);
       if (err) toast.error(t.status.somethingWentWrong);
+      else await props.onChanged?.();
     }
   };
 
@@ -182,12 +188,14 @@ export function TrackingCard(props: Props) {
         });
         if (err) toast.error(t.status.somethingWentWrong);
         await reloadPos();
+        await props.onChanged?.();
       } else {
         const { error: err } = await supabase
           .from("purchase_orders")
           .update({ tracking_numbers: next })
           .eq("id", props.poId);
         if (err) toast.error(t.status.somethingWentWrong);
+        else await props.onChanged?.();
       }
     } else if (dealId) {
       const { error: err } = await removeTrackingNumber(supabase, {
@@ -197,6 +205,7 @@ export function TrackingCard(props: Props) {
       });
       if (err) toast.error(t.status.somethingWentWrong);
       await reloadPos();
+      await props.onChanged?.();
     }
   };
 
@@ -375,14 +384,16 @@ export function TrackingCard(props: Props) {
                     </span>
                   )}
                 </a>
-                <button
-                  type="button"
-                  onClick={() => void removeTag(tag)}
-                  className="text-muted-foreground hover:text-destructive"
-                  aria-label="remove"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                {props.canRemove !== false && (
+                  <button
+                    type="button"
+                    onClick={() => void removeTag(tag)}
+                    className="text-muted-foreground hover:text-destructive"
+                    aria-label="remove"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             );
           })}

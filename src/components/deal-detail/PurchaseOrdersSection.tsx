@@ -432,6 +432,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
           <FileDownloadButtons files={files} />
           <RowMenu
             isReceived={isReceived}
+            isPaid={isPaid}
             hasInvoice={hasInvoice}
             poStatus={po.status}
             onRevertClick={() => setRevertOpen(true)}
@@ -525,6 +526,8 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
           initial={po.tracking_numbers ?? []}
           bare
           inlineHeader
+          onChanged={onChanged}
+          canRemove={!isReceived}
         />
       </div>
 
@@ -607,6 +610,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
 
 interface RowMenuProps {
   isReceived: boolean;
+  isPaid: boolean;
   hasInvoice: boolean;
   poStatus: Database["public"]["Enums"]["po_status"];
   onRevertClick: () => void;
@@ -617,6 +621,7 @@ interface RowMenuProps {
 
 function RowMenu({
   isReceived,
+  isPaid,
   hasInvoice,
   poStatus,
   onRevertClick,
@@ -624,6 +629,9 @@ function RowMenu({
   onEditInvoice,
   onDelete,
 }: RowMenuProps) {
+  // When PO is paid, all menu actions are locked.
+  // When PO has been received (but not paid), "Breyta PO" is locked.
+  const editPoDisabled = isPaid || isReceived;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -632,18 +640,18 @@ function RowMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuItem onClick={onEditPo}>
+        <DropdownMenuItem onClick={onEditPo} disabled={editPoDisabled}>
           {t.purchaseOrder.rowMenuEditPo}
         </DropdownMenuItem>
         {hasInvoice && (
-          <DropdownMenuItem onClick={onEditInvoice}>
+          <DropdownMenuItem onClick={onEditInvoice} disabled={isPaid}>
             {t.purchaseOrder.rowMenuEditInvoice}
           </DropdownMenuItem>
         )}
         {isReceived && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onRevertClick}>
+            <DropdownMenuItem onClick={onRevertClick} disabled={isPaid}>
               {t.purchaseOrder.rowMenuRevertToOrdered}
             </DropdownMenuItem>
           </>
