@@ -50,6 +50,8 @@ interface BaseFileRow {
   file_size_bytes: number | null;
   uploaded_at: string;
   uploaded_by: string | null;
+  thumbnail_path: string | null;
+  thumbnail_status: string;
 }
 
 interface DealFileRow extends BaseFileRow {
@@ -62,9 +64,15 @@ interface CompanyFileRow extends BaseFileRow {
   company: CompanyLite | null;
 }
 
+type SignedExtras = {
+  signedUrl: string | null;
+  signedUrlDownload: string | null;
+  thumbnailUrl: string | null;
+};
+
 type MergedFile =
-  | (DealFileRow & { source: "deal"; signedUrl: string | null; signedUrlDownload: string | null })
-  | (CompanyFileRow & { source: "company"; signedUrl: string | null; signedUrlDownload: string | null });
+  | (DealFileRow & { source: "deal" } & SignedExtras)
+  | (CompanyFileRow & { source: "company" } & SignedExtras);
 
 type TypeFilter = "mockup" | "artwork" | "logo" | "presentation" | "brand";
 
