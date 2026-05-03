@@ -252,6 +252,29 @@ function HonnunContent() {
     void loadAll();
   }, [loadAll]);
 
+  // One-time backfill of pending thumbnails for admin/designer users.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (cancelled || !auth.user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", auth.user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const role = profile?.role;
+      if (role !== "admin" && role !== "designer") return;
+
+      const { runThumbnailBackfill } = await import("@/lib/thumbnailBackfill");
+      void runThumbnailBackfill(() => cancelled);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // When search term changes, re-query deal_lines for product matches
   useEffect(() => {
     const term = debouncedSearch.trim();
