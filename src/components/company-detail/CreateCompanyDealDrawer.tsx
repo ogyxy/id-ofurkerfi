@@ -76,7 +76,7 @@ export function CreateCompanyDealDrawer({
 
   const [name, setName] = useState("");
   const [ownerId, setOwnerId] = useState(currentUserId);
-  const [markup, setMarkup] = useState("30");
+  const [markup, setMarkup] = useState("100");
   const [promisedDate, setPromisedDate] = useState("");
   const [firstNote, setFirstNote] = useState("");
   const [saving, setSaving] = useState(false);
@@ -120,7 +120,7 @@ export function CreateCompanyDealDrawer({
   const reset = () => {
     setContactId("");
     setName("");
-    setMarkup("30");
+    setMarkup("100");
     setPromisedDate("");
     setFirstNote("");
     setContactSearch("");
@@ -195,7 +195,7 @@ export function CreateCompanyDealDrawer({
         owner_id: ownerId || null,
         name: name.trim(),
         stage: "quote_in_progress",
-        default_markup_pct: Number(markup) || 30,
+        default_markup_pct: Number(markup) || 100,
         promised_delivery_date: promisedDate || null,
       })
       .select("id, company_id")
