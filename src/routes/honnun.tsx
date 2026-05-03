@@ -151,6 +151,7 @@ function HonnunContent() {
   const [allFiles, setAllFiles] = useState<MergedFile[]>([]);
   const [lineMatchedDealIds, setLineMatchedDealIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [previewFile, setPreviewFile] = useState<MergedFile | null>(null);
 
   // Cache so re-running searches doesn't regenerate signed URLs needlessly
   const urlCacheRef = useRef<Map<string, { url: string; download: string; thumb: string }>>(new Map());
