@@ -162,7 +162,7 @@ function HonnunContent() {
       .from("deal_files")
       .select(
         `id, deal_id, storage_path, file_type, original_filename,
-         file_size_bytes, uploaded_at, uploaded_by,
+         file_size_bytes, uploaded_at, uploaded_by, thumbnail_path, thumbnail_status,
          deal:deals!deal_files_deal_id_fkey(id, so_number, name, company_id, archived,
                     company:companies(id, name))`,
       )
@@ -173,7 +173,7 @@ function HonnunContent() {
       .from("company_files")
       .select(
         `id, company_id, storage_path, file_type, original_filename,
-         file_size_bytes, uploaded_at, uploaded_by,
+         file_size_bytes, uploaded_at, uploaded_by, thumbnail_path, thumbnail_status,
          company:companies!company_files_company_id_fkey(id, name)`,
       )
       .order("uploaded_at", { ascending: false });
@@ -190,19 +190,29 @@ function HonnunContent() {
 
     // Generate signed URLs in parallel, with caching
     const cache = urlCacheRef.current;
-    const sign = async (storagePath: string, filename: string | null) => {
-      const key = `${storagePath}|${filename ?? ""}`;
+    const sign = async (
+      storagePath: string,
+      filename: string | null,
+      thumbPath: string | null,
+      thumbStatus: string,
+    ) => {
+      const key = `${storagePath}|${filename ?? ""}|${thumbPath ?? ""}`;
       const cached = cache.get(key);
       if (cached) return cached;
-      const [view, dl] = await Promise.all([
+      const wantThumb = thumbStatus === "done" && !!thumbPath;
+      const [view, dl, thumb] = await Promise.all([
         supabase.storage.from("deal_files").createSignedUrl(storagePath, 3600),
         supabase.storage
           .from("deal_files")
           .createSignedUrl(storagePath, 3600, { download: filename ?? true }),
+        wantThumb
+          ? supabase.storage.from("thumbnails").createSignedUrl(thumbPath!, 3600)
+          : Promise.resolve({ data: null }),
       ]);
       const value = {
         url: view.data?.signedUrl ?? "",
         download: dl.data?.signedUrl ?? "",
+        thumb: thumb.data?.signedUrl ?? "",
       };
       cache.set(key, value);
       return value;
@@ -210,24 +220,26 @@ function HonnunContent() {
 
     const dealMerged: MergedFile[] = await Promise.all(
       liveDealFiles.map(async (f) => {
-        const u = await sign(f.storage_path, f.original_filename);
+        const u = await sign(f.storage_path, f.original_filename, f.thumbnail_path, f.thumbnail_status);
         return {
           ...f,
           source: "deal" as const,
           signedUrl: u.url || null,
           signedUrlDownload: u.download || null,
+          thumbnailUrl: u.thumb || null,
         };
       }),
     );
 
     const companyMerged: MergedFile[] = await Promise.all(
       cFiles.map(async (f) => {
-        const u = await sign(f.storage_path, f.original_filename);
+        const u = await sign(f.storage_path, f.original_filename, f.thumbnail_path, f.thumbnail_status);
         return {
           ...f,
           source: "company" as const,
           signedUrl: u.url || null,
           signedUrlDownload: u.download || null,
+          thumbnailUrl: u.thumb || null,
         };
       }),
     );
