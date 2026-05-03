@@ -152,7 +152,7 @@ function HonnunContent() {
   const [loading, setLoading] = useState(true);
 
   // Cache so re-running searches doesn't regenerate signed URLs needlessly
-  const urlCacheRef = useRef<Map<string, { url: string; download: string }>>(new Map());
+  const urlCacheRef = useRef<Map<string, { url: string; download: string; thumb: string }>>(new Map());
 
   // Load all files once on mount
   const loadAll = useCallback(async () => {
