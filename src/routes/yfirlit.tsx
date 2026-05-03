@@ -736,6 +736,7 @@ function YfirlitContent({
       {/* Two columns: Top customers + Recent activity */}
       <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Top customers */}
+        {showFinancials && (
         <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {t.yfirlit.topCustomersTitle}
@@ -773,6 +774,7 @@ function YfirlitContent({
             </ul>
           )}
         </div>
+        )}
 
         {/* Recent activity */}
         <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
