@@ -206,15 +206,23 @@ export function DealFilesSection({
               contentType: file.type || "application/octet-stream",
             });
           if (upErr) throw new Error(upErr.message);
-          const { error: insErr } = await supabase.from("deal_files").insert({
-            deal_id: dealId,
-            storage_path: storagePath,
-            file_type: fileType,
-            original_filename: file.name,
-            file_size_bytes: file.size,
-            uploaded_by: currentProfileId,
-          });
+          const { data: inserted, error: insErr } = await supabase
+            .from("deal_files")
+            .insert({
+              deal_id: dealId,
+              storage_path: storagePath,
+              file_type: fileType,
+              original_filename: file.name,
+              file_size_bytes: file.size,
+              uploaded_by: currentProfileId,
+              thumbnail_status: initialThumbStatus(file.name),
+            })
+            .select("id")
+            .single();
           if (insErr) throw new Error(insErr.message);
+          if (inserted?.id) {
+            processThumbnailInBackground("deal_files", inserted.id, file, file.name);
+          }
         }}
         onAnySuccess={() => void load()}
         onBatchComplete={async (result) => {
@@ -258,6 +266,8 @@ function FileCard({
         <FileThumbnail
           filename={file.original_filename}
           signedUrl={file.signedUrl}
+          thumbnailUrl={file.thumbnailUrl}
+          thumbnailStatus={file.thumbnail_status}
           className="h-28"
         />
         <div className="space-y-0.5 p-3">
