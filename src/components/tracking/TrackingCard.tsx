@@ -163,6 +163,7 @@ export function TrackingCard(props: Props) {
         setTags(props.initial);
       }
       await reloadPos();
+      await props.onChanged?.();
     } else if (isPo) {
       // PO with no linked deal: write directly
       const { error: err } = await supabase
@@ -170,6 +171,7 @@ export function TrackingCard(props: Props) {
         .update({ tracking_numbers: next })
         .eq("id", props.poId);
       if (err) toast.error(t.status.somethingWentWrong);
+      else await props.onChanged?.();
     }
   };
 
