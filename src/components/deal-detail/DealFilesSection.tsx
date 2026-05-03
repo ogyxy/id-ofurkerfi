@@ -267,12 +267,12 @@ function FileCard({
 
   return (
     <div className="group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
-      <a
-        href={file.signedUrl ?? "#"}
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        type="button"
+        onClick={onPreview}
         className="block w-full text-left"
         title={file.original_filename ?? ""}
+        aria-label={`${t.dealFile.title}: ${file.original_filename ?? ""}`}
       >
         <FileThumbnail
           filename={file.original_filename}
@@ -292,7 +292,7 @@ function FileCard({
             {file.profile?.name ?? "—"} · {formatDate(file.uploaded_at)}
           </div>
         </div>
-      </a>
+      </button>
 
       <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
         <a
