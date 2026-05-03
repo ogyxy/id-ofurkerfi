@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Download, Trash2, Upload } from "lucide-react";
 import { FileThumbnail } from "@/components/FileThumbnail";
+import { FilePreviewOverlay } from "@/components/FilePreviewOverlay";
 import { MultiFileUploadDialog } from "@/components/MultiFileUploadDialog";
 import { smartGuessDealFileType } from "@/lib/uploadHelpers";
 import {
