@@ -548,6 +548,8 @@ function FileCard({ file }: { file: MergedFile }) {
         <FileThumbnail
           filename={file.original_filename}
           signedUrl={file.signedUrl}
+          thumbnailUrl={file.thumbnailUrl}
+          thumbnailStatus={file.thumbnail_status}
           className="h-32"
         />
 
