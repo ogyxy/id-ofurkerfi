@@ -9,6 +9,10 @@ import {
 import { FileThumbnail } from "@/components/FileThumbnail";
 import { MultiFileUploadDialog } from "@/components/MultiFileUploadDialog";
 import { smartGuessBrandFileType } from "@/lib/uploadHelpers";
+import {
+  processThumbnailInBackground,
+  initialThumbStatus,
+} from "@/lib/thumbnailPipeline";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatDate } from "@/lib/sala_translations_is";
@@ -72,9 +76,12 @@ interface CompanyFileRow {
   file_size_bytes: number | null;
   uploaded_at: string;
   uploaded_by: string | null;
+  thumbnail_path: string | null;
+  thumbnail_status: string;
   profile?: { id: string; name: string | null } | null;
   signedUrl?: string | null;
   signedUrlDownload?: string | null;
+  thumbnailUrl?: string | null;
 }
 
 interface DealFileRow extends CompanyFileRow {
