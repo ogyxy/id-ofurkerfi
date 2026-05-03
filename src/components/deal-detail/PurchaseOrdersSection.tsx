@@ -526,6 +526,8 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
           initial={po.tracking_numbers ?? []}
           bare
           inlineHeader
+          onChanged={onChanged}
+          canRemove={!isReceived}
         />
       </div>
 
