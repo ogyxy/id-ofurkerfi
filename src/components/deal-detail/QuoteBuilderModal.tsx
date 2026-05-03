@@ -276,14 +276,30 @@ export function QuoteBuilderModal({
         uploadOk = false;
         console.error("[quote upload]", upErr);
       } else {
-        await supabase.from("deal_files").insert({
-          deal_id: deal.id,
-          storage_path: filePath,
-          file_type: "quote",
-          original_filename: filename,
-          file_size_bytes: bytes.byteLength,
-          uploaded_by: currentProfile?.id ?? null,
-        });
+        const { data: inserted } = await supabase
+          .from("deal_files")
+          .insert({
+            deal_id: deal.id,
+            storage_path: filePath,
+            file_type: "quote",
+            original_filename: filename,
+            file_size_bytes: bytes.byteLength,
+            uploaded_by: currentProfile?.id ?? null,
+            thumbnail_status: "processing",
+          })
+          .select("id")
+          .single();
+        if (inserted?.id) {
+          const { processThumbnailInBackground } = await import(
+            "@/lib/thumbnailPipeline"
+          );
+          processThumbnailInBackground(
+            "deal_files",
+            inserted.id,
+            pdfBlob,
+            filename,
+          );
+        }
       }
 
       // 5. Stage transition / log
