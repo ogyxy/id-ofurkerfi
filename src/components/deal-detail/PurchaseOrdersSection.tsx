@@ -432,6 +432,7 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
           <FileDownloadButtons files={files} />
           <RowMenu
             isReceived={isReceived}
+            isPaid={isPaid}
             hasInvoice={hasInvoice}
             poStatus={po.status}
             onRevertClick={() => setRevertOpen(true)}
