@@ -96,7 +96,12 @@ async function processOne(row: PendingRow): Promise<void> {
       .update({ thumbnail_path: path, thumbnail_status: "done" })
       .eq("id", row.id);
   } catch (err) {
-    console.error("[thumbnail-backfill]", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(
+      `[thumbnail-backfill] failed table=${row.table} id=${row.id} file="${row.original_filename}" path="${row.storage_path}":`,
+      msg,
+      err,
+    );
     await supabase
       .from(row.table)
       .update({ thumbnail_status: "error" })
