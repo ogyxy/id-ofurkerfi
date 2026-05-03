@@ -338,7 +338,7 @@ export function CreateDealDrawer({
         owner_id: ownerId || null,
         name: name.trim(),
         stage: "quote_in_progress",
-        default_markup_pct: 50,
+        default_markup_pct: 100,
         promised_delivery_date: promisedDate || null,
       })
       .select("id, company_id")
