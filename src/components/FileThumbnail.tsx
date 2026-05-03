@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   File as FileIconLucide,
   FileText,
@@ -6,7 +5,7 @@ import {
   FileType as FileTypeIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PdfThumbnail } from "./PdfThumbnail";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const IMAGE_EXTS = ["png", "jpg", "jpeg", "gif", "webp", "svg"];
 
@@ -16,31 +15,40 @@ function getExt(name: string | null | undefined): string {
   return i >= 0 ? name.slice(i + 1).toLowerCase() : "";
 }
 
+export type ThumbnailStatus =
+  | "pending"
+  | "processing"
+  | "done"
+  | "unsupported"
+  | "error";
+
 interface FileThumbnailProps {
   filename: string | null | undefined;
   signedUrl: string | null | undefined;
-  /** Tailwind classes controlling the outer box (height, rounding, etc.) */
+  /** Pre-rendered thumbnail URL (typically from useThumbnailUrl or bulk fetch) */
+  thumbnailUrl?: string | null;
+  thumbnailStatus?: ThumbnailStatus | string | null;
   className?: string;
-  /** Image alt text (defaults to filename) */
   alt?: string;
 }
 
 /**
  * Unified thumbnail for file cards across the app.
- *  • Images → <img>
- *  • PDFs   → first-page render via pdf.js, falls back to icon if it fails
- *  • Other  → coloured icon with extension label
+ *  • Images → original signedUrl
+ *  • thumbnailUrl present → server-side rendered preview
+ *  • status pending/processing → skeleton placeholder
+ *  • unsupported/error/none → coloured icon fallback
  */
 export function FileThumbnail({
   filename,
   signedUrl,
+  thumbnailUrl,
+  thumbnailStatus,
   className,
   alt,
 }: FileThumbnailProps) {
-  const [pdfFailed, setPdfFailed] = useState(false);
   const ext = getExt(filename);
   const isImage = IMAGE_EXTS.includes(ext);
-  const isPdf = ext === "pdf";
 
   const boxClass = cn(
     "flex h-28 w-full items-center justify-center overflow-hidden bg-muted/30",
@@ -60,19 +68,30 @@ export function FileThumbnail({
     );
   }
 
-  if (isPdf && signedUrl && !pdfFailed) {
+  if (thumbnailUrl) {
     return (
-      <PdfThumbnail
-        url={signedUrl}
-        className={boxClass}
-        onError={() => setPdfFailed(true)}
-      />
+      <div className={boxClass}>
+        <img
+          src={thumbnailUrl}
+          alt={alt ?? filename ?? ""}
+          loading="lazy"
+          className="h-full w-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  if (thumbnailStatus === "pending" || thumbnailStatus === "processing") {
+    return (
+      <div className={boxClass}>
+        <Skeleton className="h-full w-full rounded-none" />
+      </div>
     );
   }
 
   return (
     <div className={boxClass}>
-      <GenericFileIcon ext={ext} isImage={isImage} isPdf={isPdf} />
+      <GenericFileIcon ext={ext} isImage={isImage} isPdf={ext === "pdf"} />
     </div>
   );
 }
@@ -86,7 +105,6 @@ function GenericFileIcon({
   isImage: boolean;
   isPdf: boolean;
 }) {
-  // Per-type colour
   let color = "text-muted-foreground";
   let Icon: typeof FileIconLucide = FileIconLucide;
 
