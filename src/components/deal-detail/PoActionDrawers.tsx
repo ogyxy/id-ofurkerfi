@@ -96,17 +96,32 @@ export function InvoiceDrawer({
     setMismatchOpen(false);
   }, [open, editMode, po]);
 
-  const save = async () => {
+  const orderedAmount = Number(po.amount ?? 0);
+  const enteredAmount = Number(amount);
+  const hasMismatch =
+    !Number.isNaN(enteredAmount) &&
+    Math.abs(enteredAmount - orderedAmount) > 0.01;
+  const diff = +(enteredAmount - orderedAmount).toFixed(2);
+
+  const trySave = () => {
     if (saving) return;
     if (!number.trim() || !amount) {
       toast.error(t.status.somethingWentWrong);
       return;
     }
-    // PDF required only on initial registration (not when editing)
     if (!editMode && !file) {
       toast.error(t.purchaseOrder.invoiceFileRequired);
       return;
     }
+    if (hasMismatch) {
+      setMismatchOpen(true);
+      return;
+    }
+    void save();
+  };
+
+  const save = async () => {
+    if (saving) return;
     setSaving(true);
 
     const patch: Partial<PORow> = {
