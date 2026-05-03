@@ -21,12 +21,18 @@ type Contact = Pick<
   "id" | "first_name" | "last_name" | "email" | "phone"
 >;
 
+type PoLite = Pick<
+  Database["public"]["Tables"]["purchase_orders"]["Row"],
+  "status" | "received_date" | "delivered_to_customer_at"
+>;
+
 interface Props {
   deal: Deal;
   company: Company;
   contact: Contact | null;
   ownerName: string | null;
   quoteValidUntil?: string | null;
+  pos?: PoLite[];
   onEdit: () => void;
 }
 
