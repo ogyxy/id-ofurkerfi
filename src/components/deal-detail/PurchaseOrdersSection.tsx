@@ -497,22 +497,6 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
                       t.purchaseOrder.invoiceRegisteredShort,
                       po.invoice_received_date,
                     )}
-                {invoiceMismatch && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="inline-flex items-center text-amber-600">
-                          <AlertTriangle className="h-3.5 w-3.5" />
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        {t.purchaseOrder.invoiceMismatchTooltip} (
-                        {invoiceDiff > 0 ? "+" : ""}
-                        {formatNumber(invoiceDiff, 2)} {po.currency})
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
               </span>
             )}
           </>
