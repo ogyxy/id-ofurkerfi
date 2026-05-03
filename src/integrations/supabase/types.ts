@@ -953,6 +953,7 @@ export type Database = {
       profiles: {
         Row: {
           active: boolean
+          avatar_url: string | null
           created_at: string
           email: string
           id: string
@@ -962,6 +963,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          avatar_url?: string | null
           created_at?: string
           email: string
           id: string
@@ -971,6 +973,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          avatar_url?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -1304,7 +1307,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_aal2: { Args: never; Returns: boolean }
       is_sala_admin: { Args: never; Returns: boolean }
+      is_sala_designer: { Args: never; Returns: boolean }
+      is_sala_readonly: { Args: never; Returns: boolean }
+      is_sala_sales: { Args: never; Returns: boolean }
       is_sala_user: { Args: never; Returns: boolean }
       next_po_number: { Args: never; Returns: string }
       next_so_number: { Args: never; Returns: string }
