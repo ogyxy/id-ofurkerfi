@@ -370,28 +370,34 @@ export function PaydayInvoiceCard({ deal, companyKennitala, currentProfile, onCh
 
         {/* Footer */}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-          <span className="text-xs text-muted-foreground">
-            {deal.payday_synced_at
-              ? `${t.payday.cardLastSynced}: ${formatRelative(deal.payday_synced_at)}`
-              : ""}
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void handleRefresh()}
-              disabled={refreshing}
-            >
-              {refreshing ? t.payday.cardRefreshing : t.payday.cardRefresh}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setUnlinkOpen(true)}
-            >
-              {t.payday.cardUnlink}
-            </Button>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            {deal.payday_synced_at && (
+              <>
+                <span>
+                  {t.payday.cardLastSynced}: {formatRelative(deal.payday_synced_at)}
+                </span>
+                {deal.payment_status !== "paid" && (
+                  <button
+                    type="button"
+                    onClick={() => void handleRefresh()}
+                    disabled={refreshing}
+                    aria-label={t.payday.cardRefresh}
+                    title={t.payday.cardRefresh}
+                    className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
+                  </button>
+                )}
+              </>
+            )}
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setUnlinkOpen(true)}
+          >
+            {t.payday.cardUnlink}
+          </Button>
         </div>
       </div>
 
