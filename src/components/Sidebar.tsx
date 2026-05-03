@@ -95,6 +95,17 @@ export function Sidebar({ activeKey, userEmail }: SidebarProps) {
         ))}
       </nav>
 
+      <div className="border-t border-white/10 py-2">
+        <SidebarNavLink
+          label={t.nav.settings}
+          to="/settings"
+          active={activeKey === "settings"}
+          icon={SettingsIcon}
+          collapsed={isCollapsed}
+          onClick={() => setMobileOpen(false)}
+        />
+      </div>
+
       <div className="border-t border-white/10 px-4 py-4">
         {!isCollapsed && (
           <div className="mb-2 truncate text-xs text-white/60" title={userEmail}>
