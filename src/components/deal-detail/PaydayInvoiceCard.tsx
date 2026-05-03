@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatIsk, formatDate } from "@/lib/sala_translations_is";
