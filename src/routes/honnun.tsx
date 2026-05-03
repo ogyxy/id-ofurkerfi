@@ -6,6 +6,7 @@ import {
   X,
 } from "lucide-react";
 import { FileThumbnail } from "@/components/FileThumbnail";
+import { FilePreviewOverlay } from "@/components/FilePreviewOverlay";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
 import { AppMain } from "@/components/AppMain";
@@ -525,10 +526,20 @@ function HonnunContent() {
       ) : (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
           {filtered.map((f) => (
-            <FileCard key={`${f.source}-${f.id}`} file={f} />
+            <FileCard
+              key={`${f.source}-${f.id}`}
+              file={f}
+              onPreview={() => setPreviewFile(f)}
+            />
           ))}
         </div>
       )}
+
+      <FilePreviewOverlay
+        open={previewFile !== null}
+        onOpenChange={(o) => !o && setPreviewFile(null)}
+        file={previewFile}
+      />
     </div>
   );
 }
