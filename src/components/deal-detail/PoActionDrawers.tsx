@@ -75,6 +75,7 @@ export function InvoiceDrawer({
   const [date, setDate] = useState(todayIso());
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [mismatchOpen, setMismatchOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -92,19 +93,35 @@ export function InvoiceDrawer({
       setDate(todayIso());
     }
     setFile(null);
+    setMismatchOpen(false);
   }, [open, editMode, po]);
 
-  const save = async () => {
+  const orderedAmount = Number(po.amount ?? 0);
+  const enteredAmount = Number(amount);
+  const hasMismatch =
+    !Number.isNaN(enteredAmount) &&
+    Math.abs(enteredAmount - orderedAmount) > 0.01;
+  const diff = +(enteredAmount - orderedAmount).toFixed(2);
+
+  const trySave = () => {
     if (saving) return;
     if (!number.trim() || !amount) {
       toast.error(t.status.somethingWentWrong);
       return;
     }
-    // PDF required only on initial registration (not when editing)
     if (!editMode && !file) {
       toast.error(t.purchaseOrder.invoiceFileRequired);
       return;
     }
+    if (hasMismatch) {
+      setMismatchOpen(true);
+      return;
+    }
+    void save();
+  };
+
+  const save = async () => {
+    if (saving) return;
     setSaving(true);
 
     const patch: Partial<PORow> = {
@@ -175,6 +192,7 @@ export function InvoiceDrawer({
   };
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-[440px]">
         <SheetHeader>
@@ -198,7 +216,16 @@ export function InvoiceDrawer({
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              className={hasMismatch ? "border-red-500 focus-visible:ring-red-500" : undefined}
             />
+            <div className="mt-1 text-xs text-muted-foreground">
+              Pantað: {orderedAmount.toFixed(2)} {po.currency}
+            </div>
+            {hasMismatch && (
+              <div className="mt-1 text-xs font-medium text-red-600">
+                Frávik: {diff > 0 ? "+" : ""}{diff.toFixed(2)} {po.currency}
+              </div>
+            )}
           </div>
           <div>
             <Label>{t.purchaseOrder.invoiceReceivedDateLabel}</Label>
@@ -233,7 +260,7 @@ export function InvoiceDrawer({
             {t.actions.cancel}
           </Button>
           <Button
-            onClick={save}
+            onClick={trySave}
             disabled={saving}
             className="bg-ide-navy text-white hover:bg-ide-navy-hover"
           >
@@ -242,6 +269,38 @@ export function InvoiceDrawer({
         </SheetFooter>
       </SheetContent>
     </Sheet>
+    <AlertDialog open={mismatchOpen} onOpenChange={setMismatchOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t.purchaseOrder.invoiceMismatchTooltip}</AlertDialogTitle>
+          <AlertDialogDescription>
+            <span className="block">
+              Pantað: <strong>{orderedAmount.toFixed(2)} {po.currency}</strong>
+            </span>
+            <span className="block">
+              Reikningur: <strong className="text-red-600">{enteredAmount.toFixed(2)} {po.currency}</strong>
+            </span>
+            <span className="mt-2 block">
+              Frávik: <strong className="text-red-600">{diff > 0 ? "+" : ""}{diff.toFixed(2)} {po.currency}</strong>
+            </span>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              setMismatchOpen(false);
+              void save();
+            }}
+            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+          >
+            {t.actions.confirm}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
@@ -356,6 +415,22 @@ export function ApproveInvoiceDialog({
               {po.po_number} · {po.supplier_invoice_number ?? "—"}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {(() => {
+            const ord = Number(po.amount ?? 0);
+            const inv = po.supplier_invoice_amount != null ? Number(po.supplier_invoice_amount) : null;
+            if (inv == null || Math.abs(inv - ord) <= 0.01) return null;
+            const d = +(inv - ord).toFixed(2);
+            return (
+              <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">
+                <div className="font-medium">{t.purchaseOrder.invoiceMismatchTooltip}</div>
+                <div className="mt-1 text-xs">
+                  Pantað: {ord.toFixed(2)} {po.currency} · Reikningur:{" "}
+                  <strong>{inv.toFixed(2)} {po.currency}</strong> ({d > 0 ? "+" : ""}
+                  {d.toFixed(2)})
+                </div>
+              </div>
+            );
+          })()}
           {!viewed && (
             <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
               {t.purchaseOrder.invoiceNotViewedWarning}
