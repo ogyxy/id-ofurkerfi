@@ -28,15 +28,16 @@ export async function runThumbnailBackfill(
   if (started) return;
   started = true;
 
+  // Include 'error' rows so transient failures get retried on next visit.
   const [deals, companies] = await Promise.all([
     supabase
       .from("deal_files")
       .select("id, storage_path, original_filename")
-      .eq("thumbnail_status", "pending"),
+      .in("thumbnail_status", ["pending", "error"]),
     supabase
       .from("company_files")
       .select("id, storage_path, original_filename")
-      .eq("thumbnail_status", "pending"),
+      .in("thumbnail_status", ["pending", "error"]),
   ]);
 
   const queue: PendingRow[] = [
