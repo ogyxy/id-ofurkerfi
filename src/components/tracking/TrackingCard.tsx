@@ -47,6 +47,10 @@ type Props = (
   bare?: boolean;
   /** When true, render the section title and the "+ add" affordance on the same line to save vertical space. */
   inlineHeader?: boolean;
+  /** Called after a successful add/remove so parent state can refetch. */
+  onChanged?: () => void | Promise<void>;
+  /** When false, the X-remove button next to each tracking number is hidden. */
+  canRemove?: boolean;
 };
 
 /**
