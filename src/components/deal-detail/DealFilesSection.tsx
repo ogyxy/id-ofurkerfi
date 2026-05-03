@@ -78,6 +78,7 @@ export function DealFilesSection({
 }: Props) {
   const [files, setFiles] = useState<DealFileRow[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState<DealFileRow | null>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -178,6 +179,7 @@ export function DealFilesSection({
                     <FileCard
                       key={f.id}
                       file={f}
+                      onPreview={() => setPreviewFile(f)}
                       onDelete={() => void handleDelete(f)}
                     />
                   ))}
