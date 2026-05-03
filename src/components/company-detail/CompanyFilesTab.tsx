@@ -128,7 +128,7 @@ export function CompanyFilesTab({
       .from("company_files")
       .select(
         `id, storage_path, file_type, original_filename, file_size_bytes,
-         uploaded_at, uploaded_by,
+         uploaded_at, uploaded_by, thumbnail_path, thumbnail_status,
          profile:profiles!company_files_uploaded_by_fkey(id, name)`,
       )
       .eq("company_id", companyId)
@@ -150,7 +150,7 @@ export function CompanyFilesTab({
         .from("deal_files")
         .select(
           `id, deal_id, storage_path, file_type, original_filename, file_size_bytes,
-           uploaded_at, uploaded_by,
+           uploaded_at, uploaded_by, thumbnail_path, thumbnail_status,
            profile:profiles!deal_files_uploaded_by_fkey(id, name)`,
         )
         .in(
@@ -166,18 +166,24 @@ export function CompanyFilesTab({
     const attachUrls = async <T extends CompanyFileRow>(rows: T[]): Promise<T[]> =>
       Promise.all(
         rows.map(async (f) => {
-          const [view, dl] = await Promise.all([
+          const [view, dl, thumb] = await Promise.all([
             supabase.storage.from("deal_files").createSignedUrl(f.storage_path, 3600),
             supabase.storage
               .from("deal_files")
               .createSignedUrl(f.storage_path, 3600, {
                 download: f.original_filename ?? true,
               }),
+            f.thumbnail_status === "done" && f.thumbnail_path
+              ? supabase.storage
+                  .from("thumbnails")
+                  .createSignedUrl(f.thumbnail_path, 3600)
+              : Promise.resolve({ data: null }),
           ]);
           return {
             ...f,
             signedUrl: view.data?.signedUrl ?? null,
             signedUrlDownload: dl.data?.signedUrl ?? null,
+            thumbnailUrl: thumb.data?.signedUrl ?? null,
           };
         }),
       );
