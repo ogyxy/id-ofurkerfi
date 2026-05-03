@@ -792,6 +792,16 @@ export const t = {
   },
 
   // ---------------------------------------------------------------------------
+  // Fullscreen file preview overlay
+  // ---------------------------------------------------------------------------
+  filePreview: {
+    download:           'Sækja',
+    close:              'Loka',
+    previewUnavailable: 'Forskoðun ekki möguleg',
+    previewFromPage1:   'Forskoðun af síðu 1',
+  },
+
+  // ---------------------------------------------------------------------------
   // Company files (Vörumerki / brand assets)
   // ---------------------------------------------------------------------------
   companyFile: {
