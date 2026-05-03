@@ -244,15 +244,23 @@ export function DealFilesSection({
           }
         }}
       />
+
+      <FilePreviewOverlay
+        open={previewFile !== null}
+        onOpenChange={(o) => !o && setPreviewFile(null)}
+        file={previewFile}
+      />
     </div>
   );
 }
 
 function FileCard({
   file,
+  onPreview,
   onDelete,
 }: {
   file: DealFileRow;
+  onPreview: () => void;
   onDelete: () => void;
 }) {
   const [confirm, setConfirm] = useState(false);
