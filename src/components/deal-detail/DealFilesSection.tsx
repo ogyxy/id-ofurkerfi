@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Download, Trash2, Upload } from "lucide-react";
 import { FileThumbnail } from "@/components/FileThumbnail";
+import { FilePreviewOverlay } from "@/components/FilePreviewOverlay";
 import { MultiFileUploadDialog } from "@/components/MultiFileUploadDialog";
 import { smartGuessDealFileType } from "@/lib/uploadHelpers";
 import {
@@ -77,6 +78,7 @@ export function DealFilesSection({
 }: Props) {
   const [files, setFiles] = useState<DealFileRow[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState<DealFileRow | null>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -177,6 +179,7 @@ export function DealFilesSection({
                     <FileCard
                       key={f.id}
                       file={f}
+                      onPreview={() => setPreviewFile(f)}
                       onDelete={() => void handleDelete(f)}
                     />
                   ))}
@@ -241,27 +244,35 @@ export function DealFilesSection({
           }
         }}
       />
+
+      <FilePreviewOverlay
+        open={previewFile !== null}
+        onOpenChange={(o) => !o && setPreviewFile(null)}
+        file={previewFile}
+      />
     </div>
   );
 }
 
 function FileCard({
   file,
+  onPreview,
   onDelete,
 }: {
   file: DealFileRow;
+  onPreview: () => void;
   onDelete: () => void;
 }) {
   const [confirm, setConfirm] = useState(false);
 
   return (
     <div className="group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
-      <a
-        href={file.signedUrl ?? "#"}
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        type="button"
+        onClick={onPreview}
         className="block w-full text-left"
         title={file.original_filename ?? ""}
+        aria-label={`${t.dealFile.title}: ${file.original_filename ?? ""}`}
       >
         <FileThumbnail
           filename={file.original_filename}
@@ -281,7 +292,7 @@ function FileCard({
             {file.profile?.name ?? "—"} · {formatDate(file.uploaded_at)}
           </div>
         </div>
-      </a>
+      </button>
 
       <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
         <a

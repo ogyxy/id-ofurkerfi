@@ -6,6 +6,7 @@ import {
   X,
 } from "lucide-react";
 import { FileThumbnail } from "@/components/FileThumbnail";
+import { FilePreviewOverlay } from "@/components/FilePreviewOverlay";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
 import { AppMain } from "@/components/AppMain";
@@ -150,6 +151,7 @@ function HonnunContent() {
   const [allFiles, setAllFiles] = useState<MergedFile[]>([]);
   const [lineMatchedDealIds, setLineMatchedDealIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [previewFile, setPreviewFile] = useState<MergedFile | null>(null);
 
   // Cache so re-running searches doesn't regenerate signed URLs needlessly
   const urlCacheRef = useRef<Map<string, { url: string; download: string; thumb: string }>>(new Map());
@@ -525,10 +527,20 @@ function HonnunContent() {
       ) : (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
           {filtered.map((f) => (
-            <FileCard key={`${f.source}-${f.id}`} file={f} />
+            <FileCard
+              key={`${f.source}-${f.id}`}
+              file={f}
+              onPreview={() => setPreviewFile(f)}
+            />
           ))}
         </div>
       )}
+
+      <FilePreviewOverlay
+        open={previewFile !== null}
+        onOpenChange={(o) => !o && setPreviewFile(null)}
+        file={previewFile}
+      />
     </div>
   );
 }
@@ -552,7 +564,7 @@ function EmptyState({ hasFilter, onClear }: { hasFilter: boolean; onClear: () =>
   );
 }
 
-function FileCard({ file }: { file: MergedFile }) {
+function FileCard({ file, onPreview }: { file: MergedFile; onPreview: () => void }) {
   const company = file.source === "deal" ? file.deal?.company : file.company;
   const dealLink =
     file.source === "deal" && file.deal
@@ -561,12 +573,12 @@ function FileCard({ file }: { file: MergedFile }) {
 
   return (
     <div className="group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
-      <a
-        href={file.signedUrl ?? "#"}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block"
+      <button
+        type="button"
+        onClick={onPreview}
+        className="block w-full text-left"
         title={file.original_filename ?? ""}
+        aria-label={file.original_filename ?? ""}
       >
         <FileThumbnail
           filename={file.original_filename}
@@ -592,7 +604,7 @@ function FileCard({ file }: { file: MergedFile }) {
             </span>
           </div>
         </div>
-      </a>
+      </button>
 
       {/* Company + source line (outside the anchor so internal links work) */}
       <div className="space-y-1 px-3 pb-3 text-xs">

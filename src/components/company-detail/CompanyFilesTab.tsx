@@ -7,6 +7,7 @@ import {
   Upload,
 } from "lucide-react";
 import { FileThumbnail } from "@/components/FileThumbnail";
+import { FilePreviewOverlay } from "@/components/FilePreviewOverlay";
 import { MultiFileUploadDialog } from "@/components/MultiFileUploadDialog";
 import { smartGuessBrandFileType } from "@/lib/uploadHelpers";
 import {
@@ -120,6 +121,7 @@ export function CompanyFilesTab({
   const [dealFiles, setDealFiles] = useState<DealFileRow[]>([]);
   const [deals, setDeals] = useState<DealLite[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState<CompanyFileRow | null>(null);
   const [activeFilter, setActiveFilter] = useState<DealFileType | null>(null);
 
   const load = useCallback(async () => {
@@ -308,6 +310,7 @@ export function CompanyFilesTab({
                 key={f.id}
                 file={f}
                 typeLabel={fileTypeLabel(f.file_type)}
+                onPreview={() => setPreviewFile(f)}
                 onDelete={() => void handleDeleteCompanyFile(f)}
               />
             ))}
@@ -376,6 +379,7 @@ export function CompanyFilesTab({
                   file={f}
                   typeLabel={fileTypeLabel(f.file_type)}
                   linkedDeal={linkedDeal}
+                  onPreview={() => setPreviewFile(f)}
                   onDelete={() => void handleDeleteDealFile(f)}
                 />
               );
@@ -422,6 +426,12 @@ export function CompanyFilesTab({
         }}
         onAnySuccess={() => void load()}
       />
+
+      <FilePreviewOverlay
+        open={previewFile !== null}
+        onOpenChange={(o) => !o && setPreviewFile(null)}
+        file={previewFile}
+      />
     </div>
   );
 }
@@ -459,23 +469,25 @@ function FileCard({
   file,
   typeLabel,
   linkedDeal,
+  onPreview,
   onDelete,
 }: {
   file: CompanyFileRow;
   typeLabel: string;
   linkedDeal?: DealLite;
+  onPreview: () => void;
   onDelete: () => void;
 }) {
   const [confirm, setConfirm] = useState(false);
 
   return (
     <div className="group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
-      <a
-        href={file.signedUrl ?? "#"}
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        type="button"
+        onClick={onPreview}
         className="block w-full text-left"
         title={file.original_filename ?? ""}
+        aria-label={`${t.dealFile.title}: ${file.original_filename ?? ""}`}
       >
         <FileThumbnail
           filename={file.original_filename}
@@ -500,7 +512,7 @@ function FileCard({
             {file.profile?.name ?? "—"} · {formatDate(file.uploaded_at)}
           </div>
         </div>
-      </a>
+      </button>
 
       {linkedDeal && (
         <div className="border-t border-border px-3 py-2">

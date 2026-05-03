@@ -7,7 +7,7 @@ if (typeof window !== "undefined" && !pdfjs.GlobalWorkerOptions.workerSrc) {
   pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 }
 
-const MAX_DIM = 400;
+const MAX_DIM = 1600;
 
 function getExt(name: string): string {
   const i = name.lastIndexOf(".");
