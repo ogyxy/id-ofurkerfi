@@ -573,12 +573,12 @@ function FileCard({ file, onPreview }: { file: MergedFile; onPreview: () => void
 
   return (
     <div className="group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
-      <a
-        href={file.signedUrl ?? "#"}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block"
+      <button
+        type="button"
+        onClick={onPreview}
+        className="block w-full text-left"
         title={file.original_filename ?? ""}
+        aria-label={file.original_filename ?? ""}
       >
         <FileThumbnail
           filename={file.original_filename}
@@ -604,7 +604,7 @@ function FileCard({ file, onPreview }: { file: MergedFile; onPreview: () => void
             </span>
           </div>
         </div>
-      </a>
+      </button>
 
       {/* Company + source line (outside the anchor so internal links work) */}
       <div className="space-y-1 px-3 pb-3 text-xs">
