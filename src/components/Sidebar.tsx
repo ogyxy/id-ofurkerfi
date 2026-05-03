@@ -5,6 +5,7 @@ import {
   Menu,
   Package,
   Palette,
+  Settings as SettingsIcon,
   ShoppingCart,
   Users,
   X,
@@ -22,7 +23,8 @@ interface SidebarProps {
     | "companies"
     | "deals"
     | "designs"
-    | "purchaseOrders";
+    | "purchaseOrders"
+    | "settings";
   userEmail: string;
 }
 
@@ -92,6 +94,17 @@ export function Sidebar({ activeKey, userEmail }: SidebarProps) {
           />
         ))}
       </nav>
+
+      <div className="border-t border-white/10 py-2">
+        <SidebarNavLink
+          label={t.nav.settings}
+          to="/settings"
+          active={activeKey === "settings"}
+          icon={SettingsIcon}
+          collapsed={isCollapsed}
+          onClick={() => setMobileOpen(false)}
+        />
+      </div>
 
       <div className="border-t border-white/10 px-4 py-4">
         {!isCollapsed && (

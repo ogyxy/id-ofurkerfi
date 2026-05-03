@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as YfirlitRouteImport } from './routes/yfirlit'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InnkaupRouteImport } from './routes/innkaup'
 import { Route as HonnunRouteImport } from './routes/honnun'
@@ -22,6 +23,11 @@ import { Route as CompaniesIdRouteImport } from './routes/companies_.$id'
 const YfirlitRoute = YfirlitRouteImport.update({
   id: '/yfirlit',
   path: '/yfirlit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/honnun': typeof HonnunRoute
   '/innkaup': typeof InnkaupRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
   '/yfirlit': typeof YfirlitRoute
   '/companies/$id': typeof CompaniesIdRoute
   '/deals/$id': typeof DealsIdRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/honnun': typeof HonnunRoute
   '/innkaup': typeof InnkaupRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
   '/yfirlit': typeof YfirlitRoute
   '/companies/$id': typeof CompaniesIdRoute
   '/deals/$id': typeof DealsIdRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/honnun': typeof HonnunRoute
   '/innkaup': typeof InnkaupRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
   '/yfirlit': typeof YfirlitRoute
   '/companies_/$id': typeof CompaniesIdRoute
   '/deals_/$id': typeof DealsIdRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/honnun'
     | '/innkaup'
     | '/login'
+    | '/settings'
     | '/yfirlit'
     | '/companies/$id'
     | '/deals/$id'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/honnun'
     | '/innkaup'
     | '/login'
+    | '/settings'
     | '/yfirlit'
     | '/companies/$id'
     | '/deals/$id'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/honnun'
     | '/innkaup'
     | '/login'
+    | '/settings'
     | '/yfirlit'
     | '/companies_/$id'
     | '/deals_/$id'
@@ -142,6 +154,7 @@ export interface RootRouteChildren {
   HonnunRoute: typeof HonnunRoute
   InnkaupRoute: typeof InnkaupRoute
   LoginRoute: typeof LoginRoute
+  SettingsRoute: typeof SettingsRoute
   YfirlitRoute: typeof YfirlitRoute
   CompaniesIdRoute: typeof CompaniesIdRoute
   DealsIdRoute: typeof DealsIdRoute
@@ -154,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/yfirlit'
       fullPath: '/yfirlit'
       preLoaderRoute: typeof YfirlitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
   HonnunRoute: HonnunRoute,
   InnkaupRoute: InnkaupRoute,
   LoginRoute: LoginRoute,
+  SettingsRoute: SettingsRoute,
   YfirlitRoute: YfirlitRoute,
   CompaniesIdRoute: CompaniesIdRoute,
   DealsIdRoute: DealsIdRoute,

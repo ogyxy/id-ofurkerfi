@@ -7,6 +7,8 @@ import { AppMain } from "@/components/AppMain";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
+import { useCurrentRole } from "@/hooks/useCurrentProfile";
+import { canSeeFinancials, canSeePurchaseOrders, canSeeActivities } from "@/lib/role";
 import { Button } from "@/components/ui/button";
 import { goBack } from "@/lib/dealReturn";
 import { StageStepper } from "@/components/deal-detail/StageStepper";
@@ -99,6 +101,10 @@ function DealDetailPage() {
 function DealDetailContent() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const role = useCurrentRole();
+  const showFinancials = canSeeFinancials(role);
+  const showPos = canSeePurchaseOrders(role);
+  const showActivities = canSeeActivities(role);
 
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -508,7 +514,7 @@ function DealDetailContent() {
         onEdit={() => setEditOpen(true)}
       />
 
-      {(deal.stage === "delivered" ||
+      {showFinancials && (deal.stage === "delivered" ||
         deal.stage === "defect_reorder" ||
         deal.payday_invoice_id) && (
         <PaydayInvoiceCard
@@ -519,7 +525,7 @@ function DealDetailContent() {
         />
       )}
 
-      {pos.length > 0 ? (
+      {showPos && pos.length > 0 ? (
         <PurchaseOrdersSection
           dealId={deal.id}
           pos={pos}
@@ -564,29 +570,33 @@ function DealDetailContent() {
         legacyAllowProgressionWithoutPo={deal.created_at < PO_GATE_CUTOFF}
       />
 
-      <DealLinesEditor
-        dealId={deal.id}
-        lines={lines}
-        setLines={setLines}
-        defaultMarkupPct={defaultMarkupPct}
-        setDefaultMarkupPct={setDefaultMarkupPct}
-        rates={rates}
-        ratesError={ratesError}
-        onSaveDefaultMarkup={saveDefaultMarkup}
-        onSaved={load}
-        readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
-      />
+      {showFinancials && (
+        <DealLinesEditor
+          dealId={deal.id}
+          lines={lines}
+          setLines={setLines}
+          defaultMarkupPct={defaultMarkupPct}
+          setDefaultMarkupPct={setDefaultMarkupPct}
+          rates={rates}
+          ratesError={ratesError}
+          onSaveDefaultMarkup={saveDefaultMarkup}
+          onSaved={load}
+          readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
+        />
+      )}
 
-      <DealSummary
-        dealId={deal.id}
-        lines={lines}
-        shippingCost={shippingCost}
-        setShippingCost={setShippingCost}
-        vskStatus={company.vsk_status}
-        readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
-        refundAmountIsk={deal.refund_amount_isk as number | null}
-        defectResolution={deal.defect_resolution}
-      />
+      {showFinancials && (
+        <DealSummary
+          dealId={deal.id}
+          lines={lines}
+          shippingCost={shippingCost}
+          setShippingCost={setShippingCost}
+          vskStatus={company.vsk_status}
+          readOnly={deal.stage !== "inquiry" && deal.stage !== "quote_in_progress"}
+          refundAmountIsk={deal.refund_amount_isk as number | null}
+          defectResolution={deal.defect_resolution}
+        />
+      )}
 
       <DealFilesSection
         dealId={deal.id}
@@ -597,20 +607,22 @@ function DealDetailContent() {
       />
 
 
-      <DealLog
-        dealId={deal.id}
-        companyId={company.id}
-        entries={(() => {
-          const poNumbers = pos.map((p) => p.po_number);
-          return logEntries.filter((e) => {
-            if (e.type !== "note") return true;
-            const body = e.body ?? "";
-            return !poNumbers.some((n) => body.startsWith(`${n}:`));
-          });
-        })()}
-        currentProfile={currentProfile}
-        onChanged={load}
-      />
+      {showActivities && (
+        <DealLog
+          dealId={deal.id}
+          companyId={company.id}
+          entries={(() => {
+            const poNumbers = pos.map((p) => p.po_number);
+            return logEntries.filter((e) => {
+              if (e.type !== "note") return true;
+              const body = e.body ?? "";
+              return !poNumbers.some((n) => body.startsWith(`${n}:`));
+            });
+          })()}
+          currentProfile={currentProfile}
+          onChanged={load}
+        />
+      )}
 
       <EditDealDrawer
         open={editOpen}

@@ -1,1 +1,7 @@
 project_id = "whhckmzqeniizdkwgznf"
+
+[functions.payday-link-invoice]
+verify_jwt = true
+
+[functions.invite-user]
+verify_jwt = true
