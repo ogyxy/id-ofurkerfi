@@ -215,7 +215,16 @@ export function InvoiceDrawer({
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              className={hasMismatch ? "border-red-500 focus-visible:ring-red-500" : undefined}
             />
+            <div className="mt-1 text-xs text-muted-foreground">
+              Pantað: {orderedAmount.toFixed(2)} {po.currency}
+            </div>
+            {hasMismatch && (
+              <div className="mt-1 text-xs font-medium text-red-600">
+                Frávik: {diff > 0 ? "+" : ""}{diff.toFixed(2)} {po.currency}
+              </div>
+            )}
           </div>
           <div>
             <Label>{t.purchaseOrder.invoiceReceivedDateLabel}</Label>
