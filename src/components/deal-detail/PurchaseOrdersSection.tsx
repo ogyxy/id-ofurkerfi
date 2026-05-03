@@ -408,12 +408,16 @@ function PoRow({ po, dealId, currentProfileId, onChanged, files }: RowProps) {
         <span
           className={cn(
             "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
-            style.badge,
+            isDelivered
+              ? "bg-green-100 text-green-900 border-green-300"
+              : style.badge,
           )}
         >
-          {po.status === "ordered" && hasTracking
-            ? t.purchaseOrder.pillOrderedEnRoute
-            : t.poStatus[po.status]}
+          {isDelivered
+            ? "Afhent"
+            : po.status === "ordered" && hasTracking
+              ? t.purchaseOrder.pillOrderedEnRoute
+              : t.poStatus[po.status]}
         </span>
 
         <div className="ml-auto flex items-center gap-2">

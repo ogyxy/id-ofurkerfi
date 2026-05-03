@@ -21,12 +21,18 @@ type Contact = Pick<
   "id" | "first_name" | "last_name" | "email" | "phone"
 >;
 
+type PoLite = Pick<
+  Database["public"]["Tables"]["purchase_orders"]["Row"],
+  "status" | "received_date" | "delivered_to_customer_at"
+>;
+
 interface Props {
   deal: Deal;
   company: Company;
   contact: Contact | null;
   ownerName: string | null;
   quoteValidUntil?: string | null;
+  pos?: PoLite[];
   onEdit: () => void;
 }
 
@@ -59,6 +65,7 @@ export function DealHeader({
   contact,
   ownerName,
   quoteValidUntil,
+  pos,
   onEdit,
 }: Props) {
   const contactName = contact
@@ -70,8 +77,30 @@ export function DealHeader({
   const isOrderStage = stage === "order_confirmed" || stage === "ready_for_pickup";
   const showDeadline = stage !== "delivered" && stage !== "cancelled";
   const showQuoteExpiry = stage === "quote_sent" && !!quoteValidUntil;
+
+  // PO collective state
+  const activePos = (pos ?? []).filter((p) => p.status !== "cancelled");
+  const allReceived =
+    activePos.length > 0 && activePos.every((p) => !!p.received_date);
+  const allDelivered =
+    activePos.length > 0 &&
+    activePos.every((p) => !!p.delivered_to_customer_at);
+
+  const lastReceivedDate = activePos
+    .map((p) => p.received_date)
+    .filter((d): d is string => !!d)
+    .sort()
+    .pop() ?? null;
+  const lastDeliveredDate = activePos
+    .map((p) => (p.delivered_to_customer_at ? p.delivered_to_customer_at.split("T")[0] : null))
+    .filter((d): d is string => !!d)
+    .sort()
+    .pop() ?? null;
+
+  const showAfhent = allDelivered && !!lastDeliveredDate;
+  const showMottekid = allReceived && !showAfhent && !!lastReceivedDate;
   const showEstimated =
-    isOrderStage && !!deal.estimated_delivery_date;
+    isOrderStage && !!deal.estimated_delivery_date && !allReceived && !allDelivered;
 
   // Tone calculations
   const deadlineDays = daysUntil(deal.promised_delivery_date);
@@ -206,6 +235,20 @@ export function DealHeader({
                 label="Áætluð móttaka"
                 value={formatDate(deal.estimated_delivery_date)}
                 tone={estimatedTone}
+              />
+            )}
+            {showMottekid && (
+              <LabeledPill
+                label="Móttekið"
+                value={formatDate(lastReceivedDate)}
+                tone="purple"
+              />
+            )}
+            {showAfhent && (
+              <LabeledPill
+                label="Afhent"
+                value={formatDate(lastDeliveredDate)}
+                tone="success"
               />
             )}
           </div>
