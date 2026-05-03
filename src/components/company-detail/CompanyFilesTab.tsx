@@ -310,6 +310,7 @@ export function CompanyFilesTab({
                 key={f.id}
                 file={f}
                 typeLabel={fileTypeLabel(f.file_type)}
+                onPreview={() => setPreviewFile(f)}
                 onDelete={() => void handleDeleteCompanyFile(f)}
               />
             ))}
@@ -378,6 +379,7 @@ export function CompanyFilesTab({
                   file={f}
                   typeLabel={fileTypeLabel(f.file_type)}
                   linkedDeal={linkedDeal}
+                  onPreview={() => setPreviewFile(f)}
                   onDelete={() => void handleDeleteDealFile(f)}
                 />
               );
