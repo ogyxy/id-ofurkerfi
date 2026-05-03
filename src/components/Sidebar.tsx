@@ -5,6 +5,7 @@ import {
   Menu,
   Package,
   Palette,
+  Settings as SettingsIcon,
   ShoppingCart,
   Users,
   X,
@@ -22,7 +23,8 @@ interface SidebarProps {
     | "companies"
     | "deals"
     | "designs"
-    | "purchaseOrders";
+    | "purchaseOrders"
+    | "settings";
   userEmail: string;
 }
 
