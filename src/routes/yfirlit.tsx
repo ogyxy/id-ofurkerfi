@@ -547,6 +547,8 @@ function YfirlitContent({
         )}
       </section>
 
+      {showFinancials && (
+      <>
       {/* Pulse */}
       <section>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -728,6 +730,8 @@ function YfirlitContent({
           </ResponsiveContainer>
         </div>
       </section>
+      </>
+      )}
 
       {/* Two columns: Top customers + Recent activity */}
       <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
