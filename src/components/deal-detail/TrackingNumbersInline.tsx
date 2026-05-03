@@ -31,7 +31,7 @@ interface Props {
 }
 
 function getTrackingUrl(trackingNumber: string): string {
-  return `https://www.ordertracker.com/track/${encodeURIComponent(trackingNumber)}`;
+  return `https://packageradar.com/${encodeURIComponent(trackingNumber)}`;
 }
 
 export function TrackingNumbersInline({ dealId, initial }: Props) {
