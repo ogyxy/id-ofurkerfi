@@ -50,6 +50,8 @@ interface BaseFileRow {
   file_size_bytes: number | null;
   uploaded_at: string;
   uploaded_by: string | null;
+  thumbnail_path: string | null;
+  thumbnail_status: string;
 }
 
 interface DealFileRow extends BaseFileRow {
@@ -62,9 +64,15 @@ interface CompanyFileRow extends BaseFileRow {
   company: CompanyLite | null;
 }
 
+type SignedExtras = {
+  signedUrl: string | null;
+  signedUrlDownload: string | null;
+  thumbnailUrl: string | null;
+};
+
 type MergedFile =
-  | (DealFileRow & { source: "deal"; signedUrl: string | null; signedUrlDownload: string | null })
-  | (CompanyFileRow & { source: "company"; signedUrl: string | null; signedUrlDownload: string | null });
+  | (DealFileRow & { source: "deal" } & SignedExtras)
+  | (CompanyFileRow & { source: "company" } & SignedExtras);
 
 type TypeFilter = "mockup" | "artwork" | "logo" | "presentation" | "brand";
 
@@ -144,7 +152,7 @@ function HonnunContent() {
   const [loading, setLoading] = useState(true);
 
   // Cache so re-running searches doesn't regenerate signed URLs needlessly
-  const urlCacheRef = useRef<Map<string, { url: string; download: string }>>(new Map());
+  const urlCacheRef = useRef<Map<string, { url: string; download: string; thumb: string }>>(new Map());
 
   // Load all files once on mount
   const loadAll = useCallback(async () => {
@@ -154,7 +162,7 @@ function HonnunContent() {
       .from("deal_files")
       .select(
         `id, deal_id, storage_path, file_type, original_filename,
-         file_size_bytes, uploaded_at, uploaded_by,
+         file_size_bytes, uploaded_at, uploaded_by, thumbnail_path, thumbnail_status,
          deal:deals!deal_files_deal_id_fkey(id, so_number, name, company_id, archived,
                     company:companies(id, name))`,
       )
@@ -165,7 +173,7 @@ function HonnunContent() {
       .from("company_files")
       .select(
         `id, company_id, storage_path, file_type, original_filename,
-         file_size_bytes, uploaded_at, uploaded_by,
+         file_size_bytes, uploaded_at, uploaded_by, thumbnail_path, thumbnail_status,
          company:companies!company_files_company_id_fkey(id, name)`,
       )
       .order("uploaded_at", { ascending: false });
@@ -182,19 +190,29 @@ function HonnunContent() {
 
     // Generate signed URLs in parallel, with caching
     const cache = urlCacheRef.current;
-    const sign = async (storagePath: string, filename: string | null) => {
-      const key = `${storagePath}|${filename ?? ""}`;
+    const sign = async (
+      storagePath: string,
+      filename: string | null,
+      thumbPath: string | null,
+      thumbStatus: string,
+    ) => {
+      const key = `${storagePath}|${filename ?? ""}|${thumbPath ?? ""}`;
       const cached = cache.get(key);
       if (cached) return cached;
-      const [view, dl] = await Promise.all([
+      const wantThumb = thumbStatus === "done" && !!thumbPath;
+      const [view, dl, thumb] = await Promise.all([
         supabase.storage.from("deal_files").createSignedUrl(storagePath, 3600),
         supabase.storage
           .from("deal_files")
           .createSignedUrl(storagePath, 3600, { download: filename ?? true }),
+        wantThumb
+          ? supabase.storage.from("thumbnails").createSignedUrl(thumbPath!, 3600)
+          : Promise.resolve({ data: null }),
       ]);
       const value = {
         url: view.data?.signedUrl ?? "",
         download: dl.data?.signedUrl ?? "",
+        thumb: thumb.data?.signedUrl ?? "",
       };
       cache.set(key, value);
       return value;
@@ -202,24 +220,26 @@ function HonnunContent() {
 
     const dealMerged: MergedFile[] = await Promise.all(
       liveDealFiles.map(async (f) => {
-        const u = await sign(f.storage_path, f.original_filename);
+        const u = await sign(f.storage_path, f.original_filename, f.thumbnail_path, f.thumbnail_status);
         return {
           ...f,
           source: "deal" as const,
           signedUrl: u.url || null,
           signedUrlDownload: u.download || null,
+          thumbnailUrl: u.thumb || null,
         };
       }),
     );
 
     const companyMerged: MergedFile[] = await Promise.all(
       cFiles.map(async (f) => {
-        const u = await sign(f.storage_path, f.original_filename);
+        const u = await sign(f.storage_path, f.original_filename, f.thumbnail_path, f.thumbnail_status);
         return {
           ...f,
           source: "company" as const,
           signedUrl: u.url || null,
           signedUrlDownload: u.download || null,
+          thumbnailUrl: u.thumb || null,
         };
       }),
     );
@@ -231,6 +251,29 @@ function HonnunContent() {
   useEffect(() => {
     void loadAll();
   }, [loadAll]);
+
+  // One-time backfill of pending thumbnails for admin/designer users.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (cancelled || !auth.user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", auth.user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const role = profile?.role;
+      if (role !== "admin" && role !== "designer") return;
+
+      const { runThumbnailBackfill } = await import("@/lib/thumbnailBackfill");
+      void runThumbnailBackfill(() => cancelled);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // When search term changes, re-query deal_lines for product matches
   useEffect(() => {
@@ -528,6 +571,8 @@ function FileCard({ file }: { file: MergedFile }) {
         <FileThumbnail
           filename={file.original_filename}
           signedUrl={file.signedUrl}
+          thumbnailUrl={file.thumbnailUrl}
+          thumbnailStatus={file.thumbnail_status}
           className="h-32"
         />
 

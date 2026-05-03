@@ -3,6 +3,10 @@ import { Download, Trash2, Upload } from "lucide-react";
 import { FileThumbnail } from "@/components/FileThumbnail";
 import { MultiFileUploadDialog } from "@/components/MultiFileUploadDialog";
 import { smartGuessDealFileType } from "@/lib/uploadHelpers";
+import {
+  processThumbnailInBackground,
+  initialThumbStatus,
+} from "@/lib/thumbnailPipeline";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { t, formatDate } from "@/lib/sala_translations_is";
@@ -47,9 +51,12 @@ interface DealFileRow {
   file_size_bytes: number | null;
   uploaded_at: string;
   uploaded_by: string | null;
+  thumbnail_path: string | null;
+  thumbnail_status: string;
   profile?: { id: string; name: string | null } | null;
   signedUrl?: string | null;
   signedUrlDownload?: string | null;
+  thumbnailUrl?: string | null;
 }
 
 interface Props {
@@ -76,7 +83,7 @@ export function DealFilesSection({
       .from("deal_files")
       .select(
         `id, storage_path, file_type, original_filename, file_size_bytes,
-         uploaded_at, uploaded_by,
+         uploaded_at, uploaded_by, thumbnail_path, thumbnail_status,
          profile:profiles!deal_files_uploaded_by_fkey(id, name)`,
       )
       .eq("deal_id", dealId)
@@ -85,18 +92,24 @@ export function DealFilesSection({
 
     const withUrls = await Promise.all(
       rows.map(async (f) => {
-        const [view, dl] = await Promise.all([
+        const [view, dl, thumb] = await Promise.all([
           supabase.storage.from("deal_files").createSignedUrl(f.storage_path, 3600),
           supabase.storage
             .from("deal_files")
             .createSignedUrl(f.storage_path, 3600, {
               download: f.original_filename ?? true,
             }),
+          f.thumbnail_status === "done" && f.thumbnail_path
+            ? supabase.storage
+                .from("thumbnails")
+                .createSignedUrl(f.thumbnail_path, 3600)
+            : Promise.resolve({ data: null }),
         ]);
         return {
           ...f,
           signedUrl: view.data?.signedUrl ?? null,
           signedUrlDownload: dl.data?.signedUrl ?? null,
+          thumbnailUrl: thumb.data?.signedUrl ?? null,
         };
       }),
     );
@@ -193,15 +206,23 @@ export function DealFilesSection({
               contentType: file.type || "application/octet-stream",
             });
           if (upErr) throw new Error(upErr.message);
-          const { error: insErr } = await supabase.from("deal_files").insert({
-            deal_id: dealId,
-            storage_path: storagePath,
-            file_type: fileType,
-            original_filename: file.name,
-            file_size_bytes: file.size,
-            uploaded_by: currentProfileId,
-          });
+          const { data: inserted, error: insErr } = await supabase
+            .from("deal_files")
+            .insert({
+              deal_id: dealId,
+              storage_path: storagePath,
+              file_type: fileType,
+              original_filename: file.name,
+              file_size_bytes: file.size,
+              uploaded_by: currentProfileId,
+              thumbnail_status: initialThumbStatus(file.name),
+            })
+            .select("id")
+            .single();
           if (insErr) throw new Error(insErr.message);
+          if (inserted?.id) {
+            processThumbnailInBackground("deal_files", inserted.id, file, file.name);
+          }
         }}
         onAnySuccess={() => void load()}
         onBatchComplete={async (result) => {
@@ -245,6 +266,8 @@ function FileCard({
         <FileThumbnail
           filename={file.original_filename}
           signedUrl={file.signedUrl}
+          thumbnailUrl={file.thumbnailUrl}
+          thumbnailStatus={file.thumbnail_status}
           className="h-28"
         />
         <div className="space-y-0.5 p-3">
