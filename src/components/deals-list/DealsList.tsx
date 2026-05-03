@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { rememberDealReturnPath, rememberCompanyReturnPath } from "@/lib/dealReturn";
 import { toast } from "sonner";
 import { CreateDealDrawer } from "./CreateDealDrawer";
+import { useCurrentRole } from "@/hooks/useCurrentProfile";
+import { canSeeFinancials } from "@/lib/role";
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
 type InvoiceStatus = Database["public"]["Enums"]["invoice_status"];
@@ -195,6 +197,8 @@ function readPersistedFilters(): PersistedFilters | null {
 }
 
 export function DealsList({ currentUserId, initialStage = null }: Props) {
+  const role = useCurrentRole();
+  const showAmount = canSeeFinancials(role);
   // Restore persisted filters on first render so the user returns to the
   // exact filtered view they had before navigating into a deal.
   const persisted = typeof window !== "undefined" ? readPersistedFilters() : null;
@@ -977,6 +981,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                   <DealCard
                     deal={d}
                     profiles={profiles}
+                    showAmount={showAmount}
                     onOpen={() => openDeal(d.id)}
                     onStageChange={(stage) => handleStageChange(d, stage)}
                     onOwnerChange={(ownerId) => handleOwnerChange(d, ownerId)}
@@ -1257,12 +1262,14 @@ function StagePopover({
 function DealCard({
   deal,
   profiles,
+  showAmount,
   onOpen,
   onStageChange,
   onOwnerChange,
 }: {
   deal: DealRow;
   profiles: Profile[];
+  showAmount: boolean;
   onOpen: () => void;
   onStageChange: (s: DealStage) => void | Promise<void>;
   onOwnerChange: (ownerId: string | null) => void | Promise<void>;
@@ -1288,7 +1295,9 @@ function DealCard({
       }}
       className={cn(
         "grid cursor-pointer items-center gap-3 rounded-md border border-border border-l-4 px-3 py-2 transition hover:bg-muted/50",
-        "grid-cols-[160px_1fr] md:grid-cols-[160px_minmax(0,1.5fr)_minmax(0,1.5fr)_180px_140px_120px]",
+        showAmount
+          ? "grid-cols-[160px_1fr] md:grid-cols-[160px_minmax(0,1.5fr)_minmax(0,1.5fr)_180px_140px_120px]"
+          : "grid-cols-[160px_1fr] md:grid-cols-[160px_minmax(0,1.5fr)_minmax(0,1.5fr)_180px_140px]",
         styles.border,
         styles.bg,
         muted && "text-gray-400",
@@ -1387,9 +1396,11 @@ function DealCard({
       </div>
 
       {/* Amount */}
-      <div className="hidden text-right md:block" onClick={(e) => e.stopPropagation()}>
-        <AmountCell deal={deal} />
-      </div>
+      {showAmount && (
+        <div className="hidden text-right md:block" onClick={(e) => e.stopPropagation()}>
+          <AmountCell deal={deal} />
+        </div>
+      )}
     </div>
   );
 }
