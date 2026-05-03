@@ -259,7 +259,7 @@ export function InvoiceDrawer({
             {t.actions.cancel}
           </Button>
           <Button
-            onClick={save}
+            onClick={trySave}
             disabled={saving}
             className="bg-ide-navy text-white hover:bg-ide-navy-hover"
           >
@@ -268,6 +268,38 @@ export function InvoiceDrawer({
         </SheetFooter>
       </SheetContent>
     </Sheet>
+    <AlertDialog open={mismatchOpen} onOpenChange={setMismatchOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t.purchaseOrder.invoiceMismatchTooltip}</AlertDialogTitle>
+          <AlertDialogDescription>
+            <span className="block">
+              Pantað: <strong>{orderedAmount.toFixed(2)} {po.currency}</strong>
+            </span>
+            <span className="block">
+              Reikningur: <strong className="text-red-600">{enteredAmount.toFixed(2)} {po.currency}</strong>
+            </span>
+            <span className="mt-2 block">
+              Frávik: <strong className="text-red-600">{diff > 0 ? "+" : ""}{diff.toFixed(2)} {po.currency}</strong>
+            </span>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t.actions.cancel}</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              setMismatchOpen(false);
+              void save();
+            }}
+            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+          >
+            {t.actions.confirm}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
