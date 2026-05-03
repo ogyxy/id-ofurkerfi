@@ -224,6 +224,8 @@ export type Database = {
           id: string
           original_filename: string | null
           storage_path: string
+          thumbnail_path: string | null
+          thumbnail_status: string
           uploaded_at: string
           uploaded_by: string | null
         }
@@ -234,6 +236,8 @@ export type Database = {
           id?: string
           original_filename?: string | null
           storage_path: string
+          thumbnail_path?: string | null
+          thumbnail_status?: string
           uploaded_at?: string
           uploaded_by?: string | null
         }
@@ -244,6 +248,8 @@ export type Database = {
           id?: string
           original_filename?: string | null
           storage_path?: string
+          thumbnail_path?: string | null
+          thumbnail_status?: string
           uploaded_at?: string
           uploaded_by?: string | null
         }
@@ -322,6 +328,8 @@ export type Database = {
           id: string
           original_filename: string | null
           storage_path: string
+          thumbnail_path: string | null
+          thumbnail_status: string
           uploaded_at: string
           uploaded_by: string | null
         }
@@ -332,6 +340,8 @@ export type Database = {
           id?: string
           original_filename?: string | null
           storage_path: string
+          thumbnail_path?: string | null
+          thumbnail_status?: string
           uploaded_at?: string
           uploaded_by?: string | null
         }
@@ -342,6 +352,8 @@ export type Database = {
           id?: string
           original_filename?: string | null
           storage_path?: string
+          thumbnail_path?: string | null
+          thumbnail_status?: string
           uploaded_at?: string
           uploaded_by?: string | null
         }
