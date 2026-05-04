@@ -694,18 +694,54 @@ function FileCard({
         </div>
       </div>
 
-      {/* Download icon (top-right, hover) */}
-      {file.signedUrlDownload && (
-        <a
-          href={file.signedUrlDownload}
-          download={file.original_filename ?? ""}
-          className="absolute right-2 top-2 rounded-md bg-background/90 p-1.5 text-muted-foreground opacity-0 shadow transition-opacity hover:text-foreground group-hover:opacity-100"
-          title={t.actions.download}
-          onClick={(e) => e.stopPropagation()}
+      {/* Action icons (top-right, hover) */}
+      <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {file.signedUrlDownload && (
+          <a
+            href={file.signedUrlDownload}
+            download={file.original_filename ?? ""}
+            className="rounded-md bg-background/90 p-1.5 text-muted-foreground shadow hover:text-foreground"
+            title={t.actions.download}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Download className="h-4 w-4" />
+          </a>
+        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setConfirm(true);
+          }}
+          className="rounded-md bg-background/90 p-1.5 text-muted-foreground shadow hover:text-red-600"
+          title={t.dealFile.delete}
+          aria-label={t.dealFile.delete}
         >
-          <Download className="h-4 w-4" />
-        </a>
-      )}
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      <AlertDialog open={confirm} onOpenChange={setConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.dealFile.confirmDelete}</AlertDialogTitle>
+            <AlertDialogDescription>{t.status.cannotBeUndone}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{t.actions.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleDelete();
+              }}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {t.dealFile.confirmYes}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
