@@ -3,8 +3,20 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Download,
   Search,
+  Trash2,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { FileThumbnail } from "@/components/FileThumbnail";
 import { FilePreviewOverlay } from "@/components/FilePreviewOverlay";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -531,6 +543,11 @@ function HonnunContent() {
               key={`${f.source}-${f.id}`}
               file={f}
               onPreview={() => setPreviewFile(f)}
+              onDeleted={() => {
+                setAllFiles((prev) =>
+                  prev.filter((x) => !(x.source === f.source && x.id === f.id)),
+                );
+              }}
             />
           ))}
         </div>
@@ -564,12 +581,48 @@ function EmptyState({ hasFilter, onClear }: { hasFilter: boolean; onClear: () =>
   );
 }
 
-function FileCard({ file, onPreview }: { file: MergedFile; onPreview: () => void }) {
+function FileCard({
+  file,
+  onPreview,
+  onDeleted,
+}: {
+  file: MergedFile;
+  onPreview: () => void;
+  onDeleted: () => void;
+}) {
+  const [confirm, setConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const company = file.source === "deal" ? file.deal?.company : file.company;
   const dealLink =
     file.source === "deal" && file.deal
       ? { id: file.deal.id, so: file.deal.so_number, name: file.deal.name }
       : null;
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const bucket = file.source === "deal" ? "deal_files" : "company_files";
+      const table = file.source === "deal" ? "deal_files" : "company_files";
+      await supabase.storage.from(bucket).remove([file.storage_path]);
+      const { error } = await supabase.from(table).delete().eq("id", file.id);
+      if (error) throw new Error(error.message);
+      if (file.source === "deal" && file.deal) {
+        await supabase.from("activities").insert({
+          deal_id: file.deal.id,
+          company_id: file.deal.company_id,
+          type: "note",
+          body: `Skjali eytt: ${file.original_filename ?? file.storage_path}`,
+        });
+      }
+      toast.success(t.status.savedSuccessfully);
+      onDeleted();
+    } catch (e) {
+      toast.error((e as Error).message || t.status.somethingWentWrong);
+    } finally {
+      setDeleting(false);
+      setConfirm(false);
+    }
+  };
 
   return (
     <div className="group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
@@ -641,18 +694,54 @@ function FileCard({ file, onPreview }: { file: MergedFile; onPreview: () => void
         </div>
       </div>
 
-      {/* Download icon (top-right, hover) */}
-      {file.signedUrlDownload && (
-        <a
-          href={file.signedUrlDownload}
-          download={file.original_filename ?? ""}
-          className="absolute right-2 top-2 rounded-md bg-background/90 p-1.5 text-muted-foreground opacity-0 shadow transition-opacity hover:text-foreground group-hover:opacity-100"
-          title={t.actions.download}
-          onClick={(e) => e.stopPropagation()}
+      {/* Action icons (top-right, hover) */}
+      <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {file.signedUrlDownload && (
+          <a
+            href={file.signedUrlDownload}
+            download={file.original_filename ?? ""}
+            className="rounded-md bg-background/90 p-1.5 text-muted-foreground shadow hover:text-foreground"
+            title={t.actions.download}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Download className="h-4 w-4" />
+          </a>
+        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setConfirm(true);
+          }}
+          className="rounded-md bg-background/90 p-1.5 text-muted-foreground shadow hover:text-red-600"
+          title={t.dealFile.delete}
+          aria-label={t.dealFile.delete}
         >
-          <Download className="h-4 w-4" />
-        </a>
-      )}
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      <AlertDialog open={confirm} onOpenChange={setConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t.dealFile.confirmDelete}</AlertDialogTitle>
+            <AlertDialogDescription>{t.status.cannotBeUndone}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{t.actions.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleDelete();
+              }}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {t.dealFile.confirmYes}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
