@@ -543,6 +543,11 @@ function HonnunContent() {
               key={`${f.source}-${f.id}`}
               file={f}
               onPreview={() => setPreviewFile(f)}
+              onDeleted={() => {
+                setAllFiles((prev) =>
+                  prev.filter((x) => !(x.source === f.source && x.id === f.id)),
+                );
+              }}
             />
           ))}
         </div>
