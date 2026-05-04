@@ -30,14 +30,18 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "IDÉ Ofurkerfi" },
+      { name: "description", content: "Manages deals, suppliers, and invoices with integrated PDF previews and status tracking." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "IDÉ Ofurkerfi" },
+      { property: "og:description", content: "Manages deals, suppliers, and invoices with integrated PDF previews and status tracking." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "IDÉ Ofurkerfi" },
+      { name: "twitter:description", content: "Manages deals, suppliers, and invoices with integrated PDF previews and status tracking." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/82b993a3-6df8-4a37-b80c-e8d112ae59de/id-preview-1a6707d9--eb96aaba-4695-4a44-8e0a-1b8b58892382.lovable.app-1777855103585.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/82b993a3-6df8-4a37-b80c-e8d112ae59de/id-preview-1a6707d9--eb96aaba-4695-4a44-8e0a-1b8b58892382.lovable.app-1777855103585.png" },
     ],
     links: [
       {
