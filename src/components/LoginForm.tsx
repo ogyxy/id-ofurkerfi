@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { t } from "@/lib/sala_translations_is";
@@ -15,13 +15,35 @@ export function LoginForm() {
   const [submitting, setSubmitting] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const handleSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (cancelled || error || !data.session) return;
+      navigate({ to: "/yfirlit" });
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session || cancelled) return;
+      navigate({ to: "/yfirlit" });
+    });
+
+    void handleSession();
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, [navigate]);
+
   const handleMicrosoft = async () => {
     setError(null);
     setSsoLoading(true);
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "azure",
       options: {
-        redirectTo: `${window.location.origin}/yfirlit`,
+        redirectTo: `${window.location.origin}/login`,
         scopes: "email openid profile",
       },
     });
