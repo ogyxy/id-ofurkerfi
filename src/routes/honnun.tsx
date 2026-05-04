@@ -3,8 +3,20 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Download,
   Search,
+  Trash2,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { FileThumbnail } from "@/components/FileThumbnail";
 import { FilePreviewOverlay } from "@/components/FilePreviewOverlay";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
