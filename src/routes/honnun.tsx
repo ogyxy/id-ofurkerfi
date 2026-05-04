@@ -581,12 +581,48 @@ function EmptyState({ hasFilter, onClear }: { hasFilter: boolean; onClear: () =>
   );
 }
 
-function FileCard({ file, onPreview }: { file: MergedFile; onPreview: () => void }) {
+function FileCard({
+  file,
+  onPreview,
+  onDeleted,
+}: {
+  file: MergedFile;
+  onPreview: () => void;
+  onDeleted: () => void;
+}) {
+  const [confirm, setConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const company = file.source === "deal" ? file.deal?.company : file.company;
   const dealLink =
     file.source === "deal" && file.deal
       ? { id: file.deal.id, so: file.deal.so_number, name: file.deal.name }
       : null;
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const bucket = file.source === "deal" ? "deal_files" : "company_files";
+      const table = file.source === "deal" ? "deal_files" : "company_files";
+      await supabase.storage.from(bucket).remove([file.storage_path]);
+      const { error } = await supabase.from(table).delete().eq("id", file.id);
+      if (error) throw new Error(error.message);
+      if (file.source === "deal" && file.deal) {
+        await supabase.from("activities").insert({
+          deal_id: file.deal.id,
+          company_id: file.deal.company_id,
+          type: "note",
+          body: `Skjali eytt: ${file.original_filename ?? file.storage_path}`,
+        });
+      }
+      toast.success(t.status.savedSuccessfully);
+      onDeleted();
+    } catch (e) {
+      toast.error((e as Error).message || t.status.somethingWentWrong);
+    } finally {
+      setDeleting(false);
+      setConfirm(false);
+    }
+  };
 
   return (
     <div className="group relative overflow-hidden rounded-md border border-border bg-card transition-colors hover:bg-muted/40">
