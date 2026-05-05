@@ -94,10 +94,11 @@ export function DealFilesSection({
 
     const withUrls = await Promise.all(
       rows.map(async (f) => {
+        const bucket = f.file_type === "quote" ? "quote_pdfs" : "deal_files";
         const [view, dl, thumb] = await Promise.all([
-          supabase.storage.from("deal_files").createSignedUrl(f.storage_path, 3600),
+          supabase.storage.from(bucket).createSignedUrl(f.storage_path, 3600),
           supabase.storage
-            .from("deal_files")
+            .from(bucket)
             .createSignedUrl(f.storage_path, 3600, {
               download: f.original_filename ?? true,
             }),
