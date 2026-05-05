@@ -124,7 +124,8 @@ export function DealFilesSection({
   }, [load]);
 
   const handleDelete = async (file: DealFileRow) => {
-    await supabase.storage.from("deal_files").remove([file.storage_path]);
+    const bucket = file.file_type === "quote" ? "quote_pdfs" : "deal_files";
+    await supabase.storage.from(bucket).remove([file.storage_path]);
     await supabase.from("deal_files").delete().eq("id", file.id);
     await supabase.from("activities").insert({
       deal_id: dealId,
