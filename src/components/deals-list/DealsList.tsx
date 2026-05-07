@@ -263,7 +263,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("id, name, email")
+        .select("id, name, email, avatar_url")
         .eq("active", true);
       setProfiles((data ?? []) as Profile[]);
     })();
