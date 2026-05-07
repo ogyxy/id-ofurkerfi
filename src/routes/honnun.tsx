@@ -609,15 +609,27 @@ function FileCard({
 }) {
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const company = file.source === "deal" ? file.deal?.company : file.company;
+  const company =
+    file.source === "deal"
+      ? file.deal?.company ?? null
+      : file.source === "company"
+        ? file.company
+        : null;
   const dealLink =
     file.source === "deal" && file.deal
       ? { id: file.deal.id, so: file.deal.so_number, name: file.deal.name }
       : null;
+  const unmatchedFolder = file.source === "unmatched" ? file.folder : null;
 
   const handleDelete = async () => {
     setDeleting(true);
     try {
+      if (file.source === "unmatched") {
+        await supabase.storage.from("deal_files").remove([file.storage_path]);
+        toast.success(t.status.savedSuccessfully);
+        onDeleted();
+        return;
+      }
       const bucket = file.source === "deal" ? "deal_files" : "company_files";
       const table = file.source === "deal" ? "deal_files" : "company_files";
       await supabase.storage.from(bucket).remove([file.storage_path]);
