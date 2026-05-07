@@ -45,7 +45,7 @@ import {
   formatIcelandicDate,
   getQuarterRange,
   getYearRange,
-  isoWeekNumber,
+  isoWeekNumber: _unusedIsoWeek,
   paceColor,
   type PaceState,
 } from "@/components/yfirlit/paceHelpers";
