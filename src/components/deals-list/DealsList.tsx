@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { CreateDealDrawer } from "./CreateDealDrawer";
 import { useCurrentRole } from "@/hooks/useCurrentProfile";
 import { canSeeFinancials } from "@/lib/role";
+import { UserAvatar } from "@/components/UserAvatar";
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
 type InvoiceStatus = Database["public"]["Enums"]["invoice_status"];
