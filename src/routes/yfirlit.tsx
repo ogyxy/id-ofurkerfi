@@ -904,107 +904,139 @@ function YfirlitContent({
         <section className="space-y-3">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             {/* Personal pace */}
-            <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {isAllTeam ? t.yfirlit.adminTeamAggregate : t.yfirlit.paceTitle}
-              </p>
-              {myQuarterTarget === 0 && !isAllTeam ? (
-                <p className="mt-4 text-sm text-muted-foreground">{t.yfirlit.paceNoTarget}</p>
-              ) : (
-                <>
-                  <p className="mt-2 text-2xl font-semibold text-foreground tabular-nums">
-                    {formatIsk(isAllTeam ? teamQuarterRev : myQuarterRev)}
-                    <span className="ml-2 text-sm font-normal text-muted-foreground">
-                      / {formatIsk(myQuarterTarget)}
-                    </span>
-                  </p>
-                  <div className="mt-3">
-                    <BulletBar
-                      achieved={isAllTeam ? teamQuarterRev : myQuarterRev}
-                      target={myQuarterTarget}
-                      expectedPct={expectedPctQ}
-                      state={myPaceState}
-                    />
+            {(() => {
+              const isYear = paceMode === "year";
+              const personalRev = isAllTeam
+                ? (isYear ? yearDeals.reduce((s, d) => s + d.net, 0) : teamQuarterRev)
+                : (isYear ? myYearRev : myQuarterRev);
+              const personalTarget = isYear ? myYearTarget : myQuarterTarget;
+              const expectedPct = isYear ? expectedPctY : expectedPctQ;
+              const state = isYear ? myYearState : myPaceState;
+              const fillPct = personalTarget > 0 ? (personalRev / personalTarget) * 100 : 0;
+              const daysLeft = isYear
+                ? Math.max(totalDaysY - elapsedY, 0)
+                : remainingQ;
+              return (
+                <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {isAllTeam ? t.yfirlit.adminTeamAggregate : t.yfirlit.paceTitle}
+                    </p>
+                    <PaceModeToggle value={paceMode} onChange={setPaceMode} />
                   </div>
-                  <div className="mt-3 flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">
-                      {t.yfirlit.paceOfTarget.replace("{pct}", String(Math.round(myPaceFillPct)))}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {t.yfirlit.paceDaysLeft.replace("{n}", String(remainingQ))}
-                    </span>
-                  </div>
-                  <span className={`mt-3 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${paceChipClass(myPaceState)}`}>
-                    {paceStateLabel(myPaceState)}
-                  </span>
-                  {myYearTarget > 0 && (
-                    <div className="mt-4 space-y-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        {t.yfirlit.paceYear}
+                  {personalTarget === 0 && !isAllTeam ? (
+                    <p className="mt-4 text-sm text-muted-foreground">{t.yfirlit.paceNoTarget}</p>
+                  ) : (
+                    <>
+                      <p className="mt-2 text-2xl font-semibold text-foreground tabular-nums">
+                        {formatIsk(personalRev)}
+                        <span className="ml-2 text-sm font-normal text-muted-foreground">
+                          / {formatIsk(personalTarget)}
+                        </span>
                       </p>
-                      <BulletBar
-                        achieved={myYearRev}
-                        target={myYearTarget}
-                        expectedPct={expectedPctY}
-                        state={myYearState}
-                        height="sm"
-                      />
-                    </div>
+                      <div className="mt-3">
+                        <BulletBar
+                          achieved={personalRev}
+                          target={personalTarget}
+                          expectedPct={expectedPct}
+                          state={state}
+                        />
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">
+                          {t.yfirlit.paceOfTarget.replace("{pct}", String(Math.round(fillPct)))}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {t.yfirlit.paceDaysLeft.replace("{n}", String(daysLeft))}
+                        </span>
+                      </div>
+                      <span className={`mt-3 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${paceChipClass(state)}`}>
+                        {paceStateLabel(state)}
+                      </span>
+                    </>
                   )}
-                </>
-              )}
-            </div>
+                </div>
+              );
+            })()}
 
             {/* Team pace */}
-            <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {t.yfirlit.teamPaceTitle}
-              </p>
-              {teamPace.length <= 1 && teamPace.every((x) => x.target === 0) ? (
-                <p className="text-sm text-muted-foreground">{t.yfirlit.teamPaceEmpty}</p>
-              ) : (
-                <ul className="space-y-2">
-                  {teamPace.map((row) => {
-                    const isMe = row.profile.id === currentUserId;
-                    const fill = row.target > 0 ? (row.rev / row.target) * 100 : 0;
-                    return (
-                      <li
-                        key={row.profile.id}
-                        className={`flex items-center gap-3 rounded-md px-2 py-1.5 ${
-                          isMe ? "border-l-2 border-ide-navy bg-muted/40" : ""
-                        }`}
-                      >
-                        <UserAvatar
-                          name={row.profile.name}
-                          email={row.profile.email}
-                          avatarUrl={row.profile.avatar_url ?? null}
-                          size={24}
-                        />
-                        <span className="w-20 truncate text-xs text-foreground">
-                          {firstName(row.profile.name, row.profile.email)}
-                        </span>
-                        <div className="flex-1">
-                          {row.target > 0 ? (
-                            <BulletBar
-                              achieved={row.rev}
-                              target={row.target}
-                              expectedPct={expectedPctQ}
-                              state={row.state}
-                              height="sm"
+            {(() => {
+              const isYear = paceMode === "year";
+              const expectedPct = isYear ? expectedPctY : expectedPctQ;
+              const teamRows = salesPeople
+                .map((p) => {
+                  const rev = isYear
+                    ? yearDeals.filter((d) => d.owner_id === p.id).reduce((s, d) => s + d.net, 0)
+                    : quarterDeals.filter((d) => d.owner_id === p.id).reduce((s, d) => s + d.net, 0);
+                  const tgt = targetForUser(p.id, isYear ? "year" : "quarter");
+                  return {
+                    profile: p,
+                    rev,
+                    target: tgt,
+                    state: computePaceState(rev, tgt, expectedPct),
+                  };
+                })
+                .filter((x) => x.target > 0 || x.profile.id === currentUserId)
+                .sort((a, b) =>
+                  (firstName(a.profile.name, a.profile.email) || "").localeCompare(
+                    firstName(b.profile.name, b.profile.email) || "",
+                  ),
+                );
+              return (
+                <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t.yfirlit.teamPaceTitle}
+                    </p>
+                    <PaceModeToggle value={paceMode} onChange={setPaceMode} />
+                  </div>
+                  {teamRows.length <= 1 && teamRows.every((x) => x.target === 0) ? (
+                    <p className="text-sm text-muted-foreground">{t.yfirlit.teamPaceEmpty}</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {teamRows.map((row) => {
+                        const isMe = row.profile.id === currentUserId;
+                        const fill = row.target > 0 ? (row.rev / row.target) * 100 : 0;
+                        return (
+                          <li
+                            key={row.profile.id}
+                            className={`flex items-center gap-3 rounded-md px-2 py-1.5 ${
+                              isMe ? "border-l-2 border-ide-navy bg-muted/40" : ""
+                            }`}
+                          >
+                            <UserAvatar
+                              name={row.profile.name}
+                              email={row.profile.email}
+                              avatarUrl={row.profile.avatar_url ?? null}
+                              size={24}
                             />
-                          ) : (
-                            <div className="h-1.5 w-full rounded-full bg-muted" />
-                          )}
-                        </div>
-                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${paceChipClass(row.state)}`}>
-                          {row.target > 0 ? `${Math.round(fill)}%` : "—"}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
+                            <span className="w-20 truncate text-xs text-foreground">
+                              {firstName(row.profile.name, row.profile.email)}
+                            </span>
+                            <div className="flex-1">
+                              {row.target > 0 ? (
+                                <BulletBar
+                                  achieved={row.rev}
+                                  target={row.target}
+                                  expectedPct={expectedPct}
+                                  state={row.state}
+                                  height="sm"
+                                />
+                              ) : (
+                                <div className="h-1.5 w-full rounded-full bg-muted" />
+                              )}
+                            </div>
+                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${paceChipClass(row.state)}`}>
+                              {row.target > 0 ? `${Math.round(fill)}%` : "—"}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Spotlight */}
             <div className="rounded-lg border border-ide-navy/40 bg-gradient-to-br from-card to-muted/30 p-5 shadow-sm">
