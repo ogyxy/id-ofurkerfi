@@ -705,6 +705,11 @@ function FileCard({
 const BRAND_TYPES: CompanyFileType[] = COMPANY_FILE_TYPES;
 const DEAL_TYPES: DealFileType[] = DEAL_FILE_TYPES;
 
+interface CompanyLite {
+  id: string;
+  name: string;
+}
+
 function MoveLegacyDialog({
   file,
   deals,
@@ -720,12 +725,19 @@ function MoveLegacyDialog({
   onClose: () => void;
   onMoved: () => void;
 }) {
-  const [tab, setTab] = useState<"brand" | "deal">("brand");
+  const [tab, setTab] = useState<"brand" | "deal" | "company">("brand");
   const [brandType, setBrandType] = useState<string>("logo");
   const [dealType, setDealType] = useState<string>("artwork");
   const [dealId, setDealId] = useState<string>("");
   const [dealComboOpen, setDealComboOpen] = useState(false);
   const selectedDeal = useMemo(() => deals.find((d) => d.id === dealId) ?? null, [deals, dealId]);
+  const [companies, setCompanies] = useState<CompanyLite[]>([]);
+  const [targetCompanyId, setTargetCompanyId] = useState<string>("");
+  const [companyComboOpen, setCompanyComboOpen] = useState(false);
+  const selectedCompany = useMemo(
+    () => companies.find((c) => c.id === targetCompanyId) ?? null,
+    [companies, targetCompanyId],
+  );
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -734,8 +746,23 @@ function MoveLegacyDialog({
       setBrandType(smartGuessBrandFileType(file.original_filename ?? ""));
       setDealType(smartGuessDealFileType(file.original_filename ?? ""));
       setDealId("");
+      setTargetCompanyId("");
     }
   }, [file]);
+
+  useEffect(() => {
+    if (!file) return;
+    void (async () => {
+      const { data } = await supabase
+        .from("companies")
+        .select("id, name")
+        .eq("archived", false)
+        .neq("id", companyId)
+        .order("name");
+      setCompanies((data ?? []) as CompanyLite[]);
+    })();
+  }, [file, companyId]);
+
 
   if (!file) return null;
 
