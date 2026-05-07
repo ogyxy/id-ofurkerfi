@@ -61,6 +61,11 @@ function SettingsContent() {
           </TabsContent>
         )}
         {isAdmin && (
+          <TabsContent value="targets" className="mt-6">
+            <TargetsTab />
+          </TabsContent>
+        )}
+        {isAdmin && (
           <TabsContent value="app" className="mt-6">
             <AppTab />
           </TabsContent>
