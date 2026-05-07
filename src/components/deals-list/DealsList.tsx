@@ -809,13 +809,17 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                   onClick={() => toggleOwner(p.id)}
                   title={p.name ?? p.email}
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition hover:scale-105",
-                    filled
-                      ? "bg-ide-navy text-white"
-                      : "bg-muted text-muted-foreground",
+                    "rounded-full transition hover:scale-105",
+                    filled ? "opacity-100" : "opacity-40 grayscale",
                   )}
                 >
-                  {initials(p.name ?? p.email)}
+                  <UserAvatar
+                    name={p.name}
+                    email={p.email}
+                    avatarUrl={p.avatar_url}
+                    size={32}
+                    title={p.name ?? p.email}
+                  />
                 </button>
               );
             })}
