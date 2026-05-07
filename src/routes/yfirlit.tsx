@@ -931,7 +931,6 @@ function PulseTile({
 
 function ActivityFeedRow({ a }: { a: ActivityRow }) {
   const name = a.profile?.name || "—";
-  const init = initials(a.profile?.name, "");
   const rawBody = a.body ?? "";
 
   // Translate body for stage_change entries (body is the raw enum value)
@@ -945,9 +944,12 @@ function ActivityFeedRow({ a }: { a: ActivityRow }) {
 
   return (
     <li className="flex gap-3">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ide-navy text-xs font-medium text-white">
-        {init || "·"}
-      </span>
+      <UserAvatar
+        name={a.profile?.name}
+        email={a.profile?.email}
+        avatarUrl={a.profile?.avatar_url ?? null}
+        size={32}
+      />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 text-sm">
           <span className="font-medium text-foreground">{name}</span>
