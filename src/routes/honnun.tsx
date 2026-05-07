@@ -716,6 +716,10 @@ function FileCard({
               {dealLink.so} — {dealLink.name}
             </Link>
           </div>
+        ) : unmatchedFolder ? (
+          <div className="truncate text-muted-foreground" title={unmatchedFolder}>
+            {t.hönnunScreen.sourceUnmatched}: {unmatchedFolder}
+          </div>
         ) : (
           <div className="text-muted-foreground">{t.hönnunScreen.sourceCompanyBrand}</div>
         )}
