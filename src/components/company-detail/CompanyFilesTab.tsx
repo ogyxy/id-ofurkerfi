@@ -5,11 +5,12 @@ import {
   Download,
   Trash2,
   Upload,
+  ArrowRightLeft,
 } from "lucide-react";
 import { FileThumbnail } from "@/components/FileThumbnail";
 import { FilePreviewOverlay } from "@/components/FilePreviewOverlay";
 import { MultiFileUploadDialog } from "@/components/MultiFileUploadDialog";
-import { smartGuessBrandFileType } from "@/lib/uploadHelpers";
+import { smartGuessBrandFileType, smartGuessDealFileType } from "@/lib/uploadHelpers";
 import {
   processThumbnailInBackground,
   initialThumbStatus,
@@ -29,6 +30,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 // ---------- Types ----------
