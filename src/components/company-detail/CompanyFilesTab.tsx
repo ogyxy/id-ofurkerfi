@@ -417,6 +417,48 @@ export function CompanyFilesTab({
         )}
       </section>
 
+      {legacyFiles.length > 0 && (
+        <>
+          <hr className="border-border" />
+          <section className="space-y-3">
+            <div>
+              <h2 className="text-lg font-semibold">{t.legacyImport.sectionTitle}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t.legacyImport.sectionHint}
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {legacyFiles.map((f) => (
+                <FileCard
+                  key={f.id}
+                  file={f}
+                  typeLabel={fileTypeLabel(f.file_type)}
+                  onPreview={() => setPreviewFile(f)}
+                  onDelete={() => void handleDeleteCompanyFile(f)}
+                  extraAction={{
+                    icon: <ArrowRightLeft className="h-4 w-4" />,
+                    label: t.legacyImport.move,
+                    onClick: () => setMoveFile(f),
+                  }}
+                />
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
+      <MoveLegacyDialog
+        file={moveFile}
+        deals={deals}
+        currentProfileId={currentProfileId}
+        companyId={companyId}
+        onClose={() => setMoveFile(null)}
+        onMoved={() => {
+          setMoveFile(null);
+          void load();
+        }}
+      />
+
       <MultiFileUploadDialog
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
