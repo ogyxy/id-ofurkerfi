@@ -133,7 +133,7 @@ export function DealLog({
       {/* Input */}
       <div className="rounded-md border border-border bg-card p-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-          <Avatar name={currentProfile?.name} />
+          <Avatar name={currentProfile?.name} avatarUrl={currentProfile?.avatar_url} />
           <div className="flex-1 space-y-2">
             <Textarea
               value={text}
