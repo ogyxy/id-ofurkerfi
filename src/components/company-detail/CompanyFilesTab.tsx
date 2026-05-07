@@ -315,7 +315,7 @@ export function CompanyFilesTab({
           </Button>
         </div>
 
-        {companyFiles.length === 0 ? (
+        {brandFiles.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-md border border-dashed border-border p-8 text-center">
             <p className="text-sm font-medium text-foreground">
               {t.companyFile.noFiles}
@@ -334,7 +334,7 @@ export function CompanyFilesTab({
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {companyFiles.map((f) => (
+            {brandFiles.map((f) => (
               <FileCard
                 key={f.id}
                 file={f}
