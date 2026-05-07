@@ -83,11 +83,21 @@ type SignedExtras = {
   thumbnailUrl: string | null;
 };
 
+interface UnmatchedFileRow {
+  id: string; // synthetic: storage path
+  storage_path: string;
+  original_filename: string | null;
+  file_size_bytes: number | null;
+  uploaded_at: string;
+  folder: string; // first segment after __unmatched__/
+}
+
 type MergedFile =
   | (DealFileRow & { source: "deal" } & SignedExtras)
-  | (CompanyFileRow & { source: "company" } & SignedExtras);
+  | (CompanyFileRow & { source: "company" } & SignedExtras)
+  | (UnmatchedFileRow & { source: "unmatched"; file_type: "other"; thumbnail_path: null; thumbnail_status: "unsupported"; uploaded_by: null } & SignedExtras);
 
-type TypeFilter = "mockup" | "artwork" | "logo" | "presentation" | "brand";
+type TypeFilter = "mockup" | "artwork" | "logo" | "presentation" | "brand" | "unmatched";
 
 // --------- Helpers ----------
 
@@ -258,7 +268,54 @@ function HonnunContent() {
       }),
     );
 
-    setAllFiles([...dealMerged, ...companyMerged]);
+    // Unmatched files in storage (no DB row, sit under __unmatched__/<folder>/<file>)
+    const unmatchedMerged: MergedFile[] = [];
+    try {
+      const { data: folders } = await supabase.storage
+        .from("deal_files")
+        .list("__unmatched__", { limit: 1000 });
+      const folderNames = (folders ?? [])
+        .filter((entry) => !entry.id) // folders have no id
+        .map((entry) => entry.name);
+      const perFolder = await Promise.all(
+        folderNames.map(async (folder) => {
+          const { data: files } = await supabase.storage
+            .from("deal_files")
+            .list(`__unmatched__/${folder}`, { limit: 1000 });
+          return { folder, files: files ?? [] };
+        }),
+      );
+      for (const { folder, files } of perFolder) {
+        for (const entry of files) {
+          if (!entry.id) continue; // skip subfolders
+          const storage_path = `__unmatched__/${folder}/${entry.name}`;
+          // Strip "<unix>-" prefix if present
+          const display = entry.name.replace(/^\d+-/, "");
+          const u = await sign(storage_path, display, null, "unsupported");
+          unmatchedMerged.push({
+            id: storage_path,
+            storage_path,
+            original_filename: display,
+            file_size_bytes:
+              (entry.metadata as { size?: number } | null)?.size ?? null,
+            uploaded_at: entry.created_at ?? new Date().toISOString(),
+            folder,
+            source: "unmatched",
+            file_type: "other",
+            thumbnail_path: null,
+            thumbnail_status: "unsupported",
+            uploaded_by: null,
+            signedUrl: u.url || null,
+            signedUrlDownload: u.download || null,
+            thumbnailUrl: u.thumb || null,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("[honnun] failed to list __unmatched__", err);
+    }
+
+    setAllFiles([...dealMerged, ...companyMerged, ...unmatchedMerged]);
     setLoading(false);
   }, []);
 
@@ -315,6 +372,7 @@ function HonnunContent() {
   const companyOptions = useMemo<CompanyLite[]>(() => {
     const m = new Map<string, CompanyLite>();
     allFiles.forEach((f) => {
+      if (f.source === "unmatched") return;
       const c = f.source === "deal" ? f.deal?.company : f.company;
       if (c) m.set(c.id, c);
     });
@@ -344,6 +402,8 @@ function HonnunContent() {
         if (typeFilter !== null) {
           if (typeFilter === "brand") {
             if (f.source !== "company") return false;
+          } else if (typeFilter === "unmatched") {
+            if (f.source !== "unmatched") return false;
           } else {
             if (f.source !== "deal" || f.file_type !== typeFilter) return false;
           }
@@ -351,6 +411,7 @@ function HonnunContent() {
 
         // Company filter
         if (companyFilter) {
+          if (f.source === "unmatched") return false;
           const cid = f.source === "deal" ? f.deal?.company_id : f.company_id;
           if (cid !== companyFilter) return false;
         }
@@ -359,6 +420,9 @@ function HonnunContent() {
         if (term) {
           const filename = f.original_filename?.toLowerCase() ?? "";
           if (filename.includes(term)) return true;
+          if (f.source === "unmatched") {
+            return f.folder.toLowerCase().includes(term);
+          }
           const companyName =
             (f.source === "deal" ? f.deal?.company?.name : f.company?.name) ?? "";
           if (companyName.toLowerCase().includes(term)) return true;
@@ -392,6 +456,7 @@ function HonnunContent() {
     { key: "logo", label: t.hönnunScreen.typeLogo },
     { key: "presentation", label: t.hönnunScreen.typePresentation },
     { key: "brand", label: t.hönnunScreen.typeBrand },
+    { key: "unmatched", label: t.hönnunScreen.sourceUnmatched },
   ];
 
   return (
@@ -592,15 +657,27 @@ function FileCard({
 }) {
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const company = file.source === "deal" ? file.deal?.company : file.company;
+  const company =
+    file.source === "deal"
+      ? file.deal?.company ?? null
+      : file.source === "company"
+        ? file.company
+        : null;
   const dealLink =
     file.source === "deal" && file.deal
       ? { id: file.deal.id, so: file.deal.so_number, name: file.deal.name }
       : null;
+  const unmatchedFolder = file.source === "unmatched" ? file.folder : null;
 
   const handleDelete = async () => {
     setDeleting(true);
     try {
+      if (file.source === "unmatched") {
+        await supabase.storage.from("deal_files").remove([file.storage_path]);
+        toast.success(t.status.savedSuccessfully);
+        onDeleted();
+        return;
+      }
       const bucket = file.source === "deal" ? "deal_files" : "company_files";
       const table = file.source === "deal" ? "deal_files" : "company_files";
       await supabase.storage.from(bucket).remove([file.storage_path]);
@@ -653,7 +730,9 @@ function FileCard({
             <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
               {file.source === "company"
                 ? t.hönnunScreen.typeBrand
-                : typeLabel(file.file_type)}
+                : file.source === "unmatched"
+                  ? t.hönnunScreen.sourceUnmatched
+                  : typeLabel(file.file_type)}
             </span>
           </div>
         </div>
@@ -684,6 +763,10 @@ function FileCard({
             >
               {dealLink.so} — {dealLink.name}
             </Link>
+          </div>
+        ) : unmatchedFolder ? (
+          <div className="truncate text-muted-foreground" title={unmatchedFolder}>
+            {t.hönnunScreen.sourceUnmatched}: {unmatchedFolder}
           </div>
         ) : (
           <div className="text-muted-foreground">{t.hönnunScreen.sourceCompanyBrand}</div>
