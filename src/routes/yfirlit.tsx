@@ -241,6 +241,7 @@ function YfirlitContent({
 
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [showAdvisory, setShowAdvisory] = useState(false);
+  const [paceMode, setPaceMode] = useState<"quarter" | "year">("quarter");
 
   const [pulse, setPulse] = useState<PulseStats>({ revenue: 0, count: 0, avgDeal: 0, marginPct: 0 });
   const [prevYearPulse, setPrevYearPulse] = useState<PulseStats>({ revenue: 0, count: 0, avgDeal: 0, marginPct: 0 });
