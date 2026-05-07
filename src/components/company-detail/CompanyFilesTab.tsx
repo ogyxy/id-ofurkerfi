@@ -542,12 +542,14 @@ function FileCard({
   linkedDeal,
   onPreview,
   onDelete,
+  extraAction,
 }: {
   file: CompanyFileRow;
   typeLabel: string;
   linkedDeal?: DealLite;
   onPreview: () => void;
   onDelete: () => void;
+  extraAction?: { icon: React.ReactNode; label: string; onClick: () => void };
 }) {
   const [confirm, setConfirm] = useState(false);
 
