@@ -6,6 +6,7 @@ import { rememberCompanyReturnPath } from "@/lib/dealReturn";
 import { Button } from "@/components/ui/button";
 import { formatPhone } from "@/lib/formatters";
 import { LabeledPill, type PillTone } from "@/components/deal-detail/LabeledPill";
+import { UserAvatar } from "@/components/UserAvatar";
 
 import { CopySoButton, CopyTextButton } from "@/components/deals-list/DealsList";
 
