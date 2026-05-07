@@ -881,6 +881,20 @@ export const t = {
     sectionHint:  'Skjöl sem hafa verið hlaðin upp á sölur þessa viðskiptavinar.',
   },
 
+  legacyImport: {
+    sectionTitle:    'Legacy import',
+    sectionHint:     'Skjöl sem voru flutt inn úr eldra kerfi. Færið þau yfir í Vörumerki eða tengið við sölu.',
+    move:            'Færa',
+    moveToBrand:     'Færa í Vörumerki',
+    moveToDeal:      'Tengja við sölu',
+    pickType:        'Veldu tegund',
+    pickDeal:        'Veldu sölu',
+    confirmMove:     'Færa',
+    moved:           'Skjal fært',
+    moveFailed:      'Ekki tókst að færa skjal',
+    noFiles:         'Engin legacy-skjöl',
+  },
+
   // ---------------------------------------------------------------------------
   // Unified file-type labels — used by deal_files, po_files and company_files
   // ---------------------------------------------------------------------------
