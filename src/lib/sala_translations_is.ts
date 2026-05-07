@@ -1042,7 +1042,7 @@ export const t = {
     monthsLong:  ['janúar', 'febrúar', 'mars', 'apríl', 'maí', 'júní', 'júlí', 'ágúst', 'september', 'október', 'nóvember', 'desember'],
     weekdaysLong: ['Sunnudagur','Mánudagur','Þriðjudagur','Miðvikudagur','Fimmtudagur','Föstudagur','Laugardagur'],
 
-    paceTitle:        'ÞÍN PACE — FJÓRÐUNGURINN',
+    paceTitle:        'ÞÍN PACE',
     paceQuarter:      'FJÓRÐUNGURINN',
     paceYear:         'ÁRSMARKMIÐ',
     paceOfTarget:     '{pct}% af markmiði',
@@ -1051,8 +1051,10 @@ export const t = {
     paceOnTrack:      'Á áætlun',
     paceBehind:       'Á eftir áætlun',
     paceNoTarget:     'Markmið ekki sett. Hafðu samband við stjórnanda.',
+    paceToggleQuarter:'Fjórðungur',
+    paceToggleYear:   'Ár',
 
-    teamPaceTitle:    'LIÐSPACE — FJÓRÐUNGURINN',
+    teamPaceTitle:    'LIÐSPACE',
     teamPaceEmpty:    'Aðrir liðsmenn hafa ekki sett markmið ennþá',
 
     spotlightTitle:   'VIKUHÁPUNKTUR',
