@@ -27,30 +27,18 @@ interface Props {
   onLocalAppend?: (entry: LogEntry) => void;
 }
 
-const NAVY = "#1a2540";
+import { UserAvatar } from "@/components/UserAvatar";
 
-function initials(name: string | null | undefined): string {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-function Avatar({ name, size = 36 }: { name: string | null | undefined; size?: number }) {
-  return (
-    <div
-      className="flex flex-shrink-0 items-center justify-center rounded-full font-semibold text-white"
-      style={{
-        width: size,
-        height: size,
-        backgroundColor: NAVY,
-        fontSize: size <= 28 ? 11 : 13,
-      }}
-    >
-      {initials(name)}
-    </div>
-  );
+function Avatar({
+  name,
+  avatarUrl,
+  size = 36,
+}: {
+  name: string | null | undefined;
+  avatarUrl?: string | null;
+  size?: number;
+}) {
+  return <UserAvatar name={name} avatarUrl={avatarUrl ?? null} size={size} />;
 }
 
 const STAGE_TONES: Record<DealStage, string> = {
