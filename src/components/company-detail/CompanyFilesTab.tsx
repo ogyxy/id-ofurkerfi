@@ -865,10 +865,11 @@ function MoveLegacyDialog({
         <DialogHeader>
           <DialogTitle>{file.original_filename ?? t.legacyImport.move}</DialogTitle>
         </DialogHeader>
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "brand" | "deal")}>
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "brand" | "deal" | "company")}>
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="brand">{t.legacyImport.moveToBrand}</TabsTrigger>
             <TabsTrigger value="deal">{t.legacyImport.moveToDeal}</TabsTrigger>
+            <TabsTrigger value="company">{t.legacyImport.moveToCompany}</TabsTrigger>
           </TabsList>
           <TabsContent value="brand" className="space-y-3 pt-3">
             <div className="space-y-1.5">
