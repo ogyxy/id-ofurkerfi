@@ -10,6 +10,7 @@ import { canManageUsers } from "@/lib/role";
 import { ProfileTab } from "@/components/settings/ProfileTab";
 import { UsersTab } from "@/components/settings/UsersTab";
 import { AppTab } from "@/components/settings/AppTab";
+import { TargetsTab } from "@/components/settings/TargetsTab";
 
 export const Route = createFileRoute("/settings")({
   ssr: false,
