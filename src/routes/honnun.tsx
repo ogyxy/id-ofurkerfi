@@ -325,6 +325,7 @@ function HonnunContent() {
   const companyOptions = useMemo<CompanyLite[]>(() => {
     const m = new Map<string, CompanyLite>();
     allFiles.forEach((f) => {
+      if (f.source === "unmatched") return;
       const c = f.source === "deal" ? f.deal?.company : f.company;
       if (c) m.set(c.id, c);
     });
