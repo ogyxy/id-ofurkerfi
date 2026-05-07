@@ -1043,17 +1043,25 @@ function YfirlitContent({
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {t.yfirlit.spotlightTitle}
               </p>
-              <div className="flex items-start gap-3">
-                {spotlight.profile && (
-                  <UserAvatar
-                    name={spotlight.profile.name}
-                    email={spotlight.profile.email}
-                    avatarUrl={spotlight.profile.avatar_url ?? null}
-                    size={40}
-                  />
-                )}
-                <p className="text-sm text-foreground leading-snug">{spotlight.text}</p>
-              </div>
+              {spotlight.length === 0 ? (
+                <p className="text-sm text-foreground leading-snug">{t.yfirlit.spotlightFallback}</p>
+              ) : (
+                <ul className="space-y-3">
+                  {spotlight.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      {item.profile && (
+                        <UserAvatar
+                          name={item.profile.name}
+                          email={item.profile.email}
+                          avatarUrl={item.profile.avatar_url ?? null}
+                          size={32}
+                        />
+                      )}
+                      <p className="text-sm text-foreground leading-snug">{item.text}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </section>
