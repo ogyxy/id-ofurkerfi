@@ -66,7 +66,7 @@ type Contact = Pick<
 >;
 type PurchaseOrder = Database["public"]["Tables"]["purchase_orders"]["Row"];
 type POLine = Database["public"]["Tables"]["po_lines"]["Row"];
-type Profile = { id: string; name: string | null; email: string };
+type Profile = { id: string; name: string | null; email: string; avatar_url: string | null };
 
 // Deals created at or after this timestamp are subject to the PO gate
 // on the order_confirmed → delivered transition (the "Vörur komnar í hús"
