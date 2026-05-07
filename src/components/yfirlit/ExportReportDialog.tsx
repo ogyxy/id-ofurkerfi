@@ -95,6 +95,8 @@ const STAGE_LABELS_EN: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
+const NAVY: [number, number, number] = [26, 37, 64];
+
 export function ExportReportDialog({ open, onOpenChange }: ExportReportDialogProps) {
   const monthOptions = useMemo(buildMonthOptions, []);
   const [period, setPeriod] = useState<Period>("month");
@@ -106,12 +108,15 @@ export function ExportReportDialog({ open, onOpenChange }: ExportReportDialogPro
     setGenerating(true);
     try {
       const range = calcRange(period, month);
+      const isIs = lang === "is";
+      const L = (is: string, en: string) => (isIs ? is : en);
+      const periodLabel = isIs ? range.labelIs : range.labelEn;
 
-      // Period deals
+      // ---------- Period delivered deals ----------
       const { data: dealsRaw } = await supabase
         .from("deals")
         .select(
-          "id, so_number, name, amount_isk, total_margin_isk, refund_amount_isk, defect_resolution, stage, delivered_at, company:companies(name)"
+          "id, owner_id, so_number, name, amount_isk, total_margin_isk, refund_amount_isk, defect_resolution, stage, delivered_at, company:companies(name)"
         )
         .eq("archived", false)
         .gte("delivered_at", range.from)
@@ -125,7 +130,33 @@ export function ExportReportDialog({ open, onOpenChange }: ExportReportDialogPro
       const marginPct = revenue > 0 ? (margin / revenue) * 100 : 0;
       const avg = deals.length ? revenue / deals.length : 0;
 
-      // Top customers
+      // ---------- Per-owner performance ----------
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, name, email");
+      const profileMap: Record<string, { name: string; email: string }> = {};
+      (profiles ?? []).forEach((p: any) => {
+        profileMap[p.id] = { name: p.name ?? "", email: p.email ?? "" };
+      });
+      const byOwner: Record<string, { rev: number; mar: number; n: number }> = {};
+      deals.forEach((d: any) => {
+        if (!d.owner_id) return;
+        if (!byOwner[d.owner_id]) byOwner[d.owner_id] = { rev: 0, mar: 0, n: 0 };
+        byOwner[d.owner_id].rev += net(d);
+        byOwner[d.owner_id].mar += netMargin(d);
+        byOwner[d.owner_id].n += 1;
+      });
+      const ownerRows = Object.entries(byOwner)
+        .map(([id, v]) => ({
+          name: profileMap[id]?.name || profileMap[id]?.email || "—",
+          rev: v.rev,
+          mar: v.mar,
+          n: v.n,
+          pct: v.rev > 0 ? (v.mar / v.rev) * 100 : 0,
+        }))
+        .sort((a, b) => b.rev - a.rev);
+
+      // ---------- Top customers ----------
       const byCompany: Record<string, { name: string; total: number; count: number }> = {};
       deals.forEach((d: any) => {
         const name = d.company?.name || "—";
@@ -133,9 +164,38 @@ export function ExportReportDialog({ open, onOpenChange }: ExportReportDialogPro
         byCompany[name].total += net(d);
         byCompany[name].count += 1;
       });
-      const top = Object.values(byCompany).sort((a, b) => b.total - a.total).slice(0, 5);
+      const top = Object.values(byCompany).sort((a, b) => b.total - a.total).slice(0, 10);
 
-      // Pipeline (current state)
+      // ---------- Sales targets vs actuals (only for ytd/lastyear) ----------
+      let targetRows: Array<{ name: string; target: number; actual: number; pct: number }> = [];
+      if (period !== "month") {
+        const yearStart = range.from.slice(0, 4) + "-01-01";
+        const { data: targetsRaw } = await supabase
+          .from("sales_targets")
+          .select("owner_id, period_type, period_start, target_isk")
+          .eq("period_type", "year")
+          .eq("period_start", yearStart);
+        const targetByOwner: Record<string, number> = {};
+        (targetsRaw ?? []).forEach((t: any) => {
+          targetByOwner[t.owner_id] = (targetByOwner[t.owner_id] || 0) + (t.target_isk || 0);
+        });
+        const allOwnerIds = new Set([...Object.keys(targetByOwner), ...Object.keys(byOwner)]);
+        targetRows = Array.from(allOwnerIds)
+          .map((id) => {
+            const target = targetByOwner[id] || 0;
+            const actual = byOwner[id]?.rev || 0;
+            return {
+              name: profileMap[id]?.name || profileMap[id]?.email || "—",
+              target,
+              actual,
+              pct: target > 0 ? (actual / target) * 100 : 0,
+            };
+          })
+          .filter((r) => r.target > 0 || r.actual > 0)
+          .sort((a, b) => b.actual - a.actual);
+      }
+
+      // ---------- Pipeline (current state) ----------
       const { data: openRaw } = await supabase
         .from("deals")
         .select("stage, amount_isk")
@@ -149,81 +209,204 @@ export function ExportReportDialog({ open, onOpenChange }: ExportReportDialogPro
         pipeline[d.stage].total += d.amount_isk || 0;
       });
 
-      const isIs = lang === "is";
-      const L = (is: string, en: string) => (isIs ? is : en);
-      const periodLabel = isIs ? range.labelIs : range.labelEn;
+      // ---------- Flagged deals (current state) ----------
+      const { data: flaggedRaw } = await supabase
+        .from("deals")
+        .select("so_number, name, stage, amount_isk, defect_resolution, paid, delivered_at, company:companies(name)")
+        .eq("archived", false)
+        .or("stage.eq.defect_reorder,and(stage.eq.delivered,paid.eq.false)");
+      const flagged = (flaggedRaw ?? []).slice(0, 20);
 
+      // ============ BUILD PDF ============
       const doc = new jsPDF();
-      let y = 20;
+      const pageW = doc.internal.pageSize.getWidth();
+      let y = 18;
 
-      doc.setFontSize(16);
-      doc.text(
-        `${L("IDÉ House of Brands Ísland", "IDÉ House of Brands Iceland")} — ${L(
-          "Skýrsla",
-          "Report"
-        )} — ${periodLabel}`,
-        14,
-        y
-      );
-      y += 10;
-
+      // Header band
+      doc.setFillColor(...NAVY);
+      doc.rect(0, 0, pageW, 28, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(15);
+      doc.text(L("IDÉ House of Brands Ísland", "IDÉ House of Brands Iceland"), 14, 13);
       doc.setFontSize(11);
+      doc.text(`${L("Sölu­skýrsla", "Sales report")} — ${periodLabel}`, 14, 21);
+      doc.setTextColor(0, 0, 0);
+      y = 38;
+
+      doc.setFontSize(9);
+      doc.setTextColor(110, 110, 110);
       doc.text(`${L("Tímabil", "Period")}: ${range.from} — ${range.to}`, 14, y);
+      doc.text(
+        `${L("Útbúin", "Generated")}: ${new Date().toISOString().slice(0, 10)}`,
+        pageW - 14,
+        y,
+        { align: "right" },
+      );
+      doc.setTextColor(0, 0, 0);
       y += 10;
 
-      // Summary
-      doc.setFontSize(13);
-      doc.text(L("Yfirlit", "Summary"), 14, y);
-      y += 6;
-      doc.setFontSize(11);
-      const lines = [
-        `${L("Tekjur", "Revenue")}: ${formatIsk(revenue)}`,
-        `${L("Sölur kláraðar", "Deals delivered")}: ${deals.length}`,
-        `${L("Meðalsala", "Average deal")}: ${formatIsk(avg)}`,
-        `${L("Framlegð", "Margin")}: ${marginPct.toFixed(1)}%`,
+      // KPI cards
+      const kpis = [
+        { label: L("Tekjur", "Revenue"), val: formatIsk(revenue) },
+        { label: L("Sölur", "Deals"), val: String(deals.length) },
+        { label: L("Meðalsala", "Avg deal"), val: formatIsk(avg) },
+        { label: L("Framlegð", "Margin"), val: `${marginPct.toFixed(1)}%` },
       ];
-      lines.forEach((line) => {
-        doc.text(line, 14, y);
-        y += 6;
+      const cardW = (pageW - 28 - 12) / 4;
+      kpis.forEach((k, i) => {
+        const x = 14 + i * (cardW + 4);
+        doc.setDrawColor(220);
+        doc.setFillColor(248, 249, 251);
+        doc.roundedRect(x, y, cardW, 22, 2, 2, "FD");
+        doc.setFontSize(8);
+        doc.setTextColor(110, 110, 110);
+        doc.text(k.label.toUpperCase(), x + 4, y + 7);
+        doc.setFontSize(12);
+        doc.setTextColor(20, 20, 20);
+        doc.text(k.val, x + 4, y + 17);
       });
-      y += 4;
+      y += 30;
+
+      // Sales rep performance
+      if (ownerRows.length > 0) {
+        doc.setFontSize(12);
+        doc.setTextColor(20, 20, 20);
+        doc.text(L("Frammistaða sölufólks", "Sales rep performance"), 14, y);
+        y += 3;
+        autoTable(doc, {
+          startY: y + 2,
+          head: [[
+            L("Sölumaður", "Rep"),
+            L("Tekjur", "Revenue"),
+            L("Framlegð", "Margin"),
+            L("%", "%"),
+            L("Sölur", "Deals"),
+          ]],
+          body: ownerRows.map((r) => [
+            r.name,
+            formatIsk(r.rev),
+            formatIsk(r.mar),
+            `${r.pct.toFixed(1)}%`,
+            String(r.n),
+          ]),
+          headStyles: { fillColor: NAVY },
+          styles: { fontSize: 9 },
+        });
+        // @ts-expect-error lastAutoTable injected by plugin
+        y = (doc.lastAutoTable?.finalY ?? y) + 8;
+      }
+
+      // Targets vs actuals
+      if (targetRows.length > 0) {
+        if (y > 230) { doc.addPage(); y = 20; }
+        doc.setFontSize(12);
+        doc.text(L("Markmið vs raunin", "Targets vs actuals"), 14, y);
+        autoTable(doc, {
+          startY: y + 4,
+          head: [[
+            L("Sölumaður", "Rep"),
+            L("Markmið", "Target"),
+            L("Raun", "Actual"),
+            L("Framvinda", "Progress"),
+          ]],
+          body: targetRows.map((r) => [
+            r.name,
+            r.target > 0 ? formatIsk(r.target) : "—",
+            formatIsk(r.actual),
+            r.target > 0 ? `${r.pct.toFixed(0)}%` : "—",
+          ]),
+          headStyles: { fillColor: NAVY },
+          styles: { fontSize: 9 },
+        });
+        // @ts-expect-error lastAutoTable
+        y = (doc.lastAutoTable?.finalY ?? y) + 8;
+      }
 
       // Top customers
-      autoTable(doc, {
-        startY: y,
-        head: [[
-          L("Viðskiptavinur", "Customer"),
-          L("Tekjur (ISK)", "Revenue (ISK)"),
-          L("Sölur", "Deals"),
-        ]],
-        body: top.map((c) => [c.name, formatIsk(c.total), String(c.count)]),
-        headStyles: { fillColor: [26, 37, 64] },
-      });
-      // @ts-expect-error lastAutoTable injected by plugin
-      y = (doc.lastAutoTable?.finalY ?? y) + 10;
+      if (top.length > 0) {
+        if (y > 230) { doc.addPage(); y = 20; }
+        doc.setFontSize(12);
+        doc.text(L("Stærstu viðskiptavinir", "Top customers"), 14, y);
+        autoTable(doc, {
+          startY: y + 4,
+          head: [[
+            L("Viðskiptavinur", "Customer"),
+            L("Tekjur (ISK)", "Revenue (ISK)"),
+            L("Sölur", "Deals"),
+          ]],
+          body: top.map((c) => [c.name, formatIsk(c.total), String(c.count)]),
+          headStyles: { fillColor: NAVY },
+          styles: { fontSize: 9 },
+        });
+        // @ts-expect-error lastAutoTable
+        y = (doc.lastAutoTable?.finalY ?? y) + 8;
+      }
 
       // Pipeline
-      doc.setFontSize(13);
-      doc.text(L("Pipeline (núverandi)", "Pipeline (current)"), 14, y);
-      y += 4;
-      autoTable(doc, {
-        startY: y,
-        head: [[
-          L("Stig", "Stage"),
-          L("Fjöldi", "Count"),
-          L("Verðmæti (ISK)", "Value (ISK)"),
-        ]],
-        body: Object.entries(pipeline).map(([stage, v]) => [
-          isIs
-            ? (t.dealStage as Record<string, string>)[stage] ?? stage
-            : STAGE_LABELS_EN[stage] ?? stage,
-          String(v.count),
-          formatIsk(v.total),
-        ]),
-        headStyles: { fillColor: [26, 37, 64] },
-      });
-      // @ts-expect-error lastAutoTable injected by plugin
-      y = (doc.lastAutoTable?.finalY ?? y) + 10;
+      if (Object.keys(pipeline).length > 0) {
+        if (y > 230) { doc.addPage(); y = 20; }
+        doc.setFontSize(12);
+        doc.text(L("Pipeline (núverandi)", "Pipeline (current)"), 14, y);
+        autoTable(doc, {
+          startY: y + 4,
+          head: [[
+            L("Stig", "Stage"),
+            L("Fjöldi", "Count"),
+            L("Verðmæti (ISK)", "Value (ISK)"),
+          ]],
+          body: Object.entries(pipeline).map(([stage, v]) => [
+            isIs
+              ? (t.dealStage as Record<string, string>)[stage] ?? stage
+              : STAGE_LABELS_EN[stage] ?? stage,
+            String(v.count),
+            formatIsk(v.total),
+          ]),
+          headStyles: { fillColor: NAVY },
+          styles: { fontSize: 9 },
+        });
+        // @ts-expect-error lastAutoTable
+        y = (doc.lastAutoTable?.finalY ?? y) + 8;
+      }
+
+      // Flagged deals
+      if (flagged.length > 0) {
+        if (y > 220) { doc.addPage(); y = 20; }
+        doc.setFontSize(12);
+        doc.text(L("Sölur sem þurfa athygli", "Deals needing attention"), 14, y);
+        autoTable(doc, {
+          startY: y + 4,
+          head: [[
+            "SO",
+            L("Viðskiptavinur", "Customer"),
+            L("Stig", "Stage"),
+            L("Upphæð", "Amount"),
+          ]],
+          body: flagged.map((d: any) => [
+            d.so_number ?? "—",
+            d.company?.name ?? "—",
+            isIs
+              ? (t.dealStage as Record<string, string>)[d.stage] ?? d.stage
+              : STAGE_LABELS_EN[d.stage] ?? d.stage,
+            formatIsk(d.amount_isk || 0),
+          ]),
+          headStyles: { fillColor: NAVY },
+          styles: { fontSize: 9 },
+        });
+      }
+
+      // Page numbers
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(140, 140, 140);
+        doc.text(
+          `${i} / ${pageCount}`,
+          pageW - 14,
+          doc.internal.pageSize.getHeight() - 8,
+          { align: "right" },
+        );
+      }
 
       doc.save(`sala-skyrsla-${range.slug}.pdf`);
       onOpenChange(false);
