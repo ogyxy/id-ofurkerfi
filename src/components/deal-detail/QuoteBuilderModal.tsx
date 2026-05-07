@@ -169,7 +169,7 @@ export function QuoteBuilderModal({
         (dealFilesRes.data ?? []).map((r) => buildRow(r, "deal", "deal_files")),
       );
       const companyAtt = await Promise.all(
-        (companyFilesRes.data ?? []).map((r) => buildRow(r, "company", "company_files")),
+        (companyFilesRes.data ?? []).map((r) => buildRow(r, "company", "deal_files")),
       );
       setAttachments(
         [...dealAtt, ...companyAtt].filter((x): x is AttachmentRow => x !== null),
