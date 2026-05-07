@@ -48,6 +48,7 @@ function SettingsContent() {
         <TabsList>
           <TabsTrigger value="profile">{t.settings.tabProfile}</TabsTrigger>
           {isAdmin && <TabsTrigger value="users">{t.settings.tabUsers}</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="targets">{t.settings.tabTargets}</TabsTrigger>}
           {isAdmin && <TabsTrigger value="app">{t.settings.tabApp}</TabsTrigger>}
         </TabsList>
 
