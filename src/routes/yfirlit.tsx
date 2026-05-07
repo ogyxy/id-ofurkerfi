@@ -45,7 +45,7 @@ import {
   formatIcelandicDate,
   getQuarterRange,
   getYearRange,
-  isoWeekNumber,
+  
   paceColor,
   type PaceState,
 } from "@/components/yfirlit/paceHelpers";
@@ -241,6 +241,7 @@ function YfirlitContent({
 
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [showAdvisory, setShowAdvisory] = useState(false);
+  const [paceMode, setPaceMode] = useState<"quarter" | "year">("quarter");
 
   const [pulse, setPulse] = useState<PulseStats>({ revenue: 0, count: 0, avgDeal: 0, marginPct: 0 });
   const [prevYearPulse, setPrevYearPulse] = useState<PulseStats>({ revenue: 0, count: 0, avgDeal: 0, marginPct: 0 });
@@ -759,21 +760,6 @@ function YfirlitContent({
 
   // Team pace (sales+admin only)
   const salesPeople = profiles.filter((p) => (p.role === "admin" || p.role === "sales"));
-  const teamPace = salesPeople
-    .map((p) => {
-      const rev = quarterDeals.filter((d) => d.owner_id === p.id).reduce((s, d) => s + d.net, 0);
-      const tgt = targetForUser(p.id, "quarter");
-      return {
-        profile: p,
-        rev,
-        target: tgt,
-        state: computePaceState(rev, tgt, expectedPctQ),
-      };
-    })
-    .filter((x) => x.target > 0 || x.profile.id === currentUserId)
-    .sort((a, b) =>
-      (firstName(a.profile.name, a.profile.email) || "").localeCompare(firstName(b.profile.name, b.profile.email) || ""),
-    );
 
   // Spotlight
   const spotlight = useMemo(() => computeSpotlight(spotlightWeekData, salesPeople), [spotlightWeekData, salesPeople]);
@@ -903,124 +889,164 @@ function YfirlitContent({
         <section className="space-y-3">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             {/* Personal pace */}
-            <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {isAllTeam ? t.yfirlit.adminTeamAggregate : t.yfirlit.paceTitle}
-              </p>
-              {myQuarterTarget === 0 && !isAllTeam ? (
-                <p className="mt-4 text-sm text-muted-foreground">{t.yfirlit.paceNoTarget}</p>
-              ) : (
-                <>
-                  <p className="mt-2 text-2xl font-semibold text-foreground tabular-nums">
-                    {formatIsk(isAllTeam ? teamQuarterRev : myQuarterRev)}
-                    <span className="ml-2 text-sm font-normal text-muted-foreground">
-                      / {formatIsk(myQuarterTarget)}
-                    </span>
-                  </p>
-                  <div className="mt-3">
-                    <BulletBar
-                      achieved={isAllTeam ? teamQuarterRev : myQuarterRev}
-                      target={myQuarterTarget}
-                      expectedPct={expectedPctQ}
-                      state={myPaceState}
-                    />
+            {(() => {
+              const isYear = paceMode === "year";
+              const personalRev = isAllTeam
+                ? (isYear ? yearDeals.reduce((s, d) => s + d.net, 0) : teamQuarterRev)
+                : (isYear ? myYearRev : myQuarterRev);
+              const personalTarget = isYear ? myYearTarget : myQuarterTarget;
+              const expectedPct = isYear ? expectedPctY : expectedPctQ;
+              const state = isYear ? myYearState : myPaceState;
+              const fillPct = personalTarget > 0 ? (personalRev / personalTarget) * 100 : 0;
+              const daysLeft = isYear
+                ? Math.max(totalDaysY - elapsedY, 0)
+                : remainingQ;
+              return (
+                <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {isAllTeam ? t.yfirlit.adminTeamAggregate : t.yfirlit.paceTitle}
+                    </p>
+                    <PaceModeToggle value={paceMode} onChange={setPaceMode} />
                   </div>
-                  <div className="mt-3 flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">
-                      {t.yfirlit.paceOfTarget.replace("{pct}", String(Math.round(myPaceFillPct)))}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {t.yfirlit.paceDaysLeft.replace("{n}", String(remainingQ))}
-                    </span>
-                  </div>
-                  <span className={`mt-3 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${paceChipClass(myPaceState)}`}>
-                    {paceStateLabel(myPaceState)}
-                  </span>
-                  {myYearTarget > 0 && (
-                    <div className="mt-4 space-y-1">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        {t.yfirlit.paceYear}
+                  {personalTarget === 0 && !isAllTeam ? (
+                    <p className="mt-4 text-sm text-muted-foreground">{t.yfirlit.paceNoTarget}</p>
+                  ) : (
+                    <>
+                      <p className="mt-2 text-2xl font-semibold text-foreground tabular-nums">
+                        {formatIsk(personalRev)}
+                        <span className="ml-2 text-sm font-normal text-muted-foreground">
+                          / {formatIsk(personalTarget)}
+                        </span>
                       </p>
-                      <BulletBar
-                        achieved={myYearRev}
-                        target={myYearTarget}
-                        expectedPct={expectedPctY}
-                        state={myYearState}
-                        height="sm"
-                      />
-                    </div>
+                      <div className="mt-3">
+                        <BulletBar
+                          achieved={personalRev}
+                          target={personalTarget}
+                          expectedPct={expectedPct}
+                          state={state}
+                        />
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">
+                          {t.yfirlit.paceOfTarget.replace("{pct}", String(Math.round(fillPct)))}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {t.yfirlit.paceDaysLeft.replace("{n}", String(daysLeft))}
+                        </span>
+                      </div>
+                      <span className={`mt-3 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${paceChipClass(state)}`}>
+                        {paceStateLabel(state)}
+                      </span>
+                    </>
                   )}
-                </>
-              )}
-            </div>
+                </div>
+              );
+            })()}
 
             {/* Team pace */}
-            <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {t.yfirlit.teamPaceTitle}
-              </p>
-              {teamPace.length <= 1 && teamPace.every((x) => x.target === 0) ? (
-                <p className="text-sm text-muted-foreground">{t.yfirlit.teamPaceEmpty}</p>
-              ) : (
-                <ul className="space-y-2">
-                  {teamPace.map((row) => {
-                    const isMe = row.profile.id === currentUserId;
-                    const fill = row.target > 0 ? (row.rev / row.target) * 100 : 0;
-                    return (
-                      <li
-                        key={row.profile.id}
-                        className={`flex items-center gap-3 rounded-md px-2 py-1.5 ${
-                          isMe ? "border-l-2 border-ide-navy bg-muted/40" : ""
-                        }`}
-                      >
-                        <UserAvatar
-                          name={row.profile.name}
-                          email={row.profile.email}
-                          avatarUrl={row.profile.avatar_url ?? null}
-                          size={24}
-                        />
-                        <span className="w-20 truncate text-xs text-foreground">
-                          {firstName(row.profile.name, row.profile.email)}
-                        </span>
-                        <div className="flex-1">
-                          {row.target > 0 ? (
-                            <BulletBar
-                              achieved={row.rev}
-                              target={row.target}
-                              expectedPct={expectedPctQ}
-                              state={row.state}
-                              height="sm"
+            {(() => {
+              const isYear = paceMode === "year";
+              const expectedPct = isYear ? expectedPctY : expectedPctQ;
+              const teamRows = salesPeople
+                .map((p) => {
+                  const rev = isYear
+                    ? yearDeals.filter((d) => d.owner_id === p.id).reduce((s, d) => s + d.net, 0)
+                    : quarterDeals.filter((d) => d.owner_id === p.id).reduce((s, d) => s + d.net, 0);
+                  const tgt = targetForUser(p.id, isYear ? "year" : "quarter");
+                  return {
+                    profile: p,
+                    rev,
+                    target: tgt,
+                    state: computePaceState(rev, tgt, expectedPct),
+                  };
+                })
+                .filter((x) => x.target > 0 || x.profile.id === currentUserId)
+                .sort((a, b) =>
+                  (firstName(a.profile.name, a.profile.email) || "").localeCompare(
+                    firstName(b.profile.name, b.profile.email) || "",
+                  ),
+                );
+              return (
+                <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t.yfirlit.teamPaceTitle}
+                    </p>
+                    <PaceModeToggle value={paceMode} onChange={setPaceMode} />
+                  </div>
+                  {teamRows.length <= 1 && teamRows.every((x) => x.target === 0) ? (
+                    <p className="text-sm text-muted-foreground">{t.yfirlit.teamPaceEmpty}</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {teamRows.map((row) => {
+                        const isMe = row.profile.id === currentUserId;
+                        const fill = row.target > 0 ? (row.rev / row.target) * 100 : 0;
+                        return (
+                          <li
+                            key={row.profile.id}
+                            className={`flex items-center gap-3 rounded-md px-2 py-1.5 ${
+                              isMe ? "border-l-2 border-ide-navy bg-muted/40" : ""
+                            }`}
+                          >
+                            <UserAvatar
+                              name={row.profile.name}
+                              email={row.profile.email}
+                              avatarUrl={row.profile.avatar_url ?? null}
+                              size={24}
                             />
-                          ) : (
-                            <div className="h-1.5 w-full rounded-full bg-muted" />
-                          )}
-                        </div>
-                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${paceChipClass(row.state)}`}>
-                          {row.target > 0 ? `${Math.round(fill)}%` : "—"}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
+                            <span className="w-20 truncate text-xs text-foreground">
+                              {firstName(row.profile.name, row.profile.email)}
+                            </span>
+                            <div className="flex-1">
+                              {row.target > 0 ? (
+                                <BulletBar
+                                  achieved={row.rev}
+                                  target={row.target}
+                                  expectedPct={expectedPct}
+                                  state={row.state}
+                                  height="sm"
+                                />
+                              ) : (
+                                <div className="h-1.5 w-full rounded-full bg-muted" />
+                              )}
+                            </div>
+                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${paceChipClass(row.state)}`}>
+                              {row.target > 0 ? `${Math.round(fill)}%` : "—"}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Spotlight */}
             <div className="rounded-lg border border-ide-navy/40 bg-gradient-to-br from-card to-muted/30 p-5 shadow-sm">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {t.yfirlit.spotlightTitle}
               </p>
-              <div className="flex items-start gap-3">
-                {spotlight.profile && (
-                  <UserAvatar
-                    name={spotlight.profile.name}
-                    email={spotlight.profile.email}
-                    avatarUrl={spotlight.profile.avatar_url ?? null}
-                    size={40}
-                  />
-                )}
-                <p className="text-sm text-foreground leading-snug">{spotlight.text}</p>
-              </div>
+              {spotlight.length === 0 ? (
+                <p className="text-sm text-foreground leading-snug">{t.yfirlit.spotlightFallback}</p>
+              ) : (
+                <ul className="space-y-3">
+                  {spotlight.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      {item.profile && (
+                        <UserAvatar
+                          name={item.profile.name}
+                          email={item.profile.email}
+                          avatarUrl={item.profile.avatar_url ?? null}
+                          size={32}
+                        />
+                      )}
+                      <p className="text-sm text-foreground leading-snug">{item.text}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </section>
@@ -1437,109 +1463,140 @@ function YfirlitContent({
 function computeSpotlight(
   weekData: Array<{ owner_id: string; net: number; delivered_at: string; amount: number; margin: number; company?: { id: string; name: string } | null }>,
   salesPeople: Profile[],
-): { text: string; profile: Profile | null } {
-  const week = isoWeekNumber(new Date());
-  const order = ["movement", "biggest", "margin", "streak"] as const;
-  const cats: Array<typeof order[number]> = [];
-  for (let i = 0; i < 4; i++) cats.push(order[(week + i) % 4]);
-
+): Array<{ text: string; profile: Profile | null }> {
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 86400000);
   const twoWeekAgo = new Date(now.getTime() - 14 * 86400000);
+  const results: Array<{ text: string; profile: Profile | null }> = [];
 
-  for (const cat of cats) {
-    if (cat === "movement") {
-      const byUser: Record<string, { last: number; prev: number }> = {};
-      weekData.forEach((d) => {
-        const dt = new Date(d.delivered_at);
-        if (!byUser[d.owner_id]) byUser[d.owner_id] = { last: 0, prev: 0 };
-        if (dt >= weekAgo) byUser[d.owner_id].last += d.net;
-        else if (dt >= twoWeekAgo) byUser[d.owner_id].prev += d.net;
+  // movement
+  {
+    const byUser: Record<string, { last: number; prev: number }> = {};
+    weekData.forEach((d) => {
+      const dt = new Date(d.delivered_at);
+      if (!byUser[d.owner_id]) byUser[d.owner_id] = { last: 0, prev: 0 };
+      if (dt >= weekAgo) byUser[d.owner_id].last += d.net;
+      else if (dt >= twoWeekAgo) byUser[d.owner_id].prev += d.net;
+    });
+    let best: { id: string; pct: number } | null = null;
+    Object.entries(byUser).forEach(([id, v]) => {
+      if (v.prev <= 0 || v.last <= 0) return;
+      const pct = ((v.last - v.prev) / v.prev) * 100;
+      if (pct > 0 && (!best || pct > best.pct)) best = { id, pct };
+    });
+    if (best) {
+      const p = salesPeople.find((x) => x.id === (best as { id: string; pct: number }).id);
+      if (p) results.push({
+        text: t.yfirlit.spotlightMovement
+          .replace("{name}", firstName(p.name, p.email))
+          .replace("{pct}", (best as { id: string; pct: number }).pct.toFixed(0)),
+        profile: p,
       });
-      let best: { id: string; pct: number } | null = null;
-      Object.entries(byUser).forEach(([id, v]) => {
-        if (v.prev <= 0 || v.last <= 0) return;
-        const pct = ((v.last - v.prev) / v.prev) * 100;
-        if (pct > 0 && (!best || pct > best.pct)) best = { id, pct };
-      });
-      if (best) {
-        const p = salesPeople.find((x) => x.id === best!.id);
-        if (p) return {
-          text: t.yfirlit.spotlightMovement
-            .replace("{name}", firstName(p.name, p.email))
-            .replace("{pct}", (best as { id: string; pct: number }).pct.toFixed(0)),
-          profile: p,
-        };
-      }
-    }
-    if (cat === "biggest") {
-      const lastWeek = weekData.filter((d) => new Date(d.delivered_at) >= weekAgo);
-      const top = lastWeek.sort((a, b) => b.amount - a.amount)[0];
-      if (top) {
-        const p = salesPeople.find((x) => x.id === top.owner_id);
-        if (p) return {
-          text: t.yfirlit.spotlightBiggest
-            .replace("{name}", firstName(p.name, p.email))
-            .replace("{company}", top.company?.name ?? "—")
-            .replace("{amount}", formatIsk(top.amount)),
-          profile: p,
-        };
-      }
-    }
-    if (cat === "margin") {
-      const thirtyAgo = new Date(now.getTime() - 30 * 86400000);
-      const recent = weekData.filter((d) => new Date(d.delivered_at) >= thirtyAgo);
-      const byUser: Record<string, { net: number; margin: number; n: number }> = {};
-      recent.forEach((d) => {
-        if (!byUser[d.owner_id]) byUser[d.owner_id] = { net: 0, margin: 0, n: 0 };
-        byUser[d.owner_id].net += d.net;
-        byUser[d.owner_id].margin += d.margin;
-        byUser[d.owner_id].n += 1;
-      });
-      let best: { id: string; pct: number } | null = null;
-      Object.entries(byUser).forEach(([id, v]) => {
-        if (v.n < 3 || v.net <= 0) return;
-        const pct = (v.margin / v.net) * 100;
-        if (!best || pct > best.pct) best = { id, pct };
-      });
-      if (best) {
-        const p = salesPeople.find((x) => x.id === best!.id);
-        if (p) return {
-          text: t.yfirlit.spotlightMargin
-            .replace("{name}", firstName(p.name, p.email))
-            .replace("{pct}", (best as { id: string; pct: number }).pct.toFixed(0)),
-          profile: p,
-        };
-      }
-    }
-    if (cat === "streak") {
-      const byUser: Record<string, Set<string>> = {};
-      weekData.forEach((d) => {
-        if (!byUser[d.owner_id]) byUser[d.owner_id] = new Set();
-        byUser[d.owner_id].add(String(d.delivered_at).slice(0, 10));
-      });
-      let best: { id: string; days: number } | null = null;
-      Object.entries(byUser).forEach(([id, set]) => {
-        let streak = 0;
-        for (let i = 0; i < 14; i++) {
-          const d = new Date(now.getTime() - i * 86400000).toISOString().split("T")[0];
-          if (set.has(d)) streak += 1;
-          else break;
-        }
-        if (streak > 1 && (!best || streak > best.days)) best = { id, days: streak };
-      });
-      if (best) {
-        const p = salesPeople.find((x) => x.id === best!.id);
-        if (p) return {
-          text: t.yfirlit.spotlightStreak
-            .replace("{name}", firstName(p.name, p.email))
-            .replace("{days}", String((best as { id: string; days: number }).days)),
-          profile: p,
-        };
-      }
     }
   }
-  return { text: t.yfirlit.spotlightFallback, profile: null };
+
+  // biggest
+  {
+    const lastWeek = weekData.filter((d) => new Date(d.delivered_at) >= weekAgo);
+    const top = [...lastWeek].sort((a, b) => b.amount - a.amount)[0];
+    if (top) {
+      const p = salesPeople.find((x) => x.id === top.owner_id);
+      if (p) results.push({
+        text: t.yfirlit.spotlightBiggest
+          .replace("{name}", firstName(p.name, p.email))
+          .replace("{company}", top.company?.name ?? "—")
+          .replace("{amount}", formatIsk(top.amount)),
+        profile: p,
+      });
+    }
+  }
+
+  // margin
+  {
+    const thirtyAgo = new Date(now.getTime() - 30 * 86400000);
+    const recent = weekData.filter((d) => new Date(d.delivered_at) >= thirtyAgo);
+    const byUser: Record<string, { net: number; margin: number; n: number }> = {};
+    recent.forEach((d) => {
+      if (!byUser[d.owner_id]) byUser[d.owner_id] = { net: 0, margin: 0, n: 0 };
+      byUser[d.owner_id].net += d.net;
+      byUser[d.owner_id].margin += d.margin;
+      byUser[d.owner_id].n += 1;
+    });
+    let best: { id: string; pct: number } | null = null;
+    Object.entries(byUser).forEach(([id, v]) => {
+      if (v.n < 3 || v.net <= 0) return;
+      const pct = (v.margin / v.net) * 100;
+      if (!best || pct > best.pct) best = { id, pct };
+    });
+    if (best) {
+      const p = salesPeople.find((x) => x.id === (best as { id: string; pct: number }).id);
+      if (p) results.push({
+        text: t.yfirlit.spotlightMargin
+          .replace("{name}", firstName(p.name, p.email))
+          .replace("{pct}", (best as { id: string; pct: number }).pct.toFixed(0)),
+        profile: p,
+      });
+    }
+  }
+
+  // streak
+  {
+    const byUser: Record<string, Set<string>> = {};
+    weekData.forEach((d) => {
+      if (!byUser[d.owner_id]) byUser[d.owner_id] = new Set();
+      byUser[d.owner_id].add(String(d.delivered_at).slice(0, 10));
+    });
+    let best: { id: string; days: number } | null = null;
+    Object.entries(byUser).forEach(([id, set]) => {
+      let streak = 0;
+      for (let i = 0; i < 14; i++) {
+        const d = new Date(now.getTime() - i * 86400000).toISOString().split("T")[0];
+        if (set.has(d)) streak += 1;
+        else break;
+      }
+      if (streak > 1 && (!best || streak > best.days)) best = { id, days: streak };
+    });
+    if (best) {
+      const p = salesPeople.find((x) => x.id === (best as { id: string; days: number }).id);
+      if (p) results.push({
+        text: t.yfirlit.spotlightStreak
+          .replace("{name}", firstName(p.name, p.email))
+          .replace("{days}", String((best as { id: string; days: number }).days)),
+        profile: p,
+      });
+    }
+  }
+
+  return results;
+}
+
+// ---------- Pace mode toggle ----------
+function PaceModeToggle({
+  value,
+  onChange,
+}: {
+  value: "quarter" | "year";
+  onChange: (v: "quarter" | "year") => void;
+}) {
+  const base = "px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors";
+  return (
+    <div className="inline-flex items-center gap-0.5 rounded-full border border-border bg-muted p-0.5">
+      <button
+        type="button"
+        onClick={() => onChange("quarter")}
+        className={`${base} ${value === "quarter" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+      >
+        {t.yfirlit.paceToggleQuarter}
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("year")}
+        className={`${base} ${value === "year" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+      >
+        {t.yfirlit.paceToggleYear}
+      </button>
+    </div>
+  );
 }
 
 // ---------- Subcomponents ----------
