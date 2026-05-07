@@ -667,3 +667,175 @@ function FileCard({
   );
 }
 
+// ---------- Move legacy file dialog ----------
+
+const BRAND_TYPES: CompanyFileType[] = COMPANY_FILE_TYPES;
+const DEAL_TYPES: DealFileType[] = DEAL_FILE_TYPES;
+
+function MoveLegacyDialog({
+  file,
+  deals,
+  currentProfileId,
+  companyId,
+  onClose,
+  onMoved,
+}: {
+  file: CompanyFileRow | null;
+  deals: DealLite[];
+  currentProfileId: string | null;
+  companyId: string;
+  onClose: () => void;
+  onMoved: () => void;
+}) {
+  const [tab, setTab] = useState<"brand" | "deal">("brand");
+  const [brandType, setBrandType] = useState<string>("logo");
+  const [dealType, setDealType] = useState<string>("artwork");
+  const [dealId, setDealId] = useState<string>("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (file) {
+      setTab("brand");
+      setBrandType(smartGuessBrandFileType(file.original_filename ?? ""));
+      setDealType(smartGuessDealFileType(file.original_filename ?? ""));
+      setDealId("");
+    }
+  }, [file]);
+
+  if (!file) return null;
+
+  const handleConfirm = async () => {
+    setBusy(true);
+    try {
+      if (tab === "brand") {
+        const { error } = await supabase
+          .from("company_files")
+          .update({ file_type: brandType, storage_path: file.storage_path })
+          .eq("id", file.id);
+        if (error) throw error;
+        // Move out of legacy by re-uploading? The file stays at same path; simpler:
+        // copy storage object to new path so it no longer matches legacy filter.
+        const newPath = file.storage_path.replace("/Legacy Import/", "/Brand/");
+        if (newPath !== file.storage_path) {
+          await supabase.storage.from("deal_files").move(file.storage_path, newPath);
+          await supabase
+            .from("company_files")
+            .update({ storage_path: newPath })
+            .eq("id", file.id);
+        }
+      } else {
+        if (!dealId) {
+          toast.error(t.legacyImport.pickDeal);
+          setBusy(false);
+          return;
+        }
+        const deal = deals.find((d) => d.id === dealId);
+        const newPath = file.storage_path.replace(
+          "/Legacy Import/",
+          `/${pathSafe(deal?.so_number ?? "deal")}/`,
+        );
+        if (newPath !== file.storage_path) {
+          await supabase.storage.from("deal_files").move(file.storage_path, newPath);
+        }
+        const { error: insErr } = await supabase.from("deal_files").insert({
+          deal_id: dealId,
+          storage_path: newPath,
+          file_type: dealType,
+          original_filename: file.original_filename,
+          file_size_bytes: file.file_size_bytes,
+          uploaded_by: currentProfileId,
+          thumbnail_status: file.thumbnail_status,
+          thumbnail_path: file.thumbnail_path,
+        });
+        if (insErr) throw insErr;
+        const { error: delErr } = await supabase
+          .from("company_files")
+          .delete()
+          .eq("id", file.id);
+        if (delErr) throw delErr;
+        await supabase.from("activities").insert({
+          deal_id: dealId,
+          company_id: companyId,
+          type: "note",
+          body: `Skjal flutt úr legacy: ${file.original_filename ?? newPath}`,
+          created_by: currentProfileId,
+        });
+      }
+      toast.success(t.legacyImport.moved);
+      onMoved();
+    } catch (e) {
+      console.error(e);
+      toast.error(t.legacyImport.moveFailed);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={file !== null} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{file.original_filename ?? t.legacyImport.move}</DialogTitle>
+        </DialogHeader>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "brand" | "deal")}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="brand">{t.legacyImport.moveToBrand}</TabsTrigger>
+            <TabsTrigger value="deal">{t.legacyImport.moveToDeal}</TabsTrigger>
+          </TabsList>
+          <TabsContent value="brand" className="space-y-3 pt-3">
+            <div className="space-y-1.5">
+              <Label>{t.legacyImport.pickType}</Label>
+              <Select value={brandType} onValueChange={setBrandType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {BRAND_TYPES.map((ft) => (
+                    <SelectItem key={ft} value={ft}>{fileTypeLabel(ft)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </TabsContent>
+          <TabsContent value="deal" className="space-y-3 pt-3">
+            <div className="space-y-1.5">
+              <Label>{t.legacyImport.pickDeal}</Label>
+              <Select value={dealId} onValueChange={setDealId}>
+                <SelectTrigger><SelectValue placeholder={t.legacyImport.pickDeal} /></SelectTrigger>
+                <SelectContent>
+                  {deals.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.so_number} — {d.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t.legacyImport.pickType}</Label>
+              <Select value={dealType} onValueChange={setDealType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {DEAL_TYPES.map((ft) => (
+                    <SelectItem key={ft} value={ft}>{fileTypeLabel(ft)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </TabsContent>
+        </Tabs>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={busy}>
+            {t.actions.cancel}
+          </Button>
+          <Button
+            onClick={() => void handleConfirm()}
+            disabled={busy}
+            className="bg-ide-navy text-white hover:bg-ide-navy-hover"
+          >
+            {t.legacyImport.confirmMove}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
