@@ -1090,7 +1090,7 @@ function YfirlitContent({
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 {/* Quarter shading */}
                 {(() => {
-                  const bands: JSX.Element[] = [];
+                  const bands: React.ReactElement[] = [];
                   let bandStart: string | null = null;
                   let curQ = -1;
                   marginTrend.forEach((p, i) => {
