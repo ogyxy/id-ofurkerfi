@@ -15,10 +15,6 @@ export function ProfileTab() {
   const [savingName, setSavingName] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const [currentPw, setCurrentPw] = useState("");
-  const [newPw, setNewPw] = useState("");
-  const [confirmPw, setConfirmPw] = useState("");
-  const [pwSaving, setPwSaving] = useState(false);
 
   const saveName = async () => {
     setSavingName(true);
