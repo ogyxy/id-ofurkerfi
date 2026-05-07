@@ -6,6 +6,7 @@ import { rememberCompanyReturnPath } from "@/lib/dealReturn";
 import { Button } from "@/components/ui/button";
 import { formatPhone } from "@/lib/formatters";
 import { LabeledPill, type PillTone } from "@/components/deal-detail/LabeledPill";
+import { UserAvatar } from "@/components/UserAvatar";
 
 import { CopySoButton, CopyTextButton } from "@/components/deals-list/DealsList";
 
@@ -31,6 +32,8 @@ interface Props {
   company: Company;
   contact: Contact | null;
   ownerName: string | null;
+  ownerAvatarUrl?: string | null;
+  ownerEmail?: string | null;
   quoteValidUntil?: string | null;
   pos?: PoLite[];
   onEdit: () => void;
@@ -64,6 +67,8 @@ export function DealHeader({
   company,
   contact,
   ownerName,
+  ownerAvatarUrl,
+  ownerEmail,
   quoteValidUntil,
   pos,
   onEdit,
@@ -255,9 +260,12 @@ export function DealHeader({
 
           {ownerName && (
             <div className="flex items-center gap-2 md:justify-end">
-              <span className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-[11px] font-semibold text-amber-800">
-                {getInitials(ownerName)}
-              </span>
+              <UserAvatar
+                name={ownerName}
+                email={ownerEmail}
+                avatarUrl={ownerAvatarUrl}
+                size={28}
+              />
               <span className="text-sm font-medium text-foreground">{ownerName}</span>
             </div>
           )}

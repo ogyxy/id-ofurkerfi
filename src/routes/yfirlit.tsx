@@ -35,6 +35,7 @@ import { t, formatIsk } from "@/lib/sala_translations_is";
 import { ExportReportDialog } from "@/components/yfirlit/ExportReportDialog";
 import { useCurrentRole } from "@/hooks/useCurrentProfile";
 import { canSeeFinancials } from "@/lib/role";
+import { UserAvatar } from "@/components/UserAvatar";
 
 export const Route = createFileRoute("/yfirlit")({
   ssr: false,
@@ -88,7 +89,7 @@ interface ActivityRow {
   type: string;
   body: string | null;
   created_at: string;
-  profile?: { id: string; name: string | null } | null;
+  profile?: { id: string; name: string | null; email?: string | null; avatar_url?: string | null } | null;
   deal?: {
     id: string;
     so_number: string;
@@ -459,7 +460,7 @@ function YfirlitContent({
         .from("activities")
         .select(
           `id, type, body, created_at,
-           profile:profiles!created_by(id, name),
+           profile:profiles!created_by(id, name, email, avatar_url),
            deal:deals(id, so_number, name, company:companies(id, name))`
         )
         .order("created_at", { ascending: false })
@@ -930,7 +931,6 @@ function PulseTile({
 
 function ActivityFeedRow({ a }: { a: ActivityRow }) {
   const name = a.profile?.name || "—";
-  const init = initials(a.profile?.name, "");
   const rawBody = a.body ?? "";
 
   // Translate body for stage_change entries (body is the raw enum value)
@@ -944,9 +944,12 @@ function ActivityFeedRow({ a }: { a: ActivityRow }) {
 
   return (
     <li className="flex gap-3">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ide-navy text-xs font-medium text-white">
-        {init || "·"}
-      </span>
+      <UserAvatar
+        name={a.profile?.name}
+        email={a.profile?.email}
+        avatarUrl={a.profile?.avatar_url ?? null}
+        size={32}
+      />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2 text-sm">
           <span className="font-medium text-foreground">{name}</span>

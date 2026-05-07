@@ -66,7 +66,7 @@ type Contact = Pick<
 >;
 type PurchaseOrder = Database["public"]["Tables"]["purchase_orders"]["Row"];
 type POLine = Database["public"]["Tables"]["po_lines"]["Row"];
-type Profile = { id: string; name: string | null; email: string };
+type Profile = { id: string; name: string | null; email: string; avatar_url: string | null };
 
 // Deals created at or after this timestamp are subject to the PO gate
 // on the order_confirmed → delivered transition (the "Vörur komnar í hús"
@@ -114,7 +114,7 @@ function DealDetailContent() {
   const [companyContacts, setCompanyContacts] = useState<Contact[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentProfile, setCurrentProfile] =
-    useState<{ id: string; name: string | null } | null>(null);
+    useState<{ id: string; name: string | null; avatar_url: string | null } | null>(null);
   const [lines, setLines] = useState<EditableLine[]>([]);
   const [pos, setPos] = useState<
     Array<PurchaseOrder & { po_lines: POLine[] }>
@@ -153,10 +153,10 @@ function DealDetailContent() {
       setCurrentUserEmail(user.email ?? "");
       const { data } = await supabase
         .from("profiles")
-        .select("id, name")
+        .select("id, name, avatar_url")
         .eq("id", user.id)
         .maybeSingle();
-      if (data) setCurrentProfile({ id: data.id, name: data.name });
+      if (data) setCurrentProfile({ id: data.id, name: data.name, avatar_url: data.avatar_url });
     })();
   }, []);
 
@@ -184,7 +184,7 @@ function DealDetailContent() {
       supabase
         .from("activities")
         .select(
-          "id, type, body, created_at, profile:profiles!activities_created_by_fkey(id, name)",
+          "id, type, body, created_at, profile:profiles!activities_created_by_fkey(id, name, avatar_url)",
         )
         .eq("deal_id", id)
         .in("type", ["note", "stage_change", "defect_note"])
@@ -250,7 +250,7 @@ function DealDetailContent() {
         .eq("company_id", d.company.id),
       supabase
         .from("profiles")
-        .select("id, name, email")
+        .select("id, name, email, avatar_url")
         .eq("active", true),
     ]);
     setCompanyContacts((cRes.data ?? []) as Contact[]);
@@ -509,6 +509,8 @@ function DealDetailContent() {
         company={company}
         contact={contact}
         ownerName={ownerName}
+        ownerAvatarUrl={ownerProfile?.avatar_url ?? null}
+        ownerEmail={ownerProfile?.email ?? null}
         quoteValidUntil={quoteValidUntil}
         pos={pos}
         onEdit={() => setEditOpen(true)}

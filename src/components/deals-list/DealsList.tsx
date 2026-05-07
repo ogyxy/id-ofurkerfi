@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { CreateDealDrawer } from "./CreateDealDrawer";
 import { useCurrentRole } from "@/hooks/useCurrentProfile";
 import { canSeeFinancials } from "@/lib/role";
+import { UserAvatar } from "@/components/UserAvatar";
 
 type DealStage = Database["public"]["Enums"]["deal_stage"];
 type InvoiceStatus = Database["public"]["Enums"]["invoice_status"];
@@ -48,7 +49,7 @@ type DealRow = {
   childDeals?: { stage: DealStage }[];
 };
 
-type Profile = { id: string; name: string | null; email: string };
+type Profile = { id: string; name: string | null; email: string; avatar_url: string | null };
 
 interface Props {
   currentUserId: string;
@@ -262,7 +263,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("id, name, email")
+        .select("id, name, email, avatar_url")
         .eq("active", true);
       setProfiles((data ?? []) as Profile[]);
     })();
@@ -808,13 +809,17 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                   onClick={() => toggleOwner(p.id)}
                   title={p.name ?? p.email}
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition hover:scale-105",
-                    filled
-                      ? "bg-ide-navy text-white"
-                      : "bg-muted text-muted-foreground",
+                    "rounded-full transition hover:scale-105",
+                    filled ? "opacity-100" : "opacity-40 grayscale",
                   )}
                 >
-                  {initials(p.name ?? p.email)}
+                  <UserAvatar
+                    name={p.name}
+                    email={p.email}
+                    avatarUrl={p.avatar_url}
+                    size={32}
+                    title={p.name ?? p.email}
+                  />
                 </button>
               );
             })}
@@ -1448,13 +1453,21 @@ function OwnerPopover({
 }) {
   const [open, setOpen] = useState(false);
 
+  const ownerProfile = owner ? profiles.find((p) => p.id === owner.id) : null;
   const trigger = owner ? (
     <button
       type="button"
-      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ide-navy text-[10px] font-medium text-white transition hover:opacity-80"
+      className="rounded-full transition hover:opacity-80"
       aria-label={owner.name ?? ""}
+      title={owner.name ?? ""}
     >
-      {initials(owner.name)}
+      <UserAvatar
+        name={owner.name}
+        email={ownerProfile?.email}
+        avatarUrl={ownerProfile?.avatar_url}
+        size={24}
+        title={owner.name ?? ""}
+      />
     </button>
   ) : (
     <button
@@ -1487,9 +1500,12 @@ function OwnerPopover({
                   }}
                   className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ide-navy text-[10px] font-medium text-white">
-                    {initials(p.name ?? p.email)}
-                  </span>
+                  <UserAvatar
+                    name={p.name}
+                    email={p.email}
+                    avatarUrl={p.avatar_url}
+                    size={24}
+                  />
                   <span className="flex-1 truncate">{p.name || p.email}</span>
                   {active && <Check className="h-4 w-4 text-ide-navy" />}
                 </button>

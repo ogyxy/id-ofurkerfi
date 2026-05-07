@@ -15,42 +15,30 @@ export type LogEntry = {
   type: "note" | "stage_change" | "defect_note";
   body: string | null;
   created_at: string;
-  profile: { id: string; name: string | null } | null;
+  profile: { id: string; name: string | null; avatar_url?: string | null } | null;
 };
 
 interface Props {
   dealId: string;
   companyId: string;
   entries: LogEntry[];
-  currentProfile: { id: string; name: string | null } | null;
+  currentProfile: { id: string; name: string | null; avatar_url?: string | null } | null;
   onChanged: () => Promise<void> | void;
   onLocalAppend?: (entry: LogEntry) => void;
 }
 
-const NAVY = "#1a2540";
+import { UserAvatar } from "@/components/UserAvatar";
 
-function initials(name: string | null | undefined): string {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-function Avatar({ name, size = 36 }: { name: string | null | undefined; size?: number }) {
-  return (
-    <div
-      className="flex flex-shrink-0 items-center justify-center rounded-full font-semibold text-white"
-      style={{
-        width: size,
-        height: size,
-        backgroundColor: NAVY,
-        fontSize: size <= 28 ? 11 : 13,
-      }}
-    >
-      {initials(name)}
-    </div>
-  );
+function Avatar({
+  name,
+  avatarUrl,
+  size = 36,
+}: {
+  name: string | null | undefined;
+  avatarUrl?: string | null;
+  size?: number;
+}) {
+  return <UserAvatar name={name} avatarUrl={avatarUrl ?? null} size={size} />;
 }
 
 const STAGE_TONES: Record<DealStage, string> = {
@@ -145,7 +133,7 @@ export function DealLog({
       {/* Input */}
       <div className="rounded-md border border-border bg-card p-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-          <Avatar name={currentProfile?.name} />
+          <Avatar name={currentProfile?.name} avatarUrl={currentProfile?.avatar_url} />
           <div className="flex-1 space-y-2">
             <Textarea
               value={text}
@@ -187,8 +175,7 @@ export function DealLog({
                 <li key={entry.id} className="flex items-center gap-3 px-1">
                   <span className="h-px flex-1 bg-border" />
                   <span
-                    className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
-                    style={{ backgroundColor: NAVY }}
+                    className="inline-block h-2 w-2 flex-shrink-0 rounded-full bg-ide-navy"
                   />
                   <span className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted-foreground">
                     <span>{t.log.stageChanged}</span>
@@ -224,7 +211,7 @@ export function DealLog({
                 )}
               >
                 <div className="flex items-start gap-3">
-                  <Avatar name={entry.profile?.name} />
+                  <Avatar name={entry.profile?.name} avatarUrl={entry.profile?.avatar_url} />
                   <div className="min-w-0 flex-1">
                     {isDefect && (
                       <div className="mb-0.5 flex items-center gap-1 text-xs font-medium text-amber-700">
