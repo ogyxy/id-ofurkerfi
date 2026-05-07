@@ -250,7 +250,7 @@ function DealDetailContent() {
         .eq("company_id", d.company.id),
       supabase
         .from("profiles")
-        .select("id, name, email")
+        .select("id, name, email, avatar_url")
         .eq("active", true),
     ]);
     setCompanyContacts((cRes.data ?? []) as Contact[]);
