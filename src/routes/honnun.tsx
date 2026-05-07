@@ -355,6 +355,8 @@ function HonnunContent() {
         if (typeFilter !== null) {
           if (typeFilter === "brand") {
             if (f.source !== "company") return false;
+          } else if (typeFilter === "unmatched") {
+            if (f.source !== "unmatched") return false;
           } else {
             if (f.source !== "deal" || f.file_type !== typeFilter) return false;
           }
@@ -362,6 +364,7 @@ function HonnunContent() {
 
         // Company filter
         if (companyFilter) {
+          if (f.source === "unmatched") return false;
           const cid = f.source === "deal" ? f.deal?.company_id : f.company_id;
           if (cid !== companyFilter) return false;
         }
@@ -370,6 +373,9 @@ function HonnunContent() {
         if (term) {
           const filename = f.original_filename?.toLowerCase() ?? "";
           if (filename.includes(term)) return true;
+          if (f.source === "unmatched") {
+            return f.folder.toLowerCase().includes(term);
+          }
           const companyName =
             (f.source === "deal" ? f.deal?.company?.name : f.company?.name) ?? "";
           if (companyName.toLowerCase().includes(term)) return true;
