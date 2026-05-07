@@ -10,6 +10,7 @@ import { canManageUsers } from "@/lib/role";
 import { ProfileTab } from "@/components/settings/ProfileTab";
 import { UsersTab } from "@/components/settings/UsersTab";
 import { AppTab } from "@/components/settings/AppTab";
+import { TargetsTab } from "@/components/settings/TargetsTab";
 
 export const Route = createFileRoute("/settings")({
   ssr: false,
@@ -47,6 +48,7 @@ function SettingsContent() {
         <TabsList>
           <TabsTrigger value="profile">{t.settings.tabProfile}</TabsTrigger>
           {isAdmin && <TabsTrigger value="users">{t.settings.tabUsers}</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="targets">{t.settings.tabTargets}</TabsTrigger>}
           {isAdmin && <TabsTrigger value="app">{t.settings.tabApp}</TabsTrigger>}
         </TabsList>
 
@@ -56,6 +58,11 @@ function SettingsContent() {
         {isAdmin && (
           <TabsContent value="users" className="mt-6">
             <UsersTab />
+          </TabsContent>
+        )}
+        {isAdmin && (
+          <TabsContent value="targets" className="mt-6">
+            <TargetsTab />
           </TabsContent>
         )}
         {isAdmin && (
