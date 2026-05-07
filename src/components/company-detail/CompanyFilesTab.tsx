@@ -798,16 +798,46 @@ function MoveLegacyDialog({
           <TabsContent value="deal" className="space-y-3 pt-3">
             <div className="space-y-1.5">
               <Label>{t.legacyImport.pickDeal}</Label>
-              <Select value={dealId} onValueChange={setDealId}>
-                <SelectTrigger><SelectValue placeholder={t.legacyImport.pickDeal} /></SelectTrigger>
-                <SelectContent>
-                  {deals.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.so_number} — {d.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={dealComboOpen} onOpenChange={setDealComboOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between font-normal"
+                  >
+                    {selectedDeal
+                      ? `${selectedDeal.so_number} — ${selectedDeal.name}`
+                      : t.legacyImport.pickDeal}
+                    <Search className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder={t.actions.search} />
+                    <CommandList>
+                      <CommandEmpty>{t.status.noResults}</CommandEmpty>
+                      <CommandGroup>
+                        {deals.map((d) => (
+                          <CommandItem
+                            key={d.id}
+                            value={`${d.so_number} ${d.name}`}
+                            onSelect={() => {
+                              setDealId(d.id);
+                              setDealComboOpen(false);
+                            }}
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-mono text-xs text-muted-foreground">
+                                {d.so_number}
+                              </span>
+                              <span className="text-sm">{d.name}</span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-1.5">
               <Label>{t.legacyImport.pickType}</Label>
