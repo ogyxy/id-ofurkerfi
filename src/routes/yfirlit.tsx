@@ -1090,7 +1090,7 @@ function YfirlitContent({
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 {/* Quarter shading */}
                 {(() => {
-                  const bands: JSX.Element[] = [];
+                  const bands: React.ReactElement[] = [];
                   let bandStart: string | null = null;
                   let curQ = -1;
                   marginTrend.forEach((p, i) => {
@@ -1467,7 +1467,7 @@ function computeSpotlight(
         if (p) return {
           text: t.yfirlit.spotlightMovement
             .replace("{name}", firstName(p.name, p.email))
-            .replace("{pct}", best.pct.toFixed(0)),
+            .replace("{pct}", (best as { id: string; pct: number }).pct.toFixed(0)),
           profile: p,
         };
       }
@@ -1507,7 +1507,7 @@ function computeSpotlight(
         if (p) return {
           text: t.yfirlit.spotlightMargin
             .replace("{name}", firstName(p.name, p.email))
-            .replace("{pct}", best.pct.toFixed(0)),
+            .replace("{pct}", (best as { id: string; pct: number }).pct.toFixed(0)),
           profile: p,
         };
       }
@@ -1533,7 +1533,7 @@ function computeSpotlight(
         if (p) return {
           text: t.yfirlit.spotlightStreak
             .replace("{name}", firstName(p.name, p.email))
-            .replace("{days}", String(best.days)),
+            .replace("{days}", String((best as { id: string; days: number }).days)),
           profile: p,
         };
       }
