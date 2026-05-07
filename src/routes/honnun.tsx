@@ -409,6 +409,7 @@ function HonnunContent() {
     { key: "logo", label: t.hönnunScreen.typeLogo },
     { key: "presentation", label: t.hönnunScreen.typePresentation },
     { key: "brand", label: t.hönnunScreen.typeBrand },
+    { key: "unmatched", label: t.hönnunScreen.sourceUnmatched },
   ];
 
   return (
