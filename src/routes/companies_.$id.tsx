@@ -229,6 +229,29 @@ function CompanyDetailContent({ currentProfileId }: { currentProfileId: string |
         onEdit={() => setEditOpen(true)}
       />
 
+      {linkedBrands.length > 0 && (
+        <div className="rounded-md border border-border bg-card p-6 shadow-sm">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-ide-navy">
+            {t.newCompany.linkedCustomers}
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {linkedBrands.map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => {
+                  rememberCompanyReturnPath();
+                  navigate({ to: "/companies/$id", params: { id: b.id } });
+                }}
+                className="inline-flex items-center rounded-full border border-border bg-muted px-3 py-1 text-sm text-foreground hover:bg-muted/70"
+              >
+                {b.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Tabs nav */}
       <div className="border-b border-border">
         <nav className="-mb-px flex gap-1 overflow-x-auto">
@@ -280,28 +303,6 @@ function CompanyDetailContent({ currentProfileId }: { currentProfileId: string |
         )}
       </div>
 
-      {linkedBrands.length > 0 && (
-        <div className="rounded-md border border-border bg-card p-6 shadow-sm">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-ide-navy">
-            {t.newCompany.linkedCustomers}
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {linkedBrands.map((b) => (
-              <button
-                key={b.id}
-                type="button"
-                onClick={() => {
-                  rememberCompanyReturnPath();
-                  navigate({ to: "/companies/$id", params: { id: b.id } });
-                }}
-                className="inline-flex items-center rounded-full border border-border bg-muted px-3 py-1 text-sm text-foreground hover:bg-muted/70"
-              >
-                {b.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       <EditCompanyDrawer
         open={editOpen}
