@@ -605,6 +605,21 @@ function FileCard({
       )}
 
       <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {extraAction && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              extraAction.onClick();
+            }}
+            className="rounded-md bg-background/90 p-1.5 text-muted-foreground shadow-sm hover:text-ide-navy"
+            aria-label={extraAction.label}
+            title={extraAction.label}
+          >
+            {extraAction.icon}
+          </button>
+        )}
         <a
           href={file.signedUrlDownload ?? "#"}
           download={file.original_filename ?? ""}
