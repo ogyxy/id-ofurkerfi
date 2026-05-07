@@ -67,6 +67,8 @@ export function DealHeader({
   company,
   contact,
   ownerName,
+  ownerAvatarUrl,
+  ownerEmail,
   quoteValidUntil,
   pos,
   onEdit,
