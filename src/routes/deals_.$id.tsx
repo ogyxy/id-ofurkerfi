@@ -184,7 +184,7 @@ function DealDetailContent() {
       supabase
         .from("activities")
         .select(
-          "id, type, body, created_at, profile:profiles!activities_created_by_fkey(id, name)",
+          "id, type, body, created_at, profile:profiles!activities_created_by_fkey(id, name, avatar_url)",
         )
         .eq("deal_id", id)
         .in("type", ["note", "stage_change", "defect_note"])
