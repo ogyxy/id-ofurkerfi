@@ -175,8 +175,7 @@ export function DealLog({
                 <li key={entry.id} className="flex items-center gap-3 px-1">
                   <span className="h-px flex-1 bg-border" />
                   <span
-                    className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
-                    style={{ backgroundColor: NAVY }}
+                    className="inline-block h-2 w-2 flex-shrink-0 rounded-full bg-ide-navy"
                   />
                   <span className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted-foreground">
                     <span>{t.log.stageChanged}</span>
