@@ -1,5 +1,9 @@
 // One-time backfill: render thumbnails for any deal_files / company_files
 // rows still in 'pending' status. Safe no-op when there are none.
+//
+// Processes strictly sequentially with a small delay between files to avoid
+// exhausting the browser's connection pool (ERR_INSUFFICIENT_RESOURCES) and
+// starving the page's own image/SVG loads.
 import { supabase } from "@/integrations/supabase/client";
 import { generateThumbnail } from "@/lib/generateThumbnail";
 
@@ -12,7 +16,9 @@ interface PendingRow {
   original_filename: string | null;
 }
 
-const CONCURRENCY = 2;
+const DELAY_BETWEEN_FILES_MS = 200;
+const DOWNLOAD_MAX_RETRIES = 2;
+const DOWNLOAD_RETRY_BACKOFF_MS = 1000;
 
 function getExt(name: string | null): string {
   if (!name) return "";
@@ -20,72 +26,124 @@ function getExt(name: string | null): string {
   return i >= 0 ? name.slice(i + 1).toLowerCase() : "";
 }
 
-let started = false;
+function isMissingFileError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { statusCode?: string | number; status?: number; message?: string; __isStorageError?: boolean };
+  if (e.__isStorageError && (String(e.statusCode) === "404" || e.status === 400)) {
+    return /not found/i.test(e.message ?? "");
+  }
+  return /object not found/i.test(e.message ?? "");
+}
+
+function formatDuration(ms: number): string {
+  const totalSec = Math.round(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+let isRunning = false;
 
 export async function runThumbnailBackfill(
   isCancelled: () => boolean,
 ): Promise<void> {
-  if (started) return;
-  started = true;
+  if (isRunning) return;
+  isRunning = true;
 
-  // Include 'error' rows so transient failures get retried on next visit.
-  const [deals, companies] = await Promise.all([
-    supabase
-      .from("deal_files")
-      .select("id, storage_path, original_filename")
-      .in("thumbnail_status", ["pending", "error"]),
-    supabase
-      .from("company_files")
-      .select("id, storage_path, original_filename")
-      .in("thumbnail_status", ["pending", "error"]),
-  ]);
+  const startedAt = Date.now();
+  let succeeded = 0;
+  let errored = 0;
+  let unsupported = 0;
+  let missing = 0;
 
-  const queue: PendingRow[] = [
-    ...((deals.data ?? []) as Omit<PendingRow, "table">[]).map((r) => ({
-      ...r,
-      table: "deal_files" as const,
-    })),
-    ...((companies.data ?? []) as Omit<PendingRow, "table">[]).map((r) => ({
-      ...r,
-      table: "company_files" as const,
-    })),
-  ];
+  try {
+    // Include 'error' rows so transient failures get retried on next visit.
+    const [deals, companies] = await Promise.all([
+      supabase
+        .from("deal_files")
+        .select("id, storage_path, original_filename")
+        .in("thumbnail_status", ["pending", "error"]),
+      supabase
+        .from("company_files")
+        .select("id, storage_path, original_filename")
+        .in("thumbnail_status", ["pending", "error"]),
+    ]);
 
-  if (queue.length === 0) return;
+    const queue: PendingRow[] = [
+      ...((deals.data ?? []) as Omit<PendingRow, "table">[]).map((r) => ({
+        ...r,
+        table: "deal_files" as const,
+      })),
+      ...((companies.data ?? []) as Omit<PendingRow, "table">[]).map((r) => ({
+        ...r,
+        table: "company_files" as const,
+      })),
+    ];
 
-  let cursor = 0;
-  const workers = Array.from({ length: CONCURRENCY }, async () => {
-    while (!isCancelled()) {
-      const idx = cursor++;
-      if (idx >= queue.length) return;
-      const row = queue[idx];
-      await processOne(row);
+    if (queue.length === 0) return;
+
+    for (const row of queue) {
+      if (isCancelled()) break;
+      const result = await processOne(row);
+      if (result === "done") succeeded++;
+      else if (result === "unsupported") unsupported++;
+      else if (result === "missing") missing++;
+      else errored++;
+
+      if (isCancelled()) break;
+      await new Promise((r) => setTimeout(r, DELAY_BETWEEN_FILES_MS));
     }
-  });
-  await Promise.all(workers);
+  } finally {
+    isRunning = false;
+    const duration = formatDuration(Date.now() - startedAt);
+    console.log(
+      `[thumbnail-backfill] complete: ${succeeded} done, ${errored} error, ${unsupported} unsupported, ${missing} missing in ${duration}`,
+    );
+  }
 }
 
-async function processOne(row: PendingRow): Promise<void> {
+type ProcessResult = "done" | "unsupported" | "missing" | "error";
+
+async function downloadWithRetry(path: string): Promise<Blob> {
+  let lastErr: unknown = null;
+  for (let attempt = 0; attempt <= DOWNLOAD_MAX_RETRIES; attempt++) {
+    try {
+      const { data, error } = await supabase.storage
+        .from("deal_files")
+        .download(path);
+      if (error) throw error;
+      if (!data) throw new Error("download failed: no data");
+      return data;
+    } catch (err) {
+      lastErr = err;
+      if (isMissingFileError(err)) throw err; // never retry missing files
+      if (attempt < DOWNLOAD_MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, DOWNLOAD_RETRY_BACKOFF_MS));
+        continue;
+      }
+    }
+  }
+  throw lastErr ?? new Error("download failed");
+}
+
+async function processOne(row: PendingRow): Promise<ProcessResult> {
   const ext = getExt(row.original_filename);
   if (ext !== "pdf" && ext !== "ai") {
     await supabase
       .from(row.table)
       .update({ thumbnail_status: "unsupported" })
       .eq("id", row.id);
-    return;
+    return "unsupported";
   }
   try {
-    const { data, error } = await supabase.storage
-      .from("deal_files")
-      .download(row.storage_path);
-    if (error || !data) throw error ?? new Error("download failed");
+    const data = await downloadWithRetry(row.storage_path);
     const blob = await generateThumbnail(data, row.original_filename ?? "");
     if (!blob) {
       await supabase
         .from(row.table)
         .update({ thumbnail_status: "unsupported" })
         .eq("id", row.id);
-      return;
+      return "unsupported";
     }
     const path = `${row.table}/${row.id}.png`;
     const { error: upErr } = await supabase.storage
@@ -96,8 +154,19 @@ async function processOne(row: PendingRow): Promise<void> {
       .from(row.table)
       .update({ thumbnail_path: path, thumbnail_status: "done" })
       .eq("id", row.id);
+    return "done";
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    if (isMissingFileError(err)) {
+      console.warn(
+        `[thumbnail-backfill] missing file table=${row.table} id=${row.id} file="${row.original_filename}" path="${row.storage_path}"`,
+      );
+      await supabase
+        .from(row.table)
+        .update({ thumbnail_status: "error" })
+        .eq("id", row.id);
+      return "missing";
+    }
     console.error(
       `[thumbnail-backfill] failed table=${row.table} id=${row.id} file="${row.original_filename}" path="${row.storage_path}":`,
       msg,
@@ -107,5 +176,6 @@ async function processOne(row: PendingRow): Promise<void> {
       .from(row.table)
       .update({ thumbnail_status: "error" })
       .eq("id", row.id);
+    return "error";
   }
 }
