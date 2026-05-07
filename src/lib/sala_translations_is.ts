@@ -73,7 +73,7 @@ export const t = {
   // ---------------------------------------------------------------------------
   settings: {
     pageTitle:           'Stillingar',
-    tabProfile:          'Mín stilling',
+    tabProfile:          'Mín stillingar',
     tabUsers:            'Starfsfólk',
     tabApp:              'Forrit',
 
