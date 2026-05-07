@@ -212,61 +212,93 @@ function HonnunContent() {
     );
     const cFiles = (companyFiles ?? []) as unknown as CompanyFileRow[];
 
-    // Generate signed URLs in parallel, with caching
+    // Batch-sign URLs to avoid exhausting the browser connection pool
+    // (per-file Promise.all of 3000+ requests silently drops most responses).
     const cache = urlCacheRef.current;
-    const sign = async (
+
+    const collectOriginalPaths = (rows: { storage_path: string }[]): string[] => {
+      const out: string[] = [];
+      for (const r of rows) {
+        const key = `orig|${r.storage_path}`;
+        if (!cache.has(key)) out.push(r.storage_path);
+      }
+      return Array.from(new Set(out));
+    };
+
+    const collectThumbPaths = (
+      rows: { thumbnail_path: string | null; thumbnail_status: string }[],
+    ): string[] => {
+      const out: string[] = [];
+      for (const r of rows) {
+        if (r.thumbnail_status !== "done" || !r.thumbnail_path) continue;
+        const key = `thumb|${r.thumbnail_path}`;
+        if (!cache.has(key)) out.push(r.thumbnail_path);
+      }
+      return Array.from(new Set(out));
+    };
+
+    const allOriginalPaths = [
+      ...collectOriginalPaths(liveDealFiles),
+      ...collectOriginalPaths(cFiles),
+    ];
+    const allThumbPaths = [
+      ...collectThumbPaths(liveDealFiles),
+      ...collectThumbPaths(cFiles),
+    ];
+
+    const [origRes, thumbRes] = await Promise.all([
+      allOriginalPaths.length > 0
+        ? supabase.storage.from("deal_files").createSignedUrls(allOriginalPaths, 3600)
+        : Promise.resolve({ data: [] as { path: string | null; signedUrl: string }[] }),
+      allThumbPaths.length > 0
+        ? supabase.storage.from("thumbnails").createSignedUrls(allThumbPaths, 3600)
+        : Promise.resolve({ data: [] as { path: string | null; signedUrl: string }[] }),
+    ]);
+
+    for (const item of origRes.data ?? []) {
+      if (item.path && item.signedUrl) {
+        cache.set(`orig|${item.path}`, { url: item.signedUrl, download: "", thumb: "" });
+      }
+    }
+    for (const item of thumbRes.data ?? []) {
+      if (item.path && item.signedUrl) {
+        cache.set(`thumb|${item.path}`, { url: "", download: "", thumb: item.signedUrl });
+      }
+    }
+
+    const buildExtras = (
       storagePath: string,
       filename: string | null,
       thumbPath: string | null,
       thumbStatus: string,
-    ) => {
-      const key = `${storagePath}|${filename ?? ""}|${thumbPath ?? ""}`;
-      const cached = cache.get(key);
-      if (cached) return cached;
-      const wantThumb = thumbStatus === "done" && !!thumbPath;
-      const [view, dl, thumb] = await Promise.all([
-        supabase.storage.from("deal_files").createSignedUrl(storagePath, 3600),
-        supabase.storage
-          .from("deal_files")
-          .createSignedUrl(storagePath, 3600, { download: filename ?? true }),
-        wantThumb
-          ? supabase.storage.from("thumbnails").createSignedUrl(thumbPath!, 3600)
-          : Promise.resolve({ data: null }),
-      ]);
-      const value = {
-        url: view.data?.signedUrl ?? "",
-        download: dl.data?.signedUrl ?? "",
-        thumb: thumb.data?.signedUrl ?? "",
-      };
-      cache.set(key, value);
-      return value;
+    ): SignedExtras => {
+      const orig = cache.get(`orig|${storagePath}`);
+      const url = orig?.url ?? null;
+      // Derive download URL from the view URL by appending the download param,
+      // avoiding a second batch call.
+      let download: string | null = null;
+      if (url) {
+        const sep = url.includes("?") ? "&" : "?";
+        download = `${url}${sep}download=${encodeURIComponent(filename ?? "")}`;
+      }
+      const thumb =
+        thumbStatus === "done" && thumbPath
+          ? cache.get(`thumb|${thumbPath}`)?.thumb ?? null
+          : null;
+      return { signedUrl: url, signedUrlDownload: download, thumbnailUrl: thumb };
     };
 
-    const dealMerged: MergedFile[] = await Promise.all(
-      liveDealFiles.map(async (f) => {
-        const u = await sign(f.storage_path, f.original_filename, f.thumbnail_path, f.thumbnail_status);
-        return {
-          ...f,
-          source: "deal" as const,
-          signedUrl: u.url || null,
-          signedUrlDownload: u.download || null,
-          thumbnailUrl: u.thumb || null,
-        };
-      }),
-    );
+    const dealMerged: MergedFile[] = liveDealFiles.map((f) => ({
+      ...f,
+      source: "deal" as const,
+      ...buildExtras(f.storage_path, f.original_filename, f.thumbnail_path, f.thumbnail_status),
+    }));
 
-    const companyMerged: MergedFile[] = await Promise.all(
-      cFiles.map(async (f) => {
-        const u = await sign(f.storage_path, f.original_filename, f.thumbnail_path, f.thumbnail_status);
-        return {
-          ...f,
-          source: "company" as const,
-          signedUrl: u.url || null,
-          signedUrlDownload: u.download || null,
-          thumbnailUrl: u.thumb || null,
-        };
-      }),
-    );
+    const companyMerged: MergedFile[] = cFiles.map((f) => ({
+      ...f,
+      source: "company" as const,
+      ...buildExtras(f.storage_path, f.original_filename, f.thumbnail_path, f.thumbnail_status),
+    }));
 
     // Unmatched files in storage (no DB row, sit under __unmatched__/<folder>/<file>)
     const unmatchedMerged: MergedFile[] = [];
@@ -285,31 +317,58 @@ function HonnunContent() {
           return { folder, files: files ?? [] };
         }),
       );
+
+      const unmatchedRows: Array<{
+        storage_path: string;
+        display: string;
+        folder: string;
+        size: number | null;
+        uploaded_at: string;
+      }> = [];
       for (const { folder, files } of perFolder) {
         for (const entry of files) {
           if (!entry.id) continue; // skip subfolders
           const storage_path = `__unmatched__/${folder}/${entry.name}`;
-          // Strip "<unix>-" prefix if present
-          const display = entry.name.replace(/^\d+-/, "");
-          const u = await sign(storage_path, display, null, "unsupported");
-          unmatchedMerged.push({
-            id: storage_path,
+          unmatchedRows.push({
             storage_path,
-            original_filename: display,
-            file_size_bytes:
-              (entry.metadata as { size?: number } | null)?.size ?? null,
-            uploaded_at: entry.created_at ?? new Date().toISOString(),
+            display: entry.name.replace(/^\d+-/, ""),
             folder,
-            source: "unmatched",
-            file_type: "other",
-            thumbnail_path: null,
-            thumbnail_status: "unsupported",
-            uploaded_by: null,
-            signedUrl: u.url || null,
-            signedUrlDownload: u.download || null,
-            thumbnailUrl: u.thumb || null,
+            size: (entry.metadata as { size?: number } | null)?.size ?? null,
+            uploaded_at: entry.created_at ?? new Date().toISOString(),
           });
         }
+      }
+
+      const unmatchedPaths = unmatchedRows
+        .map((r) => r.storage_path)
+        .filter((p) => !cache.has(`orig|${p}`));
+      if (unmatchedPaths.length > 0) {
+        const { data } = await supabase.storage
+          .from("deal_files")
+          .createSignedUrls(unmatchedPaths, 3600);
+        for (const item of data ?? []) {
+          if (item.path && item.signedUrl) {
+            cache.set(`orig|${item.path}`, { url: item.signedUrl, download: "", thumb: "" });
+          }
+        }
+      }
+
+      for (const r of unmatchedRows) {
+        const extras = buildExtras(r.storage_path, r.display, null, "unsupported");
+        unmatchedMerged.push({
+          id: r.storage_path,
+          storage_path: r.storage_path,
+          original_filename: r.display,
+          file_size_bytes: r.size,
+          uploaded_at: r.uploaded_at,
+          folder: r.folder,
+          source: "unmatched",
+          file_type: "other",
+          thumbnail_path: null,
+          thumbnail_status: "unsupported",
+          uploaded_by: null,
+          ...extras,
+        });
       }
     } catch (err) {
       console.error("[honnun] failed to list __unmatched__", err);
