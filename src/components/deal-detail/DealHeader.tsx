@@ -32,6 +32,8 @@ interface Props {
   company: Company;
   contact: Contact | null;
   ownerName: string | null;
+  ownerAvatarUrl?: string | null;
+  ownerEmail?: string | null;
   quoteValidUntil?: string | null;
   pos?: PoLite[];
   onEdit: () => void;
