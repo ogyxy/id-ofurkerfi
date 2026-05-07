@@ -705,6 +705,11 @@ function FileCard({
 const BRAND_TYPES: CompanyFileType[] = COMPANY_FILE_TYPES;
 const DEAL_TYPES: DealFileType[] = DEAL_FILE_TYPES;
 
+interface CompanyLite {
+  id: string;
+  name: string;
+}
+
 function MoveLegacyDialog({
   file,
   deals,
@@ -720,12 +725,19 @@ function MoveLegacyDialog({
   onClose: () => void;
   onMoved: () => void;
 }) {
-  const [tab, setTab] = useState<"brand" | "deal">("brand");
+  const [tab, setTab] = useState<"brand" | "deal" | "company">("brand");
   const [brandType, setBrandType] = useState<string>("logo");
   const [dealType, setDealType] = useState<string>("artwork");
   const [dealId, setDealId] = useState<string>("");
   const [dealComboOpen, setDealComboOpen] = useState(false);
   const selectedDeal = useMemo(() => deals.find((d) => d.id === dealId) ?? null, [deals, dealId]);
+  const [companies, setCompanies] = useState<CompanyLite[]>([]);
+  const [targetCompanyId, setTargetCompanyId] = useState<string>("");
+  const [companyComboOpen, setCompanyComboOpen] = useState(false);
+  const selectedCompany = useMemo(
+    () => companies.find((c) => c.id === targetCompanyId) ?? null,
+    [companies, targetCompanyId],
+  );
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -734,8 +746,23 @@ function MoveLegacyDialog({
       setBrandType(smartGuessBrandFileType(file.original_filename ?? ""));
       setDealType(smartGuessDealFileType(file.original_filename ?? ""));
       setDealId("");
+      setTargetCompanyId("");
     }
   }, [file]);
+
+  useEffect(() => {
+    if (!file) return;
+    void (async () => {
+      const { data } = await supabase
+        .from("companies")
+        .select("id, name")
+        .eq("archived", false)
+        .neq("id", companyId)
+        .order("name");
+      setCompanies((data ?? []) as CompanyLite[]);
+    })();
+  }, [file, companyId]);
+
 
   if (!file) return null;
 
@@ -758,7 +785,7 @@ function MoveLegacyDialog({
             .update({ storage_path: newPath })
             .eq("id", file.id);
         }
-      } else {
+      } else if (tab === "deal") {
         if (!dealId) {
           toast.error(t.legacyImport.pickDeal);
           setBusy(false);
@@ -795,6 +822,32 @@ function MoveLegacyDialog({
           body: `Skjal flutt úr legacy: ${file.original_filename ?? newPath}`,
           created_by: currentProfileId,
         });
+      } else {
+        // tab === "company": move legacy file to another company's Legacy Import
+        if (!targetCompanyId) {
+          toast.error(t.legacyImport.pickCompany);
+          setBusy(false);
+          return;
+        }
+        const target = companies.find((c) => c.id === targetCompanyId);
+        if (!target) {
+          toast.error(t.legacyImport.pickCompany);
+          setBusy(false);
+          return;
+        }
+        const filename = file.storage_path.split("/").pop() ?? file.storage_path;
+        const newPath = `${pathSafe(target.name)}/Legacy Import/${filename}`;
+        if (newPath !== file.storage_path) {
+          const { error: mvErr } = await supabase.storage
+            .from("deal_files")
+            .move(file.storage_path, newPath);
+          if (mvErr) throw mvErr;
+        }
+        const { error: updErr } = await supabase
+          .from("company_files")
+          .update({ company_id: targetCompanyId, storage_path: newPath })
+          .eq("id", file.id);
+        if (updErr) throw updErr;
       }
       toast.success(t.legacyImport.moved);
       onMoved();
@@ -812,10 +865,11 @@ function MoveLegacyDialog({
         <DialogHeader>
           <DialogTitle>{file.original_filename ?? t.legacyImport.move}</DialogTitle>
         </DialogHeader>
-        <Tabs value={tab} onValueChange={(v) => setTab(v as "brand" | "deal")}>
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "brand" | "deal" | "company")}>
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="brand">{t.legacyImport.moveToBrand}</TabsTrigger>
             <TabsTrigger value="deal">{t.legacyImport.moveToDeal}</TabsTrigger>
+            <TabsTrigger value="company">{t.legacyImport.moveToCompany}</TabsTrigger>
           </TabsList>
           <TabsContent value="brand" className="space-y-3 pt-3">
             <div className="space-y-1.5">
@@ -884,6 +938,44 @@ function MoveLegacyDialog({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          </TabsContent>
+          <TabsContent value="company" className="space-y-3 pt-3">
+            <div className="space-y-1.5">
+              <Label>{t.legacyImport.pickCompany}</Label>
+              <Popover open={companyComboOpen} onOpenChange={setCompanyComboOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between font-normal"
+                  >
+                    {selectedCompany ? selectedCompany.name : t.legacyImport.pickCompany}
+                    <Search className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder={t.actions.search} />
+                    <CommandList>
+                      <CommandEmpty>{t.status.noResults}</CommandEmpty>
+                      <CommandGroup>
+                        {companies.map((c) => (
+                          <CommandItem
+                            key={c.id}
+                            value={c.name}
+                            onSelect={() => {
+                              setTargetCompanyId(c.id);
+                              setCompanyComboOpen(false);
+                            }}
+                          >
+                            <span className="text-sm">{c.name}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </TabsContent>
         </Tabs>
