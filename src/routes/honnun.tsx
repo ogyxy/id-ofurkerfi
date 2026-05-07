@@ -268,7 +268,54 @@ function HonnunContent() {
       }),
     );
 
-    setAllFiles([...dealMerged, ...companyMerged]);
+    // Unmatched files in storage (no DB row, sit under __unmatched__/<folder>/<file>)
+    const unmatchedMerged: MergedFile[] = [];
+    try {
+      const { data: folders } = await supabase.storage
+        .from("deal_files")
+        .list("__unmatched__", { limit: 1000 });
+      const folderNames = (folders ?? [])
+        .filter((entry) => !entry.id) // folders have no id
+        .map((entry) => entry.name);
+      const perFolder = await Promise.all(
+        folderNames.map(async (folder) => {
+          const { data: files } = await supabase.storage
+            .from("deal_files")
+            .list(`__unmatched__/${folder}`, { limit: 1000 });
+          return { folder, files: files ?? [] };
+        }),
+      );
+      for (const { folder, files } of perFolder) {
+        for (const entry of files) {
+          if (!entry.id) continue; // skip subfolders
+          const storage_path = `__unmatched__/${folder}/${entry.name}`;
+          // Strip "<unix>-" prefix if present
+          const display = entry.name.replace(/^\d+-/, "");
+          const u = await sign(storage_path, display, null, "unsupported");
+          unmatchedMerged.push({
+            id: storage_path,
+            storage_path,
+            original_filename: display,
+            file_size_bytes:
+              (entry.metadata as { size?: number } | null)?.size ?? null,
+            uploaded_at: entry.created_at ?? new Date().toISOString(),
+            folder,
+            source: "unmatched",
+            file_type: "other",
+            thumbnail_path: null,
+            thumbnail_status: "unsupported",
+            uploaded_by: null,
+            signedUrl: u.url || null,
+            signedUrlDownload: u.download || null,
+            thumbnailUrl: u.thumb || null,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("[honnun] failed to list __unmatched__", err);
+    }
+
+    setAllFiles([...dealMerged, ...companyMerged, ...unmatchedMerged]);
     setLoading(false);
   }, []);
 
