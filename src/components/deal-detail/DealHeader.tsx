@@ -260,9 +260,12 @@ export function DealHeader({
 
           {ownerName && (
             <div className="flex items-center gap-2 md:justify-end">
-              <span className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-[11px] font-semibold text-amber-800">
-                {getInitials(ownerName)}
-              </span>
+              <UserAvatar
+                name={ownerName}
+                email={ownerEmail}
+                avatarUrl={ownerAvatarUrl}
+                size={28}
+              />
               <span className="text-sm font-medium text-foreground">{ownerName}</span>
             </div>
           )}
