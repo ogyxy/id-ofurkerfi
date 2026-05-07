@@ -1478,109 +1478,140 @@ function YfirlitContent({
 function computeSpotlight(
   weekData: Array<{ owner_id: string; net: number; delivered_at: string; amount: number; margin: number; company?: { id: string; name: string } | null }>,
   salesPeople: Profile[],
-): { text: string; profile: Profile | null } {
-  const week = isoWeekNumber(new Date());
-  const order = ["movement", "biggest", "margin", "streak"] as const;
-  const cats: Array<typeof order[number]> = [];
-  for (let i = 0; i < 4; i++) cats.push(order[(week + i) % 4]);
-
+): Array<{ text: string; profile: Profile | null }> {
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 86400000);
   const twoWeekAgo = new Date(now.getTime() - 14 * 86400000);
+  const results: Array<{ text: string; profile: Profile | null }> = [];
 
-  for (const cat of cats) {
-    if (cat === "movement") {
-      const byUser: Record<string, { last: number; prev: number }> = {};
-      weekData.forEach((d) => {
-        const dt = new Date(d.delivered_at);
-        if (!byUser[d.owner_id]) byUser[d.owner_id] = { last: 0, prev: 0 };
-        if (dt >= weekAgo) byUser[d.owner_id].last += d.net;
-        else if (dt >= twoWeekAgo) byUser[d.owner_id].prev += d.net;
+  // movement
+  {
+    const byUser: Record<string, { last: number; prev: number }> = {};
+    weekData.forEach((d) => {
+      const dt = new Date(d.delivered_at);
+      if (!byUser[d.owner_id]) byUser[d.owner_id] = { last: 0, prev: 0 };
+      if (dt >= weekAgo) byUser[d.owner_id].last += d.net;
+      else if (dt >= twoWeekAgo) byUser[d.owner_id].prev += d.net;
+    });
+    let best: { id: string; pct: number } | null = null;
+    Object.entries(byUser).forEach(([id, v]) => {
+      if (v.prev <= 0 || v.last <= 0) return;
+      const pct = ((v.last - v.prev) / v.prev) * 100;
+      if (pct > 0 && (!best || pct > best.pct)) best = { id, pct };
+    });
+    if (best) {
+      const p = salesPeople.find((x) => x.id === (best as { id: string; pct: number }).id);
+      if (p) results.push({
+        text: t.yfirlit.spotlightMovement
+          .replace("{name}", firstName(p.name, p.email))
+          .replace("{pct}", (best as { id: string; pct: number }).pct.toFixed(0)),
+        profile: p,
       });
-      let best: { id: string; pct: number } | null = null;
-      Object.entries(byUser).forEach(([id, v]) => {
-        if (v.prev <= 0 || v.last <= 0) return;
-        const pct = ((v.last - v.prev) / v.prev) * 100;
-        if (pct > 0 && (!best || pct > best.pct)) best = { id, pct };
-      });
-      if (best) {
-        const p = salesPeople.find((x) => x.id === best!.id);
-        if (p) return {
-          text: t.yfirlit.spotlightMovement
-            .replace("{name}", firstName(p.name, p.email))
-            .replace("{pct}", (best as { id: string; pct: number }).pct.toFixed(0)),
-          profile: p,
-        };
-      }
-    }
-    if (cat === "biggest") {
-      const lastWeek = weekData.filter((d) => new Date(d.delivered_at) >= weekAgo);
-      const top = lastWeek.sort((a, b) => b.amount - a.amount)[0];
-      if (top) {
-        const p = salesPeople.find((x) => x.id === top.owner_id);
-        if (p) return {
-          text: t.yfirlit.spotlightBiggest
-            .replace("{name}", firstName(p.name, p.email))
-            .replace("{company}", top.company?.name ?? "—")
-            .replace("{amount}", formatIsk(top.amount)),
-          profile: p,
-        };
-      }
-    }
-    if (cat === "margin") {
-      const thirtyAgo = new Date(now.getTime() - 30 * 86400000);
-      const recent = weekData.filter((d) => new Date(d.delivered_at) >= thirtyAgo);
-      const byUser: Record<string, { net: number; margin: number; n: number }> = {};
-      recent.forEach((d) => {
-        if (!byUser[d.owner_id]) byUser[d.owner_id] = { net: 0, margin: 0, n: 0 };
-        byUser[d.owner_id].net += d.net;
-        byUser[d.owner_id].margin += d.margin;
-        byUser[d.owner_id].n += 1;
-      });
-      let best: { id: string; pct: number } | null = null;
-      Object.entries(byUser).forEach(([id, v]) => {
-        if (v.n < 3 || v.net <= 0) return;
-        const pct = (v.margin / v.net) * 100;
-        if (!best || pct > best.pct) best = { id, pct };
-      });
-      if (best) {
-        const p = salesPeople.find((x) => x.id === best!.id);
-        if (p) return {
-          text: t.yfirlit.spotlightMargin
-            .replace("{name}", firstName(p.name, p.email))
-            .replace("{pct}", (best as { id: string; pct: number }).pct.toFixed(0)),
-          profile: p,
-        };
-      }
-    }
-    if (cat === "streak") {
-      const byUser: Record<string, Set<string>> = {};
-      weekData.forEach((d) => {
-        if (!byUser[d.owner_id]) byUser[d.owner_id] = new Set();
-        byUser[d.owner_id].add(String(d.delivered_at).slice(0, 10));
-      });
-      let best: { id: string; days: number } | null = null;
-      Object.entries(byUser).forEach(([id, set]) => {
-        let streak = 0;
-        for (let i = 0; i < 14; i++) {
-          const d = new Date(now.getTime() - i * 86400000).toISOString().split("T")[0];
-          if (set.has(d)) streak += 1;
-          else break;
-        }
-        if (streak > 1 && (!best || streak > best.days)) best = { id, days: streak };
-      });
-      if (best) {
-        const p = salesPeople.find((x) => x.id === best!.id);
-        if (p) return {
-          text: t.yfirlit.spotlightStreak
-            .replace("{name}", firstName(p.name, p.email))
-            .replace("{days}", String((best as { id: string; days: number }).days)),
-          profile: p,
-        };
-      }
     }
   }
-  return { text: t.yfirlit.spotlightFallback, profile: null };
+
+  // biggest
+  {
+    const lastWeek = weekData.filter((d) => new Date(d.delivered_at) >= weekAgo);
+    const top = [...lastWeek].sort((a, b) => b.amount - a.amount)[0];
+    if (top) {
+      const p = salesPeople.find((x) => x.id === top.owner_id);
+      if (p) results.push({
+        text: t.yfirlit.spotlightBiggest
+          .replace("{name}", firstName(p.name, p.email))
+          .replace("{company}", top.company?.name ?? "—")
+          .replace("{amount}", formatIsk(top.amount)),
+        profile: p,
+      });
+    }
+  }
+
+  // margin
+  {
+    const thirtyAgo = new Date(now.getTime() - 30 * 86400000);
+    const recent = weekData.filter((d) => new Date(d.delivered_at) >= thirtyAgo);
+    const byUser: Record<string, { net: number; margin: number; n: number }> = {};
+    recent.forEach((d) => {
+      if (!byUser[d.owner_id]) byUser[d.owner_id] = { net: 0, margin: 0, n: 0 };
+      byUser[d.owner_id].net += d.net;
+      byUser[d.owner_id].margin += d.margin;
+      byUser[d.owner_id].n += 1;
+    });
+    let best: { id: string; pct: number } | null = null;
+    Object.entries(byUser).forEach(([id, v]) => {
+      if (v.n < 3 || v.net <= 0) return;
+      const pct = (v.margin / v.net) * 100;
+      if (!best || pct > best.pct) best = { id, pct };
+    });
+    if (best) {
+      const p = salesPeople.find((x) => x.id === (best as { id: string; pct: number }).id);
+      if (p) results.push({
+        text: t.yfirlit.spotlightMargin
+          .replace("{name}", firstName(p.name, p.email))
+          .replace("{pct}", (best as { id: string; pct: number }).pct.toFixed(0)),
+        profile: p,
+      });
+    }
+  }
+
+  // streak
+  {
+    const byUser: Record<string, Set<string>> = {};
+    weekData.forEach((d) => {
+      if (!byUser[d.owner_id]) byUser[d.owner_id] = new Set();
+      byUser[d.owner_id].add(String(d.delivered_at).slice(0, 10));
+    });
+    let best: { id: string; days: number } | null = null;
+    Object.entries(byUser).forEach(([id, set]) => {
+      let streak = 0;
+      for (let i = 0; i < 14; i++) {
+        const d = new Date(now.getTime() - i * 86400000).toISOString().split("T")[0];
+        if (set.has(d)) streak += 1;
+        else break;
+      }
+      if (streak > 1 && (!best || streak > best.days)) best = { id, days: streak };
+    });
+    if (best) {
+      const p = salesPeople.find((x) => x.id === (best as { id: string; days: number }).id);
+      if (p) results.push({
+        text: t.yfirlit.spotlightStreak
+          .replace("{name}", firstName(p.name, p.email))
+          .replace("{days}", String((best as { id: string; days: number }).days)),
+        profile: p,
+      });
+    }
+  }
+
+  return results;
+}
+
+// ---------- Pace mode toggle ----------
+function PaceModeToggle({
+  value,
+  onChange,
+}: {
+  value: "quarter" | "year";
+  onChange: (v: "quarter" | "year") => void;
+}) {
+  const base = "px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors";
+  return (
+    <div className="inline-flex items-center gap-0.5 rounded-full border border-border bg-muted p-0.5">
+      <button
+        type="button"
+        onClick={() => onChange("quarter")}
+        className={`${base} ${value === "quarter" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+      >
+        {t.yfirlit.paceToggleQuarter}
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("year")}
+        className={`${base} ${value === "year" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+      >
+        {t.yfirlit.paceToggleYear}
+      </button>
+    </div>
+  );
 }
 
 // ---------- Subcomponents ----------
