@@ -15,10 +15,6 @@ export function ProfileTab() {
   const [savingName, setSavingName] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const [currentPw, setCurrentPw] = useState("");
-  const [newPw, setNewPw] = useState("");
-  const [confirmPw, setConfirmPw] = useState("");
-  const [pwSaving, setPwSaving] = useState(false);
 
   const saveName = async () => {
     setSavingName(true);
@@ -60,37 +56,6 @@ export function ProfileTab() {
     toast.success(t.status.savedSuccessfully);
   };
 
-  const changePassword = async () => {
-    if (newPw.length < 8) {
-      toast.error(t.settings.passwordTooShort);
-      return;
-    }
-    if (newPw !== confirmPw) {
-      toast.error(t.settings.passwordMismatch);
-      return;
-    }
-    setPwSaving(true);
-    // Re-authenticate to confirm current password
-    const { error: signInErr } = await supabase.auth.signInWithPassword({
-      email: profile.email,
-      password: currentPw,
-    });
-    if (signInErr) {
-      setPwSaving(false);
-      toast.error(t.login.wrongCredentials);
-      return;
-    }
-    const { error } = await supabase.auth.updateUser({ password: newPw });
-    setPwSaving(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    setCurrentPw("");
-    setNewPw("");
-    setConfirmPw("");
-    toast.success(t.settings.passwordChanged);
-  };
 
   return (
     <div className="space-y-8 max-w-xl">
@@ -129,28 +94,6 @@ export function ProfileTab() {
         </div>
       </section>
 
-      {!profile.isOauth && (
-        <section className="space-y-4 rounded-md border border-border bg-card p-6">
-          <h2 className="text-base font-semibold">{t.settings.passwordSection}</h2>
-          <div className="space-y-1.5">
-            <Label htmlFor="cpw">{t.settings.currentPassword}</Label>
-            <Input id="cpw" type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} autoComplete="current-password" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="npw">{t.settings.newPassword}</Label>
-            <Input id="npw" type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} autoComplete="new-password" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="cnpw">{t.settings.confirmPassword}</Label>
-            <Input id="cnpw" type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} autoComplete="new-password" />
-          </div>
-          <div>
-            <Button onClick={changePassword} disabled={pwSaving} className="bg-ide-navy text-white hover:bg-ide-navy-hover">
-              {pwSaving ? t.status.saving : t.settings.changePassword}
-            </Button>
-          </div>
-        </section>
-      )}
     </div>
   );
 }
