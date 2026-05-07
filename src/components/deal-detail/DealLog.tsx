@@ -211,7 +211,7 @@ export function DealLog({
                 )}
               >
                 <div className="flex items-start gap-3">
-                  <Avatar name={entry.profile?.name} />
+                  <Avatar name={entry.profile?.name} avatarUrl={entry.profile?.avatar_url} />
                   <div className="min-w-0 flex-1">
                     {isDefect && (
                       <div className="mb-0.5 flex items-center gap-1 text-xs font-medium text-amber-700">
