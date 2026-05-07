@@ -1500,9 +1500,12 @@ function OwnerPopover({
                   }}
                   className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ide-navy text-[10px] font-medium text-white">
-                    {initials(p.name ?? p.email)}
-                  </span>
+                  <UserAvatar
+                    name={p.name}
+                    email={p.email}
+                    avatarUrl={p.avatar_url}
+                    size={24}
+                  />
                   <span className="flex-1 truncate">{p.name || p.email}</span>
                   {active && <Check className="h-4 w-4 text-ide-navy" />}
                 </button>
