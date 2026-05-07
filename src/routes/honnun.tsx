@@ -317,31 +317,58 @@ function HonnunContent() {
           return { folder, files: files ?? [] };
         }),
       );
+
+      const unmatchedRows: Array<{
+        storage_path: string;
+        display: string;
+        folder: string;
+        size: number | null;
+        uploaded_at: string;
+      }> = [];
       for (const { folder, files } of perFolder) {
         for (const entry of files) {
           if (!entry.id) continue; // skip subfolders
           const storage_path = `__unmatched__/${folder}/${entry.name}`;
-          // Strip "<unix>-" prefix if present
-          const display = entry.name.replace(/^\d+-/, "");
-          const u = await sign(storage_path, display, null, "unsupported");
-          unmatchedMerged.push({
-            id: storage_path,
+          unmatchedRows.push({
             storage_path,
-            original_filename: display,
-            file_size_bytes:
-              (entry.metadata as { size?: number } | null)?.size ?? null,
-            uploaded_at: entry.created_at ?? new Date().toISOString(),
+            display: entry.name.replace(/^\d+-/, ""),
             folder,
-            source: "unmatched",
-            file_type: "other",
-            thumbnail_path: null,
-            thumbnail_status: "unsupported",
-            uploaded_by: null,
-            signedUrl: u.url || null,
-            signedUrlDownload: u.download || null,
-            thumbnailUrl: u.thumb || null,
+            size: (entry.metadata as { size?: number } | null)?.size ?? null,
+            uploaded_at: entry.created_at ?? new Date().toISOString(),
           });
         }
+      }
+
+      const unmatchedPaths = unmatchedRows
+        .map((r) => r.storage_path)
+        .filter((p) => !cache.has(`orig|${p}`));
+      if (unmatchedPaths.length > 0) {
+        const { data } = await supabase.storage
+          .from("deal_files")
+          .createSignedUrls(unmatchedPaths, 3600);
+        for (const item of data ?? []) {
+          if (item.path && item.signedUrl) {
+            cache.set(`orig|${item.path}`, { url: item.signedUrl, download: "", thumb: "" });
+          }
+        }
+      }
+
+      for (const r of unmatchedRows) {
+        const extras = buildExtras(r.storage_path, r.display, null, "unsupported");
+        unmatchedMerged.push({
+          id: r.storage_path,
+          storage_path: r.storage_path,
+          original_filename: r.display,
+          file_size_bytes: r.size,
+          uploaded_at: r.uploaded_at,
+          folder: r.folder,
+          source: "unmatched",
+          file_type: "other",
+          thumbnail_path: null,
+          thumbnail_status: "unsupported",
+          uploaded_by: null,
+          ...extras,
+        });
       }
     } catch (err) {
       console.error("[honnun] failed to list __unmatched__", err);
