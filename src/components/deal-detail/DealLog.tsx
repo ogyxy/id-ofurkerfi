@@ -15,14 +15,14 @@ export type LogEntry = {
   type: "note" | "stage_change" | "defect_note";
   body: string | null;
   created_at: string;
-  profile: { id: string; name: string | null } | null;
+  profile: { id: string; name: string | null; avatar_url?: string | null } | null;
 };
 
 interface Props {
   dealId: string;
   companyId: string;
   entries: LogEntry[];
-  currentProfile: { id: string; name: string | null } | null;
+  currentProfile: { id: string; name: string | null; avatar_url?: string | null } | null;
   onChanged: () => Promise<void> | void;
   onLocalAppend?: (entry: LogEntry) => void;
 }
