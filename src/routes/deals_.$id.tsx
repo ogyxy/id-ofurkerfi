@@ -153,10 +153,10 @@ function DealDetailContent() {
       setCurrentUserEmail(user.email ?? "");
       const { data } = await supabase
         .from("profiles")
-        .select("id, name")
+        .select("id, name, avatar_url")
         .eq("id", user.id)
         .maybeSingle();
-      if (data) setCurrentProfile({ id: data.id, name: data.name });
+      if (data) setCurrentProfile({ id: data.id, name: data.name, avatar_url: data.avatar_url });
     })();
   }, []);
 
