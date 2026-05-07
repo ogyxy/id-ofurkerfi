@@ -114,7 +114,7 @@ function DealDetailContent() {
   const [companyContacts, setCompanyContacts] = useState<Contact[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentProfile, setCurrentProfile] =
-    useState<{ id: string; name: string | null } | null>(null);
+    useState<{ id: string; name: string | null; avatar_url: string | null } | null>(null);
   const [lines, setLines] = useState<EditableLine[]>([]);
   const [pos, setPos] = useState<
     Array<PurchaseOrder & { po_lines: POLine[] }>
