@@ -509,6 +509,8 @@ function DealDetailContent() {
         company={company}
         contact={contact}
         ownerName={ownerName}
+        ownerAvatarUrl={ownerProfile?.avatar_url ?? null}
+        ownerEmail={ownerProfile?.email ?? null}
         quoteValidUntil={quoteValidUntil}
         pos={pos}
         onEdit={() => setEditOpen(true)}
