@@ -940,6 +940,44 @@ function MoveLegacyDialog({
               </Select>
             </div>
           </TabsContent>
+          <TabsContent value="company" className="space-y-3 pt-3">
+            <div className="space-y-1.5">
+              <Label>{t.legacyImport.pickCompany}</Label>
+              <Popover open={companyComboOpen} onOpenChange={setCompanyComboOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between font-normal"
+                  >
+                    {selectedCompany ? selectedCompany.name : t.legacyImport.pickCompany}
+                    <Search className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder={t.actions.search} />
+                    <CommandList>
+                      <CommandEmpty>{t.status.noResults}</CommandEmpty>
+                      <CommandGroup>
+                        {companies.map((c) => (
+                          <CommandItem
+                            key={c.id}
+                            value={c.name}
+                            onSelect={() => {
+                              setTargetCompanyId(c.id);
+                              setCompanyComboOpen(false);
+                            }}
+                          >
+                            <span className="text-sm">{c.name}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </TabsContent>
         </Tabs>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={busy}>
