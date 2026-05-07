@@ -887,6 +887,8 @@ export const t = {
     move:            'Færa',
     moveToBrand:     'Færa í Vörumerki',
     moveToDeal:      'Tengja við sölu',
+    moveToCompany:   'Færa á annan viðskiptavin',
+    pickCompany:     'Veldu viðskiptavin',
     pickType:        'Veldu tegund',
     pickDeal:        'Veldu sölu',
     confirmMove:     'Færa',
