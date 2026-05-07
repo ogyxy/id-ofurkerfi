@@ -35,6 +35,7 @@ import { t, formatIsk } from "@/lib/sala_translations_is";
 import { ExportReportDialog } from "@/components/yfirlit/ExportReportDialog";
 import { useCurrentRole } from "@/hooks/useCurrentProfile";
 import { canSeeFinancials } from "@/lib/role";
+import { UserAvatar } from "@/components/UserAvatar";
 
 export const Route = createFileRoute("/yfirlit")({
   ssr: false,
