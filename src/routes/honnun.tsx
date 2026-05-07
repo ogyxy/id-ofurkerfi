@@ -83,11 +83,21 @@ type SignedExtras = {
   thumbnailUrl: string | null;
 };
 
+interface UnmatchedFileRow {
+  id: string; // synthetic: storage path
+  storage_path: string;
+  original_filename: string | null;
+  file_size_bytes: number | null;
+  uploaded_at: string;
+  folder: string; // first segment after __unmatched__/
+}
+
 type MergedFile =
   | (DealFileRow & { source: "deal" } & SignedExtras)
-  | (CompanyFileRow & { source: "company" } & SignedExtras);
+  | (CompanyFileRow & { source: "company" } & SignedExtras)
+  | (UnmatchedFileRow & { source: "unmatched"; file_type: "other"; thumbnail_path: null; thumbnail_status: "unsupported"; uploaded_by: null } & SignedExtras);
 
-type TypeFilter = "mockup" | "artwork" | "logo" | "presentation" | "brand";
+type TypeFilter = "mockup" | "artwork" | "logo" | "presentation" | "brand" | "unmatched";
 
 // --------- Helpers ----------
 
