@@ -459,7 +459,7 @@ function YfirlitContent({
         .from("activities")
         .select(
           `id, type, body, created_at,
-           profile:profiles!created_by(id, name),
+           profile:profiles!created_by(id, name, email, avatar_url),
            deal:deals(id, so_number, name, company:companies(id, name))`
         )
         .order("created_at", { ascending: false })
