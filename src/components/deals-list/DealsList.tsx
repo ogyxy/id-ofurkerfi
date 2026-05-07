@@ -48,7 +48,7 @@ type DealRow = {
   childDeals?: { stage: DealStage }[];
 };
 
-type Profile = { id: string; name: string | null; email: string };
+type Profile = { id: string; name: string | null; email: string; avatar_url: string | null };
 
 interface Props {
   currentUserId: string;
