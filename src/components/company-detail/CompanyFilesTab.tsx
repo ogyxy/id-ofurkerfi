@@ -281,6 +281,18 @@ export function CompanyFilesTab({
     return m;
   }, [deals]);
 
+  const isLegacy = (p: string) => p.includes("Legacy Import");
+  const brandFiles = useMemo(
+    () => companyFiles.filter((f) => !isLegacy(f.storage_path)),
+    [companyFiles],
+  );
+  const legacyFiles = useMemo(
+    () => companyFiles.filter((f) => isLegacy(f.storage_path)),
+    [companyFiles],
+  );
+
+  const [moveFile, setMoveFile] = useState<CompanyFileRow | null>(null);
+
   // ---------- Render ----------
 
   return (
