@@ -785,7 +785,7 @@ function MoveLegacyDialog({
             .update({ storage_path: newPath })
             .eq("id", file.id);
         }
-      } else {
+      } else if (tab === "deal") {
         if (!dealId) {
           toast.error(t.legacyImport.pickDeal);
           setBusy(false);
@@ -822,6 +822,32 @@ function MoveLegacyDialog({
           body: `Skjal flutt úr legacy: ${file.original_filename ?? newPath}`,
           created_by: currentProfileId,
         });
+      } else {
+        // tab === "company": move legacy file to another company's Legacy Import
+        if (!targetCompanyId) {
+          toast.error(t.legacyImport.pickCompany);
+          setBusy(false);
+          return;
+        }
+        const target = companies.find((c) => c.id === targetCompanyId);
+        if (!target) {
+          toast.error(t.legacyImport.pickCompany);
+          setBusy(false);
+          return;
+        }
+        const filename = file.storage_path.split("/").pop() ?? file.storage_path;
+        const newPath = `${pathSafe(target.name)}/Legacy Import/${filename}`;
+        if (newPath !== file.storage_path) {
+          const { error: mvErr } = await supabase.storage
+            .from("deal_files")
+            .move(file.storage_path, newPath);
+          if (mvErr) throw mvErr;
+        }
+        const { error: updErr } = await supabase
+          .from("company_files")
+          .update({ company_id: targetCompanyId, storage_path: newPath })
+          .eq("id", file.id);
+        if (updErr) throw updErr;
       }
       toast.success(t.legacyImport.moved);
       onMoved();
