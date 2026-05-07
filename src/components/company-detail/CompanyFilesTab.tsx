@@ -196,30 +196,49 @@ export function CompanyFilesTab({
 
     const cRows = (cFiles ?? []) as unknown as CompanyFileRow[];
 
-    const attachUrls = async <T extends CompanyFileRow>(rows: T[]): Promise<T[]> =>
-      Promise.all(
-        rows.map(async (f) => {
-          const [view, dl, thumb] = await Promise.all([
-            supabase.storage.from("deal_files").createSignedUrl(f.storage_path, 3600),
-            supabase.storage
-              .from("deal_files")
-              .createSignedUrl(f.storage_path, 3600, {
-                download: f.original_filename ?? true,
-              }),
-            f.thumbnail_status === "done" && f.thumbnail_path
-              ? supabase.storage
-                  .from("thumbnails")
-                  .createSignedUrl(f.thumbnail_path, 3600)
-              : Promise.resolve({ data: null }),
-          ]);
-          return {
-            ...f,
-            signedUrl: view.data?.signedUrl ?? null,
-            signedUrlDownload: dl.data?.signedUrl ?? null,
-            thumbnailUrl: thumb.data?.signedUrl ?? null,
-          };
-        }),
+    const attachUrls = async <T extends CompanyFileRow>(rows: T[]): Promise<T[]> => {
+      if (rows.length === 0) return [];
+      const origPaths = Array.from(new Set(rows.map((r) => r.storage_path)));
+      const thumbPaths = Array.from(
+        new Set(
+          rows
+            .filter((r) => r.thumbnail_status === "done" && r.thumbnail_path)
+            .map((r) => r.thumbnail_path as string),
+        ),
       );
+      const [origRes, thumbRes] = await Promise.all([
+        supabase.storage.from("deal_files").createSignedUrls(origPaths, 3600),
+        thumbPaths.length > 0
+          ? supabase.storage.from("thumbnails").createSignedUrls(thumbPaths, 3600)
+          : Promise.resolve({ data: [] as { path: string | null; signedUrl: string }[] }),
+      ]);
+      const origMap = new Map<string, string>();
+      for (const it of origRes.data ?? []) {
+        if (it.path && it.signedUrl) origMap.set(it.path, it.signedUrl);
+      }
+      const thumbMap = new Map<string, string>();
+      for (const it of thumbRes.data ?? []) {
+        if (it.path && it.signedUrl) thumbMap.set(it.path, it.signedUrl);
+      }
+      return rows.map((f) => {
+        const view = origMap.get(f.storage_path) ?? null;
+        let download: string | null = null;
+        if (view) {
+          const sep = view.includes("?") ? "&" : "?";
+          download = `${view}${sep}download=${encodeURIComponent(f.original_filename ?? "")}`;
+        }
+        const thumb =
+          f.thumbnail_status === "done" && f.thumbnail_path
+            ? thumbMap.get(f.thumbnail_path) ?? null
+            : null;
+        return {
+          ...f,
+          signedUrl: view,
+          signedUrlDownload: download,
+          thumbnailUrl: thumb,
+        };
+      });
+    };
 
     const [cWithUrls, dWithUrls] = await Promise.all([
       attachUrls(cRows),
