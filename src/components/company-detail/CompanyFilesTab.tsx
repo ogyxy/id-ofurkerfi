@@ -705,6 +705,8 @@ function MoveLegacyDialog({
   const [brandType, setBrandType] = useState<string>("logo");
   const [dealType, setDealType] = useState<string>("artwork");
   const [dealId, setDealId] = useState<string>("");
+  const [dealComboOpen, setDealComboOpen] = useState(false);
+  const selectedDeal = useMemo(() => deals.find((d) => d.id === dealId) ?? null, [deals, dealId]);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
