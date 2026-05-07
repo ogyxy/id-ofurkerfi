@@ -88,7 +88,7 @@ interface ActivityRow {
   type: string;
   body: string | null;
   created_at: string;
-  profile?: { id: string; name: string | null } | null;
+  profile?: { id: string; name: string | null; email?: string | null; avatar_url?: string | null } | null;
   deal?: {
     id: string;
     so_number: string;
