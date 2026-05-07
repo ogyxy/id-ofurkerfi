@@ -760,21 +760,6 @@ function YfirlitContent({
 
   // Team pace (sales+admin only)
   const salesPeople = profiles.filter((p) => (p.role === "admin" || p.role === "sales"));
-  const teamPace = salesPeople
-    .map((p) => {
-      const rev = quarterDeals.filter((d) => d.owner_id === p.id).reduce((s, d) => s + d.net, 0);
-      const tgt = targetForUser(p.id, "quarter");
-      return {
-        profile: p,
-        rev,
-        target: tgt,
-        state: computePaceState(rev, tgt, expectedPctQ),
-      };
-    })
-    .filter((x) => x.target > 0 || x.profile.id === currentUserId)
-    .sort((a, b) =>
-      (firstName(a.profile.name, a.profile.email) || "").localeCompare(firstName(b.profile.name, b.profile.email) || ""),
-    );
 
   // Spotlight
   const spotlight = useMemo(() => computeSpotlight(spotlightWeekData, salesPeople), [spotlightWeekData, salesPeople]);
