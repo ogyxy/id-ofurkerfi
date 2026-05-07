@@ -1453,13 +1453,21 @@ function OwnerPopover({
 }) {
   const [open, setOpen] = useState(false);
 
+  const ownerProfile = owner ? profiles.find((p) => p.id === owner.id) : null;
   const trigger = owner ? (
     <button
       type="button"
-      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ide-navy text-[10px] font-medium text-white transition hover:opacity-80"
+      className="rounded-full transition hover:opacity-80"
       aria-label={owner.name ?? ""}
+      title={owner.name ?? ""}
     >
-      {initials(owner.name)}
+      <UserAvatar
+        name={owner.name}
+        email={ownerProfile?.email}
+        avatarUrl={ownerProfile?.avatar_url}
+        size={24}
+        title={owner.name ?? ""}
+      />
     </button>
   ) : (
     <button
