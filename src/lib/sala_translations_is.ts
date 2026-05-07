@@ -120,6 +120,24 @@ export const t = {
     appPaydayConnected:  'Tengt',
     appPaydayDisconnected:'Ekki tengt',
     appHardcodedNotice:  'Þessar stillingar eru ekki vistaðar enn — þetta er forskoðun.',
+
+    tabTargets:          'Markmið',
+    targets: {
+      tabTitle:        'Markmið',
+      yearLabel:       'Ár',
+      q1:              'Q1',
+      q2:              'Q2',
+      q3:              'Q3',
+      q4:              'Q4',
+      yearTarget:      'Ársmarkmið',
+      nameCol:         'Nafn',
+      helper:          'Markmið eru notuð á /yfirlit til að sýna sölumönnum hvar þeir standa.',
+      mismatchWarning: 'Athugið: ársmarkmið passar ekki við samtölu fjórðunganna.',
+      saveButton:      'Vista markmið',
+      saving:          'Vistar...',
+      savedToast:      'Markmið vistuð',
+      saveError:       'Ekki tókst að vista markmið',
+    },
   },
 
   // ---------------------------------------------------------------------------
