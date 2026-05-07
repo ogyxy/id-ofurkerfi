@@ -56,37 +56,6 @@ export function ProfileTab() {
     toast.success(t.status.savedSuccessfully);
   };
 
-  const changePassword = async () => {
-    if (newPw.length < 8) {
-      toast.error(t.settings.passwordTooShort);
-      return;
-    }
-    if (newPw !== confirmPw) {
-      toast.error(t.settings.passwordMismatch);
-      return;
-    }
-    setPwSaving(true);
-    // Re-authenticate to confirm current password
-    const { error: signInErr } = await supabase.auth.signInWithPassword({
-      email: profile.email,
-      password: currentPw,
-    });
-    if (signInErr) {
-      setPwSaving(false);
-      toast.error(t.login.wrongCredentials);
-      return;
-    }
-    const { error } = await supabase.auth.updateUser({ password: newPw });
-    setPwSaving(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    setCurrentPw("");
-    setNewPw("");
-    setConfirmPw("");
-    toast.success(t.settings.passwordChanged);
-  };
 
   return (
     <div className="space-y-8 max-w-xl">
