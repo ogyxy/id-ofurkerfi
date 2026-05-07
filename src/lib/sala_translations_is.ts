@@ -923,6 +923,7 @@ export const t = {
     typeLogo:            'Logo',
     typePresentation:    'Kynning',
     typeBrand:           'Vörumerki',
+    sourceUnmatched:     'Ótengt',
   },
 
   // ---------------------------------------------------------------------------
