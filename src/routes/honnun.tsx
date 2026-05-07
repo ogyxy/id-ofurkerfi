@@ -682,7 +682,9 @@ function FileCard({
             <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
               {file.source === "company"
                 ? t.hönnunScreen.typeBrand
-                : typeLabel(file.file_type)}
+                : file.source === "unmatched"
+                  ? t.hönnunScreen.sourceUnmatched
+                  : typeLabel(file.file_type)}
             </span>
           </div>
         </div>
