@@ -817,7 +817,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
                     name={p.name}
                     email={p.email}
                     avatarUrl={p.avatar_url}
-                    size={64}
+                    size={48}
                     title={p.name ?? p.email}
                   />
                 </button>
