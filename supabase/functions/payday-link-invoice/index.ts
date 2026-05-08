@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
       payday_foreign_amount_excl_vsk: isForeign ? inv.foreignAmountExcludingVat : null,
       payday_foreign_amount_incl_vsk: isForeign ? inv.foreignAmountIncludingVat : null,
       payday_synced_at: new Date().toISOString(),
-      payday_due_date: inv.dueDate ?? null,
+      payday_due_date: inv.finalDueDate ?? null,
       invoice_status: "full",
       payment_status: isPaid ? "paid" : "unpaid",
       invoice_date: inv.invoiceDate ?? null,
