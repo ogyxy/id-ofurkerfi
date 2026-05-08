@@ -747,13 +747,14 @@ function YfirlitContent({
 
   const myQuarterRev = quarterDeals.filter((d) => d.owner_id === dashboardUserId).reduce((s, d) => s + d.net, 0);
   const myYearRev = yearDeals.filter((d) => d.owner_id === dashboardUserId).reduce((s, d) => s + d.net, 0);
+  const visibleOwnerIds = new Set(profiles.map((p) => p.id));
   const myQuarterTarget = isAllTeam
-    ? targets.filter((t) => t.period_type === "quarter" && t.period_start === qr.start.toISOString().split("T")[0]).reduce((s, t) => s + Number(t.target_isk), 0)
+    ? targets.filter((t) => t.period_type === "quarter" && t.period_start === qr.start.toISOString().split("T")[0] && visibleOwnerIds.has(t.owner_id)).reduce((s, t) => s + Number(t.target_isk), 0)
     : targetForUser(dashboardUserId, "quarter");
   const myYearTarget = isAllTeam
-    ? targets.filter((t) => t.period_type === "year" && t.period_start === yr.start.toISOString().split("T")[0]).reduce((s, t) => s + Number(t.target_isk), 0)
+    ? targets.filter((t) => t.period_type === "year" && t.period_start === yr.start.toISOString().split("T")[0] && visibleOwnerIds.has(t.owner_id)).reduce((s, t) => s + Number(t.target_isk), 0)
     : targetForUser(dashboardUserId, "year");
-  const teamQuarterRev = isAllTeam ? quarterDeals.reduce((s, d) => s + d.net, 0) : myQuarterRev;
+  const teamQuarterRev = isAllTeam ? quarterDeals.filter((d) => !d.owner_id || visibleOwnerIds.has(d.owner_id)).reduce((s, d) => s + d.net, 0) : myQuarterRev;
 
   const myPaceState = computePaceState(myQuarterRev, myQuarterTarget, expectedPctQ);
   const myPaceFillPct = myQuarterTarget > 0 ? (myQuarterRev / myQuarterTarget) * 100 : 0;
@@ -893,7 +894,7 @@ function YfirlitContent({
             {(() => {
               const isYear = paceMode === "year";
               const personalRev = isAllTeam
-                ? (isYear ? yearDeals.reduce((s, d) => s + d.net, 0) : teamQuarterRev)
+                ? (isYear ? yearDeals.filter((d) => !d.owner_id || visibleOwnerIds.has(d.owner_id)).reduce((s, d) => s + d.net, 0) : teamQuarterRev)
                 : (isYear ? myYearRev : myQuarterRev);
               const personalTarget = isYear ? myYearTarget : myQuarterTarget;
               const expectedPct = isYear ? expectedPctY : expectedPctQ;
