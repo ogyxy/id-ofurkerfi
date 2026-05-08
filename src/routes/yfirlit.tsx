@@ -891,7 +891,7 @@ function YfirlitContent({
       {/* Pace section — sales/admin only */}
       {showFinancials && (
         <section className="space-y-3">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {/* Personal pace */}
             {(() => {
               const isYear = paceMode === "year";
