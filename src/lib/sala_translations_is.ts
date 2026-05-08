@@ -1075,6 +1075,8 @@ export const t = {
     tasksStaleDefect: '{n} dögum án viðbragða',
     tasksStaleGeneric:'fyrir {n} dögum',
     tasksAdvisoryShow:'+ {n} til athugunar',
+    tasksShowMore:    'Sýna {n} til viðbótar',
+    tasksShowLess:    'Fela',
 
     pulseVsLastYear:  'vs. sama tímabil í fyrra',
     pulseTitleNew:    'Síðustu 30 dagar · vs. sama tímabil í fyrra',
