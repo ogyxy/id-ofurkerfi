@@ -293,7 +293,7 @@ function YfirlitContent({
         .select("id, name, email, role, avatar_url")
         .eq("active", true)
         .order("name", { ascending: true });
-      if (data) setProfiles(data as Profile[]);
+      if (data) setProfiles(filterVisibleProfiles(data as Profile[]));
     })();
   }, []);
 
