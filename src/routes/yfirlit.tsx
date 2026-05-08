@@ -1460,7 +1460,12 @@ function YfirlitContent({
         </section>
       )}
 
-      <ExportReportDialog open={exportOpen} onOpenChange={setExportOpen} />
+      <ExportReportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        ownerId={isAllTeam ? null : dashboardUserId}
+        ownerName={isAllTeam ? null : (dashboardProfile?.name || dashboardProfile?.email || dashboardFirstName)}
+      />
     </div>
   );
 }
