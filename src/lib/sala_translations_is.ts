@@ -1088,9 +1088,9 @@ export const t = {
     warningsDormantDetail:'Engin sala í {days} daga (að jafnaði á {avg} daga fresti)',
     warningsDormantAllClear:'Allir vakandi viðskiptavinir. ✓',
     warningsCoverage: 'Pipeline coverage',
-    warningsCoverageHealthy:'Heilbrigt',
-    warningsCoverageWeak:'Veikt',
-    warningsCoverageRisky:'Áhættusamt',
+    warningsCoverageHealthy:'Nóg framundan',
+    warningsCoverageWeak:'Mætti vera meira',
+    warningsCoverageRisky:'Þarf að gefa í',
     warningsCoverageDetail:'{pipeline} í pipeline · {remaining} eftir af markmiði',
     warningsCoverageNoTarget:'Markmið ekki sett.',
 
