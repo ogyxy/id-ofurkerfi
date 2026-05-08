@@ -1079,7 +1079,7 @@ export const t = {
     tasksShowLess:    'Fela',
 
     pulseVsLastYear:  'vs. sama tímabil í fyrra',
-    pulseTitleNew:    'Síðustu 30 dagar · vs. sama tímabil í fyrra',
+    pulseTitleNew:    'SALAN ÞÍN – 30 DAGAR MIÐAÐ VIÐ Í FYRRA',
     pulseNoYoY:       '—',
 
     warningsTitle:    'MERKI SEM VERT ER AÐ SKOÐA',
