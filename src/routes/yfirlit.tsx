@@ -784,7 +784,7 @@ function YfirlitContent({
   const remainingTarget = Math.max(myQuarterTarget - myQuarterRev, 0);
   const coverageRatio = remainingTarget > 0 ? pipelineValue / remainingTarget : pipelineValue > 0 ? 99 : 0;
   const coverageState: "healthy" | "weak" | "risky" =
-    myQuarterTarget === 0 ? "weak" : coverageRatio >= 2.5 ? "healthy" : coverageRatio >= 1.5 ? "weak" : "risky";
+    myQuarterTarget === 0 ? "weak" : coverageRatio >= 1.3 ? "healthy" : coverageRatio >= 0.7 ? "weak" : "risky";
 
   return (
     <div className="space-y-8">
