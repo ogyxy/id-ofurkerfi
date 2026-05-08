@@ -255,7 +255,7 @@ function DealDetailContent() {
         .eq("active", true),
     ]);
     setCompanyContacts((cRes.data ?? []) as Contact[]);
-    setProfiles((pRes.data ?? []) as Profile[]);
+    setProfiles(filterVisibleProfiles((pRes.data ?? []) as Profile[]));
 
     setLoading(false);
   }, [id]);
