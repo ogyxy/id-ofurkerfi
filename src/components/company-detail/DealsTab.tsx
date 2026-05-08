@@ -114,7 +114,7 @@ export function DealsTab({
         .from("profiles")
         .select("id, name, email")
         .eq("active", true);
-      setProfiles((data ?? []) as Profile[]);
+      setProfiles(filterVisibleProfiles((data ?? []) as Profile[]));
     })();
   }, []);
 
