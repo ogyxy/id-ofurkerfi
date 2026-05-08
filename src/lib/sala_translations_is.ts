@@ -1043,7 +1043,7 @@ export const t = {
     monthsLong:  ['janúar', 'febrúar', 'mars', 'apríl', 'maí', 'júní', 'júlí', 'ágúst', 'september', 'október', 'nóvember', 'desember'],
     weekdaysLong: ['Sunnudagur','Mánudagur','Þriðjudagur','Miðvikudagur','Fimmtudagur','Föstudagur','Laugardagur'],
 
-    paceTitle:        'ÞÍN PACE',
+    paceTitle:        'ÞITT SÖLUMARKMIÐ',
     paceQuarter:      'FJÓRÐUNGURINN',
     paceYear:         'ÁRSMARKMIÐ',
     paceOfTarget:     '{pct}% af markmiði',
@@ -1097,7 +1097,7 @@ export const t = {
     warningsCoverageNoTarget:'Markmið ekki sett.',
 
     adminTitle:       'STJÓRNANDAYFIRLIT',
-    adminTeamAggregate:'Liðspace samtals',
+    adminTeamAggregate:'HEILDAR SÖLUMARKMIÐ',
     adminLongestStuck:'Lengstu fastsetningar',
     adminMarginOutliers:'Framlegðar útlagar',
     adminMarginHigh:  'Hæsta framlegð',
