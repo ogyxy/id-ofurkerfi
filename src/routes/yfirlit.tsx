@@ -1027,7 +1027,7 @@ function YfirlitContent({
               );
             })()}
 
-            {/* Spotlight */}
+            {/* Spotlight (hidden — kept for future re-enable)
             <div className="rounded-lg border border-ide-navy/40 bg-gradient-to-br from-card to-muted/30 p-5 shadow-sm">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {t.yfirlit.spotlightTitle}
@@ -1052,6 +1052,7 @@ function YfirlitContent({
                 </ul>
               )}
             </div>
+            */}
           </div>
         </section>
       )}
