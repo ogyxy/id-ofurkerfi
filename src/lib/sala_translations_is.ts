@@ -1055,7 +1055,7 @@ export const t = {
     paceToggleQuarter:'Fjórðungur',
     paceToggleYear:   'Ár',
 
-    teamPaceTitle:    'LIÐSPACE',
+    teamPaceTitle:    'IDÉ SÖLUMARKMIÐ',
     teamPaceEmpty:    'Aðrir liðsmenn hafa ekki sett markmið ennþá',
 
     spotlightTitle:   'VIKUHÁPUNKTUR',
