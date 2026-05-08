@@ -83,7 +83,7 @@ export function TargetsTab() {
           .lte("period_start", `${year}-12-31`),
       ]);
 
-      const ps = (profs ?? []) as ProfileRow[];
+      const ps = filterVisibleProfiles((profs ?? []) as ProfileRow[]);
       setProfiles(ps);
 
       const e: Edits = {};
