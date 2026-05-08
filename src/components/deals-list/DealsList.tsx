@@ -4,6 +4,7 @@ import { Search, X, AlertTriangle, Check, Plus, ChevronDown, Clock, AlertCircle,
 import { exportDealsToXlsx } from "@/lib/exportDealsXlsx";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { supabase } from "@/integrations/supabase/client";
+import { filterVisibleProfiles } from "@/lib/hiddenUsers";
 import type { Database } from "@/integrations/supabase/types";
 import { t, formatIsk, formatDate } from "@/lib/sala_translations_is";
 import { Input } from "@/components/ui/input";

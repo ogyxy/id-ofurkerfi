@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { filterVisibleProfiles } from "@/lib/hiddenUsers";
 import { t, formatIsk } from "@/lib/sala_translations_is";
 import { ExportReportDialog } from "@/components/yfirlit/ExportReportDialog";
 import { BulletBar } from "@/components/yfirlit/BulletBar";
