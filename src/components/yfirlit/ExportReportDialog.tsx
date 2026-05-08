@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
-import { filterVisibleProfiles } from "@/lib/hiddenUsers";
 import { t, formatIsk } from "@/lib/sala_translations_is";
 import {
   Dialog,

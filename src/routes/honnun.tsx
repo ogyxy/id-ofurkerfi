@@ -23,7 +23,6 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
 import { AppMain } from "@/components/AppMain";
 import { supabase } from "@/integrations/supabase/client";
-import { filterVisibleProfiles } from "@/lib/hiddenUsers";
 import { t, formatDate } from "@/lib/sala_translations_is";
 import { formatFileSize } from "@/lib/formatters";
 import { rememberDealReturnPath, rememberCompanyReturnPath } from "@/lib/dealReturn";
