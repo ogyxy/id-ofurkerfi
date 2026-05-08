@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { filterVisibleProfiles } from "@/lib/hiddenUsers";
 import { t, formatIsk } from "@/lib/sala_translations_is";
 import { ExportReportDialog } from "@/components/yfirlit/ExportReportDialog";
 import { BulletBar } from "@/components/yfirlit/BulletBar";
@@ -292,7 +293,7 @@ function YfirlitContent({
         .select("id, name, email, role, avatar_url")
         .eq("active", true)
         .order("name", { ascending: true });
-      if (data) setProfiles(data as Profile[]);
+      if (data) setProfiles(filterVisibleProfiles(data as Profile[]));
     })();
   }, []);
 

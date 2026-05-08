@@ -5,6 +5,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Sidebar } from "@/components/Sidebar";
 import { AppMain } from "@/components/AppMain";
 import { supabase } from "@/integrations/supabase/client";
+import { filterVisibleProfiles } from "@/lib/hiddenUsers";
 import type { Database } from "@/integrations/supabase/types";
 import { t } from "@/lib/sala_translations_is";
 import { useCurrentRole } from "@/hooks/useCurrentProfile";
@@ -254,7 +255,7 @@ function DealDetailContent() {
         .eq("active", true),
     ]);
     setCompanyContacts((cRes.data ?? []) as Contact[]);
-    setProfiles((pRes.data ?? []) as Profile[]);
+    setProfiles(filterVisibleProfiles((pRes.data ?? []) as Profile[]));
 
     setLoading(false);
   }, [id]);

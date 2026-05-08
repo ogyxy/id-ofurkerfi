@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { filterVisibleProfiles } from "@/lib/hiddenUsers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,7 +47,7 @@ export function UsersTab() {
       .from("profiles")
       .select("id, email, name, role, active")
       .order("email");
-    setRows((data ?? []) as Row[]);
+    setRows(filterVisibleProfiles((data ?? []) as Row[]));
     setLoading(false);
   };
 

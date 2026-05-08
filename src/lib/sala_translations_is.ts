@@ -131,6 +131,7 @@ export const t = {
       q4:              'Q4',
       yearTarget:      'Ársmarkmið',
       nameCol:         'Nafn',
+      totalRow:        'Samtals',
       helper:          'Markmið eru notuð á /yfirlit til að sýna sölumönnum hvar þeir standa.',
       mismatchWarning: 'Athugið: ársmarkmið passar ekki við samtölu fjórðunganna.',
       saveButton:      'Vista markmið',

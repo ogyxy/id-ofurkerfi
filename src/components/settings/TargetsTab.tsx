@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { t, formatIsk } from "@/lib/sala_translations_is";
+import { filterVisibleProfiles } from "@/lib/hiddenUsers";
 
 interface ProfileRow {
   id: string;
@@ -83,7 +84,7 @@ export function TargetsTab() {
           .lte("period_start", `${year}-12-31`),
       ]);
 
-      const ps = (profs ?? []) as ProfileRow[];
+      const ps = filterVisibleProfiles((profs ?? []) as ProfileRow[]);
       setProfiles(ps);
 
       const e: Edits = {};
@@ -123,6 +124,61 @@ export function TargetsTab() {
     value: string,
   ) => {
     setEdits((prev) => ({ ...prev, [ownerId]: { ...prev[ownerId], [field]: value } }));
+  };
+
+  const columnTotals = useMemo(() => {
+    const cols: Record<"q1" | "q2" | "q3" | "q4" | "year", number> = {
+      q1: 0, q2: 0, q3: 0, q4: 0, year: 0,
+    };
+    for (const p of profiles) {
+      const e = edits[p.id];
+      if (!e) continue;
+      cols.q1 += parseNum(e.q1);
+      cols.q2 += parseNum(e.q2);
+      cols.q3 += parseNum(e.q3);
+      cols.q4 += parseNum(e.q4);
+      cols.year += parseNum(e.year);
+    }
+    return cols;
+  }, [edits, profiles]);
+
+  // Proportionally redistribute a column total across users based on their
+  // current share. If everyone is currently zero, distribute evenly.
+  const updateColumnTotal = (
+    field: "q1" | "q2" | "q3" | "q4" | "year",
+    value: string,
+  ) => {
+    const newTotal = parseNum(value);
+    const current = profiles.map((p) => ({
+      id: p.id,
+      v: parseNum(edits[p.id]?.[field] ?? ""),
+    }));
+    const sum = current.reduce((s, x) => s + x.v, 0);
+    setEdits((prev) => {
+      const next = { ...prev };
+      if (sum > 0) {
+        let allocated = 0;
+        current.forEach((row, idx) => {
+          let share: number;
+          if (idx === current.length - 1) {
+            share = Math.max(newTotal - allocated, 0);
+          } else {
+            share = Math.round((row.v / sum) * newTotal);
+            allocated += share;
+          }
+          next[row.id] = { ...next[row.id], [field]: share > 0 ? fmt(share) : "" };
+        });
+      } else if (current.length > 0) {
+        const each = Math.floor(newTotal / current.length);
+        let allocated = 0;
+        current.forEach((row, idx) => {
+          const share = idx === current.length - 1 ? newTotal - allocated : each;
+          allocated += each;
+          next[row.id] = { ...next[row.id], [field]: share > 0 ? fmt(share) : "" };
+        });
+      }
+      return next;
+    });
   };
 
   const handleSave = async () => {
@@ -259,6 +315,24 @@ export function TargetsTab() {
               })
             )}
           </tbody>
+          {!loading && profiles.length > 0 && (
+            <tfoot className="bg-muted/30 font-medium">
+              <tr className="border-t-2 border-border">
+                <td className="px-3 py-2 text-foreground">{t.settings.targets.totalRow}</td>
+                {(["q1", "q2", "q3", "q4", "year"] as const).map((col) => (
+                  <td key={col} className="px-2 py-2">
+                    <Input
+                      value={fmt(columnTotals[col])}
+                      onChange={(ev) => updateColumnTotal(col, ev.target.value)}
+                      className="text-right tabular-nums font-semibold"
+                      inputMode="numeric"
+                      placeholder="0"
+                    />
+                  </td>
+                ))}
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
 
