@@ -510,7 +510,7 @@ function YfirlitContent({
         by[id].total += (d.amount_isk || 0) - (d.refund_amount_isk || 0);
         by[id].count += 1;
       });
-      setTopCustomers(Object.values(by).sort((a, b) => b.total - a.total).slice(0, 5));
+      setTopCustomers(Object.values(by).sort((a, b) => b.total - a.total).slice(0, 10));
     })();
   }, [dashboardUserId, isAllTeam]);
 
