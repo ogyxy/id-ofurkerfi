@@ -894,7 +894,7 @@ function YfirlitContent({
             {(() => {
               const isYear = paceMode === "year";
               const personalRev = isAllTeam
-                ? (isYear ? yearDeals.reduce((s, d) => s + d.net, 0) : teamQuarterRev)
+                ? (isYear ? yearDeals.filter((d) => !d.owner_id || visibleOwnerIds.has(d.owner_id)).reduce((s, d) => s + d.net, 0) : teamQuarterRev)
                 : (isYear ? myYearRev : myQuarterRev);
               const personalTarget = isYear ? myYearTarget : myQuarterTarget;
               const expectedPct = isYear ? expectedPctY : expectedPctQ;
