@@ -765,8 +765,9 @@ function YfirlitContent({
   // Team pace (sales+admin only)
   const salesPeople = profiles.filter((p) => (p.role === "admin" || p.role === "sales"));
 
-  // Spotlight
+  // Spotlight (kept for future re-enable; UI is currently hidden)
   const spotlight = useMemo(() => computeSpotlight(spotlightWeekData, salesPeople), [spotlightWeekData, salesPeople]);
+  void spotlight;
 
   // Tasks grouping
   const groupedTasks = useMemo(() => {
@@ -891,7 +892,7 @@ function YfirlitContent({
       {/* Pace section — sales/admin only */}
       {showFinancials && (
         <section className="space-y-3">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {/* Personal pace */}
             {(() => {
               const isYear = paceMode === "year";
@@ -1027,7 +1028,7 @@ function YfirlitContent({
               );
             })()}
 
-            {/* Spotlight */}
+            {/* Spotlight (hidden — kept for future re-enable)
             <div className="rounded-lg border border-ide-navy/40 bg-gradient-to-br from-card to-muted/30 p-5 shadow-sm">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {t.yfirlit.spotlightTitle}
@@ -1052,6 +1053,7 @@ function YfirlitContent({
                 </ul>
               )}
             </div>
+            */}
           </div>
         </section>
       )}
