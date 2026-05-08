@@ -342,6 +342,29 @@ export function PaydayInvoiceCard({ deal, companyKennitala, currentProfile, onCh
           )}
         </div>
 
+        {/* Due date */}
+        {deal.payday_due_date && deal.payment_status !== "paid" && (() => {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const due = new Date(deal.payday_due_date);
+          const isOverdue = due < today;
+          return (
+            <div className="mb-3 flex items-baseline justify-between text-sm">
+              <span className="text-muted-foreground">
+                {t.payday.cardDueDate}
+              </span>
+              <span className={isOverdue ? "font-semibold text-red-600" : ""}>
+                {formatDate(deal.payday_due_date)}
+                {isOverdue && (
+                  <span className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                    {t.payday.cardOverdue}
+                  </span>
+                )}
+              </span>
+            </div>
+          );
+        })()}
+
         {/* Payment block */}
         {deal.payment_status === "paid" && deal.paid_at && (
           <div className="mb-3 flex items-baseline justify-between text-sm">
