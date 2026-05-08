@@ -66,6 +66,10 @@ export function TargetsTab() {
   const [edits, setEdits] = useState<Edits>({});
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  // While a "smart" field (total row or per-user yearly) is focused we keep
+  // the user's raw input as a draft so proportional reallocation only runs on
+  // blur — otherwise every keystroke would re-shuffle other cells.
+  const [draft, setDraft] = useState<{ key: string; value: string } | null>(null);
 
   useEffect(() => {
     (async () => {
