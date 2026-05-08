@@ -266,7 +266,7 @@ export function DealsList({ currentUserId, initialStage = null }: Props) {
         .from("profiles")
         .select("id, name, email, avatar_url")
         .eq("active", true);
-      setProfiles((data ?? []) as Profile[]);
+      setProfiles(filterVisibleProfiles((data ?? []) as Profile[]));
     })();
   }, []);
 
