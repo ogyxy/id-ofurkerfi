@@ -146,44 +146,71 @@ export function TargetsTab() {
     return cols;
   }, [edits, profiles]);
 
-  // Proportionally redistribute a column total across users based on their
-  // current share. If everyone is currently zero, distribute evenly.
-  const updateColumnTotal = (
+  // Generic proportional allocator. Distributes `newTotal` across `parts`
+  // weighted by their current values. If all parts are zero, distributes
+  // evenly. Last entry absorbs rounding so the parts always sum to newTotal.
+  function allocate(parts: number[], newTotal: number): number[] {
+    const sum = parts.reduce((s, x) => s + x, 0);
+    const out: number[] = new Array(parts.length).fill(0);
+    if (parts.length === 0) return out;
+    let allocated = 0;
+    if (sum > 0) {
+      for (let i = 0; i < parts.length; i++) {
+        if (i === parts.length - 1) {
+          out[i] = Math.max(newTotal - allocated, 0);
+        } else {
+          const share = Math.round((parts[i] / sum) * newTotal);
+          out[i] = share;
+          allocated += share;
+        }
+      }
+    } else {
+      const each = Math.floor(newTotal / parts.length);
+      for (let i = 0; i < parts.length; i++) {
+        const share = i === parts.length - 1 ? newTotal - allocated : each;
+        out[i] = share;
+        allocated += each;
+      }
+    }
+    return out;
+  }
+
+  const applyColumnTotal = (
     field: "q1" | "q2" | "q3" | "q4" | "year",
     value: string,
   ) => {
     const newTotal = parseNum(value);
-    const current = profiles.map((p) => ({
-      id: p.id,
-      v: parseNum(edits[p.id]?.[field] ?? ""),
-    }));
-    const sum = current.reduce((s, x) => s + x.v, 0);
+    const parts = profiles.map((p) => parseNum(edits[p.id]?.[field] ?? ""));
+    const shares = allocate(parts, newTotal);
     setEdits((prev) => {
       const next = { ...prev };
-      if (sum > 0) {
-        let allocated = 0;
-        current.forEach((row, idx) => {
-          let share: number;
-          if (idx === current.length - 1) {
-            share = Math.max(newTotal - allocated, 0);
-          } else {
-            share = Math.round((row.v / sum) * newTotal);
-            allocated += share;
-          }
-          next[row.id] = { ...next[row.id], [field]: share > 0 ? fmt(share) : "" };
-        });
-      } else if (current.length > 0) {
-        const each = Math.floor(newTotal / current.length);
-        let allocated = 0;
-        current.forEach((row, idx) => {
-          const share = idx === current.length - 1 ? newTotal - allocated : each;
-          allocated += each;
-          next[row.id] = { ...next[row.id], [field]: share > 0 ? fmt(share) : "" };
-        });
-      }
+      profiles.forEach((p, i) => {
+        next[p.id] = { ...next[p.id], [field]: shares[i] > 0 ? fmt(shares[i]) : "" };
+      });
       return next;
     });
   };
+
+  const applyUserYear = (ownerId: string, value: string) => {
+    const newYear = parseNum(value);
+    const e = edits[ownerId];
+    if (!e) return;
+    const parts = [parseNum(e.q1), parseNum(e.q2), parseNum(e.q3), parseNum(e.q4)];
+    const shares = allocate(parts, newYear);
+    setEdits((prev) => ({
+      ...prev,
+      [ownerId]: {
+        q1: shares[0] > 0 ? fmt(shares[0]) : "",
+        q2: shares[1] > 0 ? fmt(shares[1]) : "",
+        q3: shares[2] > 0 ? fmt(shares[2]) : "",
+        q4: shares[3] > 0 ? fmt(shares[3]) : "",
+        year: newYear > 0 ? fmt(newYear) : "",
+      },
+    }));
+  };
+
+  const draftValue = (key: string, fallback: string) =>
+    draft && draft.key === key ? draft.value : fallback;
 
   const handleSave = async () => {
     setSaving(true);
