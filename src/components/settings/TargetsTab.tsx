@@ -360,8 +360,15 @@ export function TargetsTab() {
                 {(["q1", "q2", "q3", "q4", "year"] as const).map((col) => (
                   <td key={col} className="px-2 py-2">
                     <Input
-                      value={fmt(columnTotals[col])}
-                      onChange={(ev) => updateColumnTotal(col, ev.target.value)}
+                      value={draftValue(`tot:${col}`, fmt(columnTotals[col]))}
+                      onChange={(ev) => setDraft({ key: `tot:${col}`, value: ev.target.value })}
+                      onFocus={() => setDraft({ key: `tot:${col}`, value: fmt(columnTotals[col]) })}
+                      onBlur={() => {
+                        if (draft && draft.key === `tot:${col}`) {
+                          applyColumnTotal(col, draft.value);
+                          setDraft(null);
+                        }
+                      }}
                       className="text-right tabular-nums font-semibold"
                       inputMode="numeric"
                       placeholder="0"
