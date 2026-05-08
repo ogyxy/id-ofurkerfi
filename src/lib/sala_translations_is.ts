@@ -1080,6 +1080,7 @@ export const t = {
 
     pulseVsLastYear:  'vs. sama tímabil í fyrra',
     pulseTitleNew:    'SALAN ÞÍN · 30 DAGAR',
+    pulseTitleAll:    'HEILDARSALA · 30 DAGAR',
     pulseNoYoY:       '—',
 
     warningsTitle:    'MERKI SEM VERT ER AÐ SKOÐA',
