@@ -1617,6 +1617,10 @@ function TaskTier({
   color: string;
   tasks: TaskItem[];
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const LIMIT = 5;
+  const visible = expanded ? tasks : tasks.slice(0, LIMIT);
+  const hidden = tasks.length - visible.length;
   return (
     <div>
       <div className="mb-2 flex items-center gap-2">
@@ -1626,10 +1630,21 @@ function TaskTier({
         </p>
       </div>
       <ul className="divide-y divide-border">
-        {tasks.map((task, i) => (
+        {visible.map((task, i) => (
           <TaskRow key={`${task.deal.id}-${task.type}-${i}`} task={task} />
         ))}
       </ul>
+      {tasks.length > LIMIT && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-2 text-xs font-medium text-ide-navy hover:underline"
+        >
+          {expanded
+            ? t.yfirlit.tasksShowLess
+            : t.yfirlit.tasksShowMore.replace("{n}", String(hidden))}
+        </button>
+      )}
     </div>
   );
 }
