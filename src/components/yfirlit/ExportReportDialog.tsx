@@ -365,7 +365,8 @@ export function ExportReportDialog({ open, onOpenChange, ownerId = null, ownerNa
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.setFillColor(...(prevRevenue > 0 ? yoyColor : MUTED_BG));
-      doc.setTextColor(...(prevRevenue > 0 ? [255, 255, 255] : TEXT_MUTED));
+      const chipTextColor: [number, number, number] = prevRevenue > 0 ? [255, 255, 255] : TEXT_MUTED;
+      doc.setTextColor(...chipTextColor);
       const chipW = doc.getTextWidth(chipText) + 8;
       doc.roundedRect(MARGIN, MARGIN + 88, chipW, 9, 2, 2, "F");
       doc.text(chipText, MARGIN + 4, MARGIN + 94);
