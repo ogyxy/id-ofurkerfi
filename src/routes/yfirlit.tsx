@@ -657,7 +657,7 @@ function YfirlitContent({
         .from("deals")
         .select("total_price_isk, owner_id")
         .eq("archived", false)
-        .in("stage", ["quote_in_progress", "quote_sent"]);
+        .in("stage", ["quote_in_progress", "quote_sent", "order_confirmed"]);
       if (!isAllTeam) pq = pq.eq("owner_id", dashboardUserId);
       const { data: pipe } = await pq;
       setPipelineValue((pipe ?? []).reduce((s: number, d: any) => s + (d.total_price_isk || 0), 0));
