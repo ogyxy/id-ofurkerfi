@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { t, formatIsk } from "@/lib/sala_translations_is";
+import { filterVisibleProfiles } from "@/lib/hiddenUsers";
 
 interface ProfileRow {
   id: string;
