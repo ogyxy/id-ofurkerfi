@@ -1701,7 +1701,6 @@ function PulseTile({
   value,
   delta,
   hasYoY,
-  spark,
   deltaSuffix,
   deltaIsAbsolute,
   deltaDecimals,
@@ -1710,7 +1709,7 @@ function PulseTile({
   value: string;
   delta: { sign: "up" | "down" | "flat"; pct: number };
   hasYoY: boolean;
-  spark: number[];
+  spark?: number[];
   deltaSuffix?: string;
   deltaIsAbsolute?: boolean;
   deltaDecimals?: number;
@@ -1727,22 +1726,19 @@ function PulseTile({
       ? delta.pct.toFixed(deltaDecimals)
       : String(Math.round(delta.pct))
     : delta.pct.toFixed(0);
-  const sparkData = spark.map((v, i) => ({ i, v }));
-  const sparkColor = delta.sign === "down" ? "#dc2626" : "#16a34a";
+  const tint =
+    hasYoY && delta.sign === "up"
+      ? "bg-emerald-500/5"
+      : hasYoY && delta.sign === "down"
+        ? "bg-red-500/5"
+        : "bg-card";
   return (
-    <div className="relative overflow-hidden rounded-lg border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
+    <div className={`relative overflow-hidden rounded-lg border border-border ${tint} p-4 shadow-sm transition-shadow hover:shadow-md`}>
       <p className="text-xs uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">{value}</p>
       <p className={`mt-1 text-xs ${color}`}>
         {t.yfirlit.pulseVsLastYear}: {hasYoY ? `${arrow} ${num}${deltaSuffix ?? ""}` : t.yfirlit.pulseNoYoY}
       </p>
-      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 opacity-25">
-        <ResponsiveContainer>
-          <LineChart data={sparkData}>
-            <Line type="monotone" dataKey="v" stroke={sparkColor} strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
     </div>
   );
 }
