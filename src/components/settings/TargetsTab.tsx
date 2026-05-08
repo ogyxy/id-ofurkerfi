@@ -329,8 +329,15 @@ export function TargetsTab() {
                     ))}
                     <td className="px-2 py-2">
                       <Input
-                        value={e.year}
-                        onChange={(ev) => updateField(p.id, "year", ev.target.value)}
+                        value={draftValue(`u:${p.id}:year`, e.year)}
+                        onChange={(ev) => setDraft({ key: `u:${p.id}:year`, value: ev.target.value })}
+                        onFocus={(ev) => setDraft({ key: `u:${p.id}:year`, value: ev.target.value })}
+                        onBlur={() => {
+                          if (draft && draft.key === `u:${p.id}:year`) {
+                            applyUserYear(p.id, draft.value);
+                            setDraft(null);
+                          }
+                        }}
                         className="text-right tabular-nums"
                         inputMode="numeric"
                         placeholder="0"
