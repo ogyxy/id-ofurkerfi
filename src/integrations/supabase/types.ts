@@ -477,6 +477,7 @@ export type Database = {
           paid_at: string | null
           parent_deal_id: string | null
           payday_currency_code: string | null
+          payday_due_date: string | null
           payday_foreign_amount_excl_vsk: number | null
           payday_foreign_amount_incl_vsk: number | null
           payday_invoice_id: string | null
@@ -519,6 +520,7 @@ export type Database = {
           paid_at?: string | null
           parent_deal_id?: string | null
           payday_currency_code?: string | null
+          payday_due_date?: string | null
           payday_foreign_amount_excl_vsk?: number | null
           payday_foreign_amount_incl_vsk?: number | null
           payday_invoice_id?: string | null
@@ -561,6 +563,7 @@ export type Database = {
           paid_at?: string | null
           parent_deal_id?: string | null
           payday_currency_code?: string | null
+          payday_due_date?: string | null
           payday_foreign_amount_excl_vsk?: number | null
           payday_foreign_amount_incl_vsk?: number | null
           payday_invoice_id?: string | null

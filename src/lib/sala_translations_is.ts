@@ -1156,6 +1156,8 @@ export const t = {
     cardPaidLabel:          'Greitt',
     cardPaidOn:             'Greitt þann',
     cardOutstandingLabel:   'Eftirstöðvar',
+    cardDueDate:            'Eindagi',
+    cardOverdue:            'Á eindaga',
     cardLastSynced:         'Síðast uppfært',
     cardRefresh:            'Uppfæra frá Payday',
     cardRefreshing:         'Uppfærir...',
