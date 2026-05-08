@@ -46,7 +46,7 @@ export function UsersTab() {
       .from("profiles")
       .select("id, email, name, role, active")
       .order("email");
-    setRows((data ?? []) as Row[]);
+    setRows(filterVisibleProfiles((data ?? []) as Row[]));
     setLoading(false);
   };
 
