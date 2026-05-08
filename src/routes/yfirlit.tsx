@@ -601,6 +601,8 @@ function YfirlitContent({
         const dt = new Date(d.delivered_at);
         const net = (d.amount_isk || 0) - (d.refund_amount_isk || 0);
         const margin = (d.total_margin_isk || 0) - (d.refund_amount_isk || 0);
+        // Skip legacy-import deals with implausibly high margin (>80%)
+        if (net > 0 && (margin / net) * 100 > 80) return;
         const id = d.company.id;
         if (!byCo[id]) byCo[id] = { name: d.company.name, prev: { rev: 0, margin: 0 }, curr: { rev: 0, margin: 0 } };
         if (dt >= ninetyAgo) {
