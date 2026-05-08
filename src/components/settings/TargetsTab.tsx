@@ -315,6 +315,24 @@ export function TargetsTab() {
               })
             )}
           </tbody>
+          {!loading && profiles.length > 0 && (
+            <tfoot className="bg-muted/30 font-medium">
+              <tr className="border-t-2 border-border">
+                <td className="px-3 py-2 text-foreground">{t.settings.targets.totalRow}</td>
+                {(["q1", "q2", "q3", "q4", "year"] as const).map((col) => (
+                  <td key={col} className="px-2 py-2">
+                    <Input
+                      value={fmt(columnTotals[col])}
+                      onChange={(ev) => updateColumnTotal(col, ev.target.value)}
+                      className="text-right tabular-nums font-semibold"
+                      inputMode="numeric"
+                      placeholder="0"
+                    />
+                  </td>
+                ))}
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
 
