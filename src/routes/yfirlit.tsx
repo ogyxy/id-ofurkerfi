@@ -765,8 +765,9 @@ function YfirlitContent({
   // Team pace (sales+admin only)
   const salesPeople = profiles.filter((p) => (p.role === "admin" || p.role === "sales"));
 
-  // Spotlight
+  // Spotlight (kept for future re-enable; UI is currently hidden)
   const spotlight = useMemo(() => computeSpotlight(spotlightWeekData, salesPeople), [spotlightWeekData, salesPeople]);
+  void spotlight;
 
   // Tasks grouping
   const groupedTasks = useMemo(() => {
